@@ -64,24 +64,23 @@ function Home({ user }) {
           </div>
 
           <div className="contract-creation">
-            <h3 className="section-title">계약서 생성하기</h3>
             <div className="contract-options">
-              <div className="contract-option" onClick={() => handleIconClick('standard')}>
+              {/* <div className="contract-option" onClick={() => handleIconClick('standard')}>
                 <img src={iconStandard} alt="표준 계약서" className="option-icon" />
                 <span className="option-text">표준 계약서</span>
-              </div>
+              </div> */}
               <div className="contract-option" onClick={() => handleIconClick('terms')}>
-                <img src={iconTerms} alt="표준약관" className="option-icon" />
-                <span className="option-text">표준약관</span>
+                <img src={iconTerms} alt="약관 초안 생성" className="option-icon" />
+                <span className="option-text">약관 초안 생성</span>
               </div>
               <div className="contract-option" onClick={() => handleIconClick('labor')}>
-                <img src={iconLabor} alt="근로계약서" className="option-icon" />
-                <span className="option-text">근로계약서</span>
+                <img src={iconStandard} alt="이미지로 약관 검수" className="option-icon" />
+                <span className="option-text">이미지로 약관 검수</span>
               </div>
-              <div className="contract-option" onClick={() => handleIconClick('rent')}>
+              {/* <div className="contract-option" onClick={() => handleIconClick('rent')}>
                 <img src={iconRentMoney} alt="차용증" className="option-icon" />
                 <span className="option-text">차용증</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
