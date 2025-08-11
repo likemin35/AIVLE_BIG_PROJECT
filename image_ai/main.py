@@ -5,19 +5,14 @@ import logging
 from PIL import Image
 from flask import Flask, request, jsonify
 
-# ✅ 올바른 service_account 임포트 경로
 from google.oauth2 import service_account
 from google.cloud import secretmanager
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
-
-# ✅ CORS
 from flask_cors import CORS
 
-# 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# --- Vertex AI 및 모델 설정 (Secret Manager 연동) ---
 PROJECT_ID = "aivle-team0721"
 LOCATION = "us-central1"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +21,6 @@ gemini_model = None
 credentials = None
 
 try:
-    # Secret Manager에서 서비스 계정 키 로드
     secret_client = secretmanager.SecretManagerServiceClient()
     secret_name = f"projects/{PROJECT_ID}/secrets/firebase-adminsdk/versions/latest"
     response = secret_client.access_secret_version(name=secret_name)
@@ -49,16 +43,16 @@ if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
         logging.info("Vertex AI 초기화 성공")
-        # ✅ 최신 멀티모달 모델로 교체 (이전: gemini-1.0-pro-vision → 404 Publisher 원인)
-        gemini_model = GenerativeModel("gemini-1.5-flash")
-        logging.info("Gemini(1.5-flash) 모델 초기화 성공")
+        # ✅ 최신 가용 모델로 교체 (예: gemini-2.0-flash)
+        gemini_model = GenerativeModel("gemini-2.0-flash")
+        logging.info("Gemini(2.0-flash) 모델 초기화 성공")
     except Exception as e:
         logging.error(f"Vertex AI 또는 Gemini 모델 초기화 실패: {e}")
 else:
     logging.error("인증 실패로 인해 Gemini 모델을 사용할 수 없습니다.")
 
 app = Flask(__name__)
-CORS(app)  # 필요 시 origins=["http://34.54.82.32", "https://YOUR-DOMAIN"]로 제한
+CORS(app)  # 필요시 origins=["http://34.54.82.32", "https://YOUR-DOMAIN"] 등으로 제한
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -66,9 +60,6 @@ def health():
 
 @app.route("/", methods=["POST"])
 def check_spelling():
-    """
-    POST 요청으로 이미지를 받아 Gemini API로 오탈자를 검수합니다.
-    """
     if not gemini_model:
         return jsonify({"error": "Gemini model is not initialized"}), 500
 
@@ -100,5 +91,4 @@ def check_spelling():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    # Cloud Run 환경에서 포트 환경 변수를 사용하도록 설정
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
