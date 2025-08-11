@@ -1,23 +1,17 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <title>Redirecting...</title>
-  <meta http-equiv="refresh" content="0; URL='/'" />
-  <script>
-    (function () {
-      // 현재 경로/쿼리/해시를 # 뒤로 붙여 홈으로 리다이렉트
-      var l = window.location;
-      var newUrl = '/' + '#' + l.pathname.replace(/^\//, '') + l.search + l.hash;
-      // 예: /upload-image  → /#/upload-image 로 변환
-      window.location.replace(newUrl);
-    })();
-  </script>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; }
-  </style>
+  <meta charset="utf-8" />
+  <title>페이지를 찾을 수 없습니다</title>
+  <meta http-equiv="refresh" content="0; URL=/" />
+  <script>
+    window.location.replace('/');
+  </script>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 24px; text-align: center; }
+  </style>
 </head>
 <body>
-  <p>페이지를 이동 중입니다…</p>
+  <p>페이지를 이동 중입니다…</p>
 </body>
 </html>
