@@ -15,7 +15,8 @@ function UploadImage() {
   const navigate = useNavigate();
 
   const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+    const file = event.target.files?.[0] ?? null;
+    setSelectedFile(file);
     setSpellCheckResult('');
     setError('');
   };
@@ -39,7 +40,7 @@ function UploadImage() {
       if (!response.ok) throw new Error('API 호출에 실패했습니다.');
 
       const data = await response.json();
-      setSpellCheckResult(data.spell_check_result);
+      setSpellCheckResult(data.spell_check_result || '');
     } catch (err) {
       setError(`오류가 발생했습니다: ${err.message}`);
       console.error(err);
@@ -81,11 +82,17 @@ function UploadImage() {
               <button
                 onClick={handleUploadClick}
                 className="upload-btn"
-                disabled={isLoading}
+                disabled={isLoading || !selectedFile}
+                title={!selectedFile ? '이미지를 먼저 선택하세요' : undefined}
               >
                 {isLoading ? '검수 중...' : '이미지 업로드 및 검수'}
               </button>
             </div>
+            {selectedFile && (
+              <div className="selected-file">
+                선택된 파일: <strong>{selectedFile.name}</strong>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -97,7 +104,9 @@ function UploadImage() {
           {spellCheckResult && (
             <div className="result-section">
               <h3 className="section-title">오탈자 검수 결과</h3>
-              <p className="result-text">{spellCheckResult}</p>
+              <p className="result-text" style={{ whiteSpace: 'pre-line' }}>
+                {spellCheckResult}
+              </p>
             </div>
           )}
         </div>
