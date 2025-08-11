@@ -1,0 +1,12 @@
+Flask
+flask_cors
+google-cloud-aiplatform
+google-auth
+langchain-google-vertexai
+spacy
+requests
+google-cloud-secret-manager
+langchain_community
+langchain_huggingface
+chromadb
+urllib3

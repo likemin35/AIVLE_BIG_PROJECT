@@ -47,6 +47,10 @@ const ContractDetail = () => {
     navigate(`/terms/${id}/edit`, { state: { contract } });
   };
 
+  const handleVisualizeClick = () => {
+    navigate(`/contracts/${id}/visualize`, { state: { contractContent: contract.content } });
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return new Date().toISOString().split('T')[0];
     return new Date(dateString).toISOString().split('T')[0];
@@ -82,17 +86,14 @@ const ContractDetail = () => {
       const usableWidth = doc.internal.pageSize.width - 2 * margin;
       let cursorY = margin;
 
-      // 1. 원본 텍스트를 줄바꿈 기준으로 나눕니다.
       const paragraphs = contract.content.split('\n');
 
       paragraphs.forEach(paragraph => {
-        // 2. 각 문단을 너비에 맞게 여러 줄로 나눕니다.
         const lines = doc.splitTextToSize(paragraph, usableWidth);
         
         lines.forEach(line => {
           const lineHeight = doc.getTextDimensions(line).h;
 
-          // 3. 페이지 끝에 도달하면 새 페이지를 추가합니다.
           if (cursorY + lineHeight > pageHeight - margin) {
             doc.addPage();
             cursorY = margin;
@@ -174,7 +175,7 @@ const ContractDetail = () => {
           <button className="action-btn" onClick={handleEditClick} disabled={!isLatest} title={!isLatest ? "최신 버전만 수정할 수 있습니다." : ""}>
             직접 수정하기
           </button>
-          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
+          <button className="action-btn" onClick={handleVisualizeClick} disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
             조항별 연관도 시각화
           </button>
           <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
