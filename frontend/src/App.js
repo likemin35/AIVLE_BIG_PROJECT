@@ -1,6 +1,6 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom'; // ✅ 변경
 import Home from './Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
@@ -20,8 +20,6 @@ import ResetPassword from './components/ResetPassword';
 import ContractManagement from './ContractManagement';
 import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
-
-// ✅ 업로드 페이지 컴포넌트 임포트 (경로 확인)
 import UploadImage from './components/UploadImage';
 
 function App() {
@@ -68,7 +66,7 @@ function App() {
           <Route path="/terms/new/edit" element={<EditTerms />} />
           <Route path="/terms/:termId/edit" element={<EditTerms />} />
 
-          {/* ✅ 근로계약서 업로드 라우트 추가 */}
+          {/* 근로계약서 업로드 라우트 */}
           <Route path="/upload-image" element={<UploadImage />} />
         </Route>
 

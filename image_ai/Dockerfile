@@ -12,9 +12,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # requirements.txt 복사
 COPY requirements.txt .
 
-# pip를 최신 버전으로 업데이트한 후 라이브러리 설치
-# 이 단계가 오래된 pip로 인한 오류를 해결합니다.
-RUN python -m pip install --upgrade pip
+# pip/setuptools/wheel 최신화 후 라이브러리 설치
+RUN python -m pip install --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 애플리케이션 파일 복사
@@ -23,6 +22,5 @@ COPY main.py .
 # 포트 8080 노출
 EXPOSE 8080
 
-# Gunicorn을 사용하여 Flask 애플리케이션 실행
-# main:app은 main.py 파일에 있는 Flask app 객체를 실행하라는 의미입니다.
+# Gunicorn으로 Flask 실행
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
