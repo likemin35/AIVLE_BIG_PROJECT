@@ -85,6 +85,28 @@ function UploadImage() {
     }
   };
 
+  // ----- 다운로드: 수정 후 전문을 .txt로 저장 -----
+  const handleDownloadAfter = () => {
+    if (!afterText) return;
+    // 파일명: 원본파일명_수정본.txt (원본 없으면 corrected.txt)
+    const base =
+      (selectedFile?.name?.replace(/\.[^.]+$/, '') || 'corrected') + '_수정본';
+    const filename = `${base}.txt`;
+
+    // UTF-8 BOM 추가로 메모장 한글 깨짐 방지
+    const content = '\ufeff' + afterText;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="image-main">
       <div className="image-container">
@@ -142,23 +164,36 @@ function UploadImage() {
           </div>
         </div>
 
-        {/* 오른쪽: 수정 전/후 전문을 좌우로 */}
+        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */}
         <div className="image-right">
           {!spellCheckResult ? (
             <div className="preview-placeholder">
               <p className="muted">검수 결과가 이 영역에 표시됩니다.</p>
             </div>
           ) : (
-            <div className="two-col-results">
-              <div className="result-card">
-                <h3 className="result-title">수정 전 전문</h3>
-                <pre className="result-pre">{beforeText}</pre>
+            <>
+              <div className="download-bar">
+                <button
+                  className="download-btn"
+                  onClick={handleDownloadAfter}
+                  disabled={!afterText}
+                  title={!afterText ? '수정 후 전문이 없습니다.' : undefined}
+                >
+                  수정 후 전문 .txt 다운로드
+                </button>
               </div>
-              <div className="result-card">
-                <h3 className="result-title">수정 후 전문</h3>
-                <pre className="result-pre">{afterText}</pre>
+
+              <div className="two-col-results">
+                <div className="result-card">
+                  <h3 className="result-title">수정 전 전문</h3>
+                  <pre className="result-pre">{beforeText}</pre>
+                </div>
+                <div className="result-card">
+                  <h3 className="result-title">수정 후 전문</h3>
+                  <pre className="result-pre">{afterText}</pre>
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
