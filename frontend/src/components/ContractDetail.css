@@ -5,6 +5,8 @@
   max-width: 1400px;
   margin: 0 auto;
   align-items: flex-start;
+  height: 90vh;
+  overflow-y: hidden;
 }
 
 .error-container {
@@ -19,7 +21,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   padding: 2rem;
-  height: 80vh;
+  height: 100%;
   overflow-y: auto;
 }
 
@@ -39,8 +41,8 @@
   gap: 1.5rem;
   position: sticky;
   top: 2rem;
-  height: 80vh;
-  overflow-y: auto;
+  height: auto;
+  overflow-y: visible;
 }
 
 .info-box, .actions-box {
@@ -131,4 +133,33 @@
 .back-to-list-btn:hover {
   background-color: #5a6268;
   border-color: #545b62;
+}
+
+/* --- 버전 경고 및 비활성화 버튼 스타일 --- */
+.version-warning {
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.version-warning p {
+  margin: 0;
+  color: #d46b08;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.action-btn:disabled {
+  background-color: #f5f5f5;
+  color: #adb5bd;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+  background-color: #f5f5f5;
+  color: #adb5bd;
+  border-color: #dee2e6;
 }

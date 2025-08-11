@@ -163,7 +163,7 @@ const ContractManagement = () => {
             <div key={latest.id} className="contract-group">
               <div className="contract-item">
                 <div className="item-data title">
-                  <Link to={`/contracts/${latest.id}`}>{latest.title}</Link>
+                  <Link to={`/contracts/${latest.id}`} state={{ isLatest: true }}>{latest.title}</Link>
                 </div>
                 <div className="item-data memo">
                   {latest.memo ? (
@@ -193,7 +193,7 @@ const ContractManagement = () => {
                   {history.map((contract) => (
                     <div key={contract.id} className="contract-item history-item">
                       <div className="item-data title">
-                        <Link to={`/contracts/${contract.id}`}>{contract.title}</Link>
+                        <Link to={`/contracts/${contract.id}`} state={{ isLatest: false }}>{contract.title}</Link>
                       </div>
                       <div className="item-data memo">
                         {contract.memo ? (
