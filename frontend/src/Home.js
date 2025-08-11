@@ -13,9 +13,19 @@ function Home({ user }) {
   const navigate = useNavigate();
 
   const handleIconClick = (type) => {
-    if (type === 'standard') navigate('/create-standard');
-    else if (type === 'terms') navigate('/create-terms');
-    else alert('해당 서비스는 아직 준비중입니다.');
+    if (type === 'standard') {
+      navigate('/create-standard');
+    } else if (type === 'terms') {
+      navigate('/create-terms');
+    } else if (type === 'labor') {
+      // ✅ 근로계약서 버튼 -> 업로드 페이지 라우팅
+      navigate('/upload-image');
+    } else if (type === 'rent') {
+      // 필요 시 업로드 페이지로 연결하거나 다른 라우트로 변경
+      alert('해당 서비스는 아직 준비중입니다.');
+    } else {
+      alert('해당 서비스는 아직 준비중입니다.');
+    }
   };
 
   const handleSignUpClick = () => {
@@ -28,7 +38,6 @@ function Home({ user }) {
 
   return (
     <div className="HomeContainer">
-
       <main className="main-content">
         <div className="hero-section">
           <h1 className="main-title">
@@ -82,5 +91,3 @@ function Home({ user }) {
 }
 
 export default Home;
-
-//
