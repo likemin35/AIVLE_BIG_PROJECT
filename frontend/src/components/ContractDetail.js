@@ -3,17 +3,21 @@ import { useParams, useOutletContext, useNavigate, useLocation } from 'react-rou
 import { getContractById } from '../api/term';
 import LoadingSpinner from './LoadingSpinner';
 import './ContractDetail.css';
+import jsPDF from 'jspdf';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { saveAs } from 'file-saver';
 
 const ContractDetail = () => {
   const { id } = useParams();
   const { user, authLoading } = useOutletContext();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isLatest } = location.state || { isLatest: true }; // 기본값을 true로 설정
+  const { isLatest } = location.state || { isLatest: true };
 
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -44,9 +48,86 @@ const ContractDetail = () => {
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR');
+    if (!dateString) return new Date().toISOString().split('T')[0];
+    return new Date(dateString).toISOString().split('T')[0];
+  };
+
+  const generateFileName = (extension) => {
+    const date = formatDate(contract.modifiedAt || contract.createdAt);
+    const version = contract.version || 'v1.0';
+    return `${contract.title}_${date}_${version}.${extension}`;
+  };
+
+  const handleDownloadPDF = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      const fontResponse = await fetch('/fonts/NanumGothic.ttf');
+      if (!fontResponse.ok) {
+        throw new Error('폰트 파일을 불러오는 데 실패했습니다.');
+      }
+      const font = await fontResponse.arrayBuffer();
+      const fontBase64 = btoa(
+        new Uint8Array(font).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+
+      const doc = new jsPDF();
+      doc.addFileToVFS('NanumGothic.ttf', fontBase64);
+      doc.addFont('NanumGothic.ttf', 'NanumGothic', 'normal');
+      doc.setFont('NanumGothic');
+      
+      const margin = 15;
+      const pageHeight = doc.internal.pageSize.height;
+      const usableWidth = doc.internal.pageSize.width - 2 * margin;
+      let cursorY = margin;
+
+      // 1. 원본 텍스트를 줄바꿈 기준으로 나눕니다.
+      const paragraphs = contract.content.split('\n');
+
+      paragraphs.forEach(paragraph => {
+        // 2. 각 문단을 너비에 맞게 여러 줄로 나눕니다.
+        const lines = doc.splitTextToSize(paragraph, usableWidth);
+        
+        lines.forEach(line => {
+          const lineHeight = doc.getTextDimensions(line).h;
+
+          // 3. 페이지 끝에 도달하면 새 페이지를 추가합니다.
+          if (cursorY + lineHeight > pageHeight - margin) {
+            doc.addPage();
+            cursorY = margin;
+          }
+          
+          doc.text(line, margin, cursorY);
+          cursorY += lineHeight;
+        });
+      });
+
+      doc.save(generateFileName('pdf'));
+
+    } catch (err) {
+      console.error(err);
+      alert('PDF 생성 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadWord = () => {
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: contract.content.split('\n').map(line => 
+          new Paragraph({
+            children: [new TextRun(line)],
+          })
+        ),
+      }],
+    });
+
+    Packer.toBlob(doc).then(blob => {
+      saveAs(blob, generateFileName('docx'));
+    });
   };
 
   if (authLoading || loading) {
@@ -90,35 +171,25 @@ const ContractDetail = () => {
           </div>
         </div>
         <div className="actions-box">
-          <button 
-            className="action-btn" 
-            onClick={handleEditClick} 
-            disabled={!isLatest}
-            title={!isLatest ? "최신 버전만 수정할 수 있습니다." : ""}
-          >
+          <button className="action-btn" onClick={handleEditClick} disabled={!isLatest} title={!isLatest ? "최신 버전만 수정할 수 있습니다." : ""}>
             직접 수정하기
           </button>
-          <button 
-            className="action-btn" 
-            disabled={!isLatest}
-            title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}
-          >
+          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
             조항별 연관도 시각화
           </button>
-          <button 
-            className="action-btn" 
-            disabled={!isLatest}
-            title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}
-          >
+          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
             해외 법률에 부합하는 초안 생성
           </button>
-          <button 
-            className="action-btn" 
-            disabled={!isLatest}
-            title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}
-          >
+          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
             AI 딸깍 버튼
           </button>
+          <hr className="divider" />
+          <div className="download-actions">
+            <button className="action-btn download-btn pdf" onClick={handleDownloadPDF} disabled={isDownloading}>
+              {isDownloading ? '생성 중...' : 'PDF로 다운로드'}
+            </button>
+            <button className="action-btn download-btn word" onClick={handleDownloadWord}>Word로 다운로드</button>
+          </div>
           <hr className="divider" />
           <button className="action-btn back-to-list-btn" onClick={() => navigate('/contracts')}>
             목록으로
