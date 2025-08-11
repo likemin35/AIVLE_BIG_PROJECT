@@ -89,6 +89,10 @@ function EditTerms() {
     }
   }, []);
 
+  const handleCancel = () => {
+    navigate(-1); // 이전 페이지로 이동
+  };
+
   const onClickSave = useCallback(async () => {
     if (!user || !title || !termsContent) {
       alert('제목과 본문은 비어 있을 수 없습니다.');
@@ -178,9 +182,14 @@ function EditTerms() {
                   <div>상품명: {metaInfo.productName || '-'}</div>
                 </div>
               </div>
-              <button onClick={onClickSave} className="ai-draft-btn" disabled={saving}>
-                {saving ? '저장 중...' : (isEditMode ? '수정 완료' : '계약서 저장')}
-              </button>
+              <div className="form-buttons">
+                <button onClick={onClickSave} className="ai-draft-btn" disabled={saving}>
+                  {saving ? '저장 중...' : (isEditMode ? '수정 완료' : '계약서 저장')}
+                </button>
+                <button onClick={handleCancel} className="ai-draft-btn cancel-btn" disabled={saving}>
+                  뒤로가기
+                </button>
+              </div>
             </div>
           </div>
           <div className="preview-section">

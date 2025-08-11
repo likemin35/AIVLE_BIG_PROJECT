@@ -126,9 +126,15 @@
   border-color: #6c5ce7;
 }
 
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
 .ai-draft-btn {
-  width: 100%;
-  padding: 1rem 2rem;
+  flex: 1;
+  padding: 1rem;
   background-color: #6c5ce7;
   color: white;
   border: none;
@@ -137,11 +143,18 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
-  margin-top: 0.5rem;
 }
 
 .ai-draft-btn:hover {
   background-color: #5f4fcf;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+}
+
+.cancel-btn:hover {
+  background-color: #5a6268;
 }
 
 /* 반응형 */
