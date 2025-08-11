@@ -41,7 +41,7 @@ function Home({ user }) {
       <main className="main-content">
         <div className="hero-section">
           <h1 className="main-title">
-            <span className="highlight">딸깍</span>으로 계약서 생성
+            <span className="highlight">딸깍</span>으로 약관 생성
           </h1>
 
           <div className="brand-section">
@@ -54,12 +54,12 @@ function Home({ user }) {
             <div className="upload-container">
               <input
                 type="text"
-                placeholder="분석할 계약서를 업로드 하세요"
+                placeholder="분석할 약관을 업로드 하세요"
                 value={contractText}
                 onChange={(e) => setContractText(e.target.value)}
                 className="upload-input"
               />
-              <button className="upload-btn">계약서 업로드</button>
+              <button className="upload-btn">약관 업로드</button>
             </div>
           </div>
 
