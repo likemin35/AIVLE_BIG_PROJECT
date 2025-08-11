@@ -20,6 +20,7 @@ import ResetPassword from './components/ResetPassword';
 import ContractManagement from './ContractManagement';
 import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
+import ContractVisualization from './components/ContractVisualization'; // 추가
 
 // 업로드 페이지
 import UploadImage from './components/UploadImage';
@@ -63,6 +64,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/contracts" element={<ContractManagement />} />
           <Route path="/contracts/:id" element={<ContractDetail />} />
+          <Route path="/contracts/:id/visualize" element={<ContractVisualization />} /> {/* 추가 */}
 
           {/* 생성 후 편집 페이지 */}
           <Route path="/terms/new/edit" element={<EditTerms />} />
