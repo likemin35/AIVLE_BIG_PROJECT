@@ -4,12 +4,16 @@ import json
 import logging
 from PIL import Image
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # Google Cloud SDK 및 Vertex AI 관련 라이브러리 임포트
 from google.auth import service_account
 from google.cloud import secretmanager
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
+
+app = Flask(__name__)
+CORS(app)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

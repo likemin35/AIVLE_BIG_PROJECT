@@ -1,12 +1,11 @@
 // src/components/UploadImage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.png';        // ✅ 경로 수정
-import '../App.css';                          // Home.js와 동일 CSS
+import logo from '../assets/logo.png';
+import '../App.css';
 
-// 백엔드 Cloud Run 서비스의 URL을 입력하세요.
-// 예: 'https://image-ai-service-xxxxxxxx-uc.a.run.app'
-const API_URL = 'YOUR_CLOUD_RUN_SERVICE_URL';
+// Cloud Run 서비스 URL (POST / 로 업로드)
+const API_URL = 'https://image-ai-service-eck6h26cxa-uc.a.run.app';
 
 function UploadImage() {
   const [selectedFile, setSelectedFile] = useState(null);

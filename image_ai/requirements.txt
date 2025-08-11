@@ -4,3 +4,4 @@ google-cloud-aiplatform>=1.66.0
 google-cloud-secret-manager>=2.20.0
 google-auth>=2.34.0
 Pillow>=10.3.0
+Flask-Cors>=4.0.1
