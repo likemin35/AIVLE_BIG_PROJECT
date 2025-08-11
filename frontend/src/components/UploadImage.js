@@ -12,36 +12,39 @@ function UploadImage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ----- 파서: "$$수정전 -> 수정후" 포맷 분리 -----
-  const { fullText, changes } = useMemo(() => {
-    const raw = spellCheckResult || '';
-    if (!raw.trim()) {
-      return { fullText: '', changes: [] };
-    }
+  // ----- 파서: "수정 전 ## 수정 후 $$변경..." 포맷 분리 -----
+  const { beforeText, afterText, changes } = useMemo(() => {
+    const raw = (spellCheckResult || '').trim();
+    if (!raw) return { beforeText: '', afterText: '', changes: [] };
 
-    // 첫 번째 "$$" 이전은 "수정된 전문", 이후는 변경 목록으로 간주
-    const firstIdx = raw.indexOf('$$');
-    const full = (firstIdx >= 0 ? raw.slice(0, firstIdx) : raw).trim();
+    // 먼저 변경 사항 시작 인덱스 (첫 $$)를 찾는다
+    const firstChangeIdx = raw.indexOf('$$');
+    const mainSection = (firstChangeIdx >= 0 ? raw.slice(0, firstChangeIdx) : raw).trim();
+    const changesSection = (firstChangeIdx >= 0 ? raw.slice(firstChangeIdx) : '').trim();
 
-    // 나머지에서 "$$" 단위로 쪼개고, "수정전 -> 수정후"를 추출
-    const rest = firstIdx >= 0 ? raw.slice(firstIdx) : '';
-    const items = rest
+    // 본문을 ##로 좌/우 분리
+    const sepIdx = mainSection.indexOf('##');
+    const before = (sepIdx >= 0 ? mainSection.slice(0, sepIdx) : mainSection).trim();
+    const after = (sepIdx >= 0 ? mainSection.slice(sepIdx + 2) : '').trim();
+
+    // 변경 사항 파싱: "$$수정전 -> 수정후" 라인 다수
+    const items = changesSection
       .split('$$')
-      .map((s) => s.trim())
+      .map(s => s.trim())
       .filter(Boolean)
-      .map((line) => {
-        const firstLine = line.split('\n')[0];
+      .map(line => {
+        const firstLine = line.split('\n')[0]; // 혹시 줄바꿈 섞이면 첫 줄만
         const arrowIdx = firstLine.indexOf('->');
         if (arrowIdx >= 0) {
-          const before = firstLine.slice(0, arrowIdx).trim();
-          const after = firstLine.slice(arrowIdx + 2).trim();
-          if (before && after) return { before, after };
+          const beforePart = firstLine.slice(0, arrowIdx).trim();
+          const afterPart = firstLine.slice(arrowIdx + 2).trim();
+          if (beforePart && afterPart) return { before: beforePart, after: afterPart };
         }
         return null;
       })
       .filter(Boolean);
 
-    return { fullText: full, changes: items };
+    return { beforeText: before, afterText: after, changes: items };
   }, [spellCheckResult]);
 
   // ----- 이벤트 핸들러 -----
@@ -84,12 +87,8 @@ function UploadImage() {
 
   return (
     <main className="image-main">
-      <div className="image-page-title">
-        이미지 텍스트 <span className="highlight">오탈자 검수</span>
-      </div>
-
       <div className="image-container">
-        {/* 왼쪽: 업로드 패널 */}
+        {/* 왼쪽: 업로드 패널 + 변경 사항 */}
         <div className="image-left">
           <div className="panel-card">
             <h2 className="panel-title">이미지 업로드</h2>
@@ -121,37 +120,43 @@ function UploadImage() {
 
             {error && <div className="error-banner">{error}</div>}
           </div>
+
+          {/* 변경 사항: 업로드 카드 아래에 출력 */}
+          <div className="changes-card">
+            <h3 className="result-title">변경 사항</h3>
+            {!spellCheckResult ? (
+              <div className="muted">업로드 후 변경 사항이 여기에 표시됩니다.</div>
+            ) : changes.length === 0 ? (
+              <div className="no-change muted">변경 사항이 없습니다.</div>
+            ) : (
+              <ul className="changes-list">
+                {changes.map((item, idx) => (
+                  <li key={`${item.before}-${idx}`} className="change-item">
+                    <span className="badge-before">{item.before}</span>
+                    <span className="arrow">→</span>
+                    <span className="badge-after">{item.after}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
-        {/* 오른쪽: 결과 프리뷰 */}
+        {/* 오른쪽: 수정 전/후 전문을 좌우로 */}
         <div className="image-right">
           {!spellCheckResult ? (
             <div className="preview-placeholder">
-              <p className="muted">오른쪽 영역에 “수정된 전문”과 “변경 사항”이 표시됩니다.</p>
+              <p className="muted">검수 결과가 이 영역에 표시됩니다.</p>
             </div>
           ) : (
-            <div className="result-grid">
+            <div className="two-col-results">
               <div className="result-card">
-                <h3 className="result-title">수정된 전문</h3>
-                <pre className="result-pre">{fullText}</pre>
+                <h3 className="result-title">수정 전 전문</h3>
+                <pre className="result-pre">{beforeText}</pre>
               </div>
-
               <div className="result-card">
-                <h3 className="result-title">변경 사항</h3>
-
-                {changes.length === 0 ? (
-                  <div className="no-change muted">변경 사항이 없습니다.</div>
-                ) : (
-                  <ul className="changes-list">
-                    {changes.map((item, idx) => (
-                      <li key={`${item.before}-${idx}`} className="change-item">
-                        <span className="badge-before">{item.before}</span>
-                        <span className="arrow">→</span>
-                        <span className="badge-after">{item.after}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <h3 className="result-title">수정 후 전문</h3>
+                <pre className="result-pre">{afterText}</pre>
               </div>
             </div>
           )}
