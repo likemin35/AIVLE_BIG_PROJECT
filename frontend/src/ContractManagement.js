@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { getContracts, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
 import LoadingSpinner from './components/LoadingSpinner';
+import Tooltip from './components/Tooltip';
 import './ContractManagement.css';
 
 const ContractManagement = () => {
@@ -14,7 +15,6 @@ const ContractManagement = () => {
   const [itemsPerPage] = useState(10);
 
   const fetchContracts = async () => {
-    // setLoading(true)를 호출하여 로딩 상태를 명시적으로 시작합니다.
     setLoading(true);
     try {
       const data = await getContracts();
@@ -83,7 +83,7 @@ const ContractManagement = () => {
       try {
         await deleteLatestContract(contract.id);
         alert('최신 버전이 삭제되었습니다.');
-        fetchContracts(); // 목록 새로고침
+        fetchContracts();
       } catch (err) {
         alert('삭제 중 오류가 발생했습니다.');
         console.error(err);
@@ -97,7 +97,7 @@ const ContractManagement = () => {
       try {
         await deleteAllContractsInGroup(contract.id);
         alert('모든 버전 기록이 삭제되었습니다.');
-        fetchContracts(); // 목록 새로고침
+        fetchContracts();
       } catch (err) {
         alert('삭제 중 오류가 발생했습니다.');
         console.error(err);
@@ -115,7 +115,34 @@ const ContractManagement = () => {
     return date.toLocaleDateString();
   };
 
-  // Pagination logic
+  const truncateMemo = (memo) => {
+    if (!memo) return '';
+    const firstLine = memo.split('\n')[0];
+    if (memo.length > firstLine.length || firstLine.length > 40) {
+      return `${firstLine.substring(0, 40)}...`;
+    }
+    return firstLine;
+  };
+
+  const renderMemo = (memo) => {
+    if (!memo) {
+      return <span className="no-memo">수정메모 없음</span>;
+    }
+
+    const truncated = truncateMemo(memo);
+    const isTruncated = memo !== truncated;
+
+    if (isTruncated) {
+      return (
+        <Tooltip text={memo}>
+          <span>{truncated}</span>
+        </Tooltip>
+      );
+    }
+    
+    return <span>{memo}</span>;
+  };
+
   const indexOfLastGroup = currentPage * itemsPerPage;
   const indexOfFirstGroup = indexOfLastGroup - itemsPerPage;
   const currentGroups = contractGroups.slice(indexOfFirstGroup, indexOfLastGroup);
@@ -166,11 +193,7 @@ const ContractManagement = () => {
                   <Link to={`/contracts/${latest.id}`} state={{ isLatest: true }}>{latest.title}</Link>
                 </div>
                 <div className="item-data memo">
-                  {latest.memo ? (
-                    <span>{latest.memo}</span>
-                  ) : (
-                    <span className="no-memo">수정메모 없음</span>
-                  )}
+                  {renderMemo(latest.memo)}
                 </div>
                 <div className="item-data date">{getDisplayDate(latest)}</div>
                 <div className="item-data version">{latest.version}</div>
@@ -196,11 +219,7 @@ const ContractManagement = () => {
                         <Link to={`/contracts/${contract.id}`} state={{ isLatest: false }}>{contract.title}</Link>
                       </div>
                       <div className="item-data memo">
-                        {contract.memo ? (
-                          <span>{contract.memo}</span>
-                        ) : (
-                          <span className="no-memo">수정메모 없음</span>
-                        )}
+                        {renderMemo(contract.memo)}
                       </div>
                       <div className="item-data date">{getDisplayDate(contract)}</div>
                       <div className="item-data version">{contract.version}</div>
