@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation, useOutletContext } from 'react-router-dom';
 import { getAllQuestions } from '../api/qna';
+import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './QnaList.css';
 
 // SVG 아이콘 컴포넌트
@@ -106,8 +107,8 @@ const QnaList = () => {
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>
-                                <div className="loading-spinner"></div>
+                            <td colSpan="4">
+                                <LoadingSpinner />
                             </td>
                         </tr>
                     ) : pageData && pageData.content.length > 0 ? (

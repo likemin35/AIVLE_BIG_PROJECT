@@ -1,0 +1,192 @@
+/* Edit-Terms.css */
+
+/* 공통 레이아웃 */
+.terms-main {
+  min-height: calc(100vh - 80px);
+  background-color: white;
+}
+
+.terms-container {
+  display: flex;
+  height: calc(100vh - 80px);
+}
+
+/* 오른쪽 미리보기/편집 영역 */
+.preview-section {
+  flex: 1;
+  background-color: #f8f9fa;
+  padding: 2rem;
+  border-right: 1px solid #e9ecef;
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #f1f3f4;
+  border-radius: 8px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  color: #636e72;
+  font-size: 1.1rem;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.generated-terms-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  text-align: left;
+  color: #333;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.generated-terms-content h3 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.terms-editor {
+  flex: 1;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: none;            /* 사용자가 리사이즈하지 않게 */
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.terms-editor:focus {
+  border-color: #6c5ce7;
+}
+
+/* 왼쪽 입력 폼 영역 */
+.form-section {
+  width: 400px;
+  background-color: white;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.form-container {
+  max-width: 100%;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #2d3436;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #6c5ce7;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.form-textarea:focus {
+  border-color: #6c5ce7;
+}
+
+.form-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.ai-draft-btn {
+  flex: 1;
+  padding: 1rem;
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ai-draft-btn:hover {
+  background-color: #5f4fcf;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+}
+
+.cancel-btn:hover {
+  background-color: #5a6268;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .form-section { width: 350px; }
+}
+
+@media (max-width: 768px) {
+  .terms-container { flex-direction: column; height: auto; }
+  .preview-section { height: 300px; border-right: none; border-bottom: 1px solid #e9ecef; }
+  .form-section { width: 100%; padding: 1.5rem; }
+  .form-group { margin-bottom: 1.2rem; }
+}
+
+@media (max-width: 480px) {
+  .form-section { padding: 1rem; }
+  .preview-section { height: 200px; padding: 1rem; }
+}
+
+/* 로딩 텍스트 애니메이션 */
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+.blinking-text {
+  animation: blink 1.2s infinite;
+}
+
+.help-text {
+  display: block;
+  margin-top: 6px;
+  color: #738196;
+  font-size: 0.8rem;
+}

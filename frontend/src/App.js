@@ -14,15 +14,21 @@ import MyPage from './MyPage';
 import QnaList from './components/QnaList';
 import QnaWrite from './components/QnaWrite';
 import QnaDetail from './components/QnaDetail';
-import QnaEdit from './components/QnaEdit'; // 수정 컴포넌트 import
+import QnaEdit from './components/QnaEdit';
 import MainLayout from './components/MainLayout';
 import PointLayout from './components/PointLayout';
 import ResetPassword from './components/ResetPassword';
+import ContractManagement from './ContractManagement';
+import EditTerms from './components/Edit-Terms';
+import ContractDetail from './components/ContractDetail';
+import ContractVisualization from './components/ContractVisualization'; // 추가
 
+// 업로드 페이지
+import UploadImage from './components/UploadImage';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true); // 인증 로딩 상태 추가
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (userAuth) => {
@@ -37,7 +43,7 @@ function App() {
       } else {
         setUser(null);
       }
-      setAuthLoading(false); // 인증 상태 확인 완료
+      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -56,12 +62,31 @@ function App() {
           <Route path="/qna" element={<QnaList />} />
           <Route path="/qna/write" element={<QnaWrite />} />
           <Route path="/qna/:id" element={<QnaDetail />} />
-          <Route path="/qna/edit/:id" element={<QnaEdit />} /> {/* 수정 페이지 라우트 추가 */}
+          <Route path="/qna/edit/:id" element={<QnaEdit />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/contracts" element={<ContractManagement />} />
+          <Route path="/contracts/:id" element={<ContractDetail />} />
+          <Route path="/contracts/:id/visualize" element={<ContractVisualization />} /> {/* 추가 */}
+
+          {/* 생성 후 편집 페이지 */}
+          <Route path="/terms/new/edit" element={<EditTerms />} />
+          <Route path="/terms/:termId/edit" element={<EditTerms />} />
+
+          {/* 근로계약서 업로드 라우트 */}
+          <Route path="/upload-image" element={<UploadImage />} />
         </Route>
 
         {/* 네비게이션 바가 없는 페이지들 */}
-        <Route path="/signup" element={<SignUp user={user} authLoading={authLoading} onHomeClick={() => window.location.href = '/'} />} />
+        <Route
+          path="/signup"
+          element={
+            <SignUp
+              user={user}
+              authLoading={authLoading}
+              onHomeClick={() => (window.location.href = '/')}
+            />
+          }
+        />
         <Route path="/login" element={<Login user={user} authLoading={authLoading} />} />
         <Route path="/complete-signup" element={<CompleteSignUp />} />
       </Routes>

@@ -13,6 +13,18 @@ spring:
   profiles: default
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
 #<<< API Gateway / Routes
       routes:
         - id: ai
@@ -46,6 +58,18 @@ spring:
   profiles: docker
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}" # GCP 배포시 환경변수로 주입, 없을 경우 로컬
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
       routes:
         - id: ai
           uri: http://ai:8080

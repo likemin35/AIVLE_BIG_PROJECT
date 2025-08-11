@@ -1,0 +1,26 @@
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 50vh; /* 뷰포트 높이의 50%를 최소 높이로 설정 */
+  padding: 4rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #f3f3f3; /* Light grey */
+  border-top: 5px solid #555; /* Dark grey */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

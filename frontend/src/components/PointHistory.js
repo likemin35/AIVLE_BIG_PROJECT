@@ -46,7 +46,7 @@ const PointHistory = ({ user }) => {
             case 'INITIAL': return '신규 가입';
             case 'CHARGE': return '포인트 충전';
             case 'DEDUCT': return '포인트 사용';
-            case 'DEDUCT_MANUAL': return '수동 차감';
+            case 'DEDUCT_MANUAL': return 'AI 딸깍';
             default: return type;
         }
     };

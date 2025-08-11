@@ -1,0 +1,65 @@
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-box-portal {
+  position: absolute;
+  background-color: #333;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  font-size: 0.85rem;
+  z-index: 1000;
+  width: max-content;
+  max-width: 300px;
+  white-space: pre-wrap;
+  
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 16px;
+
+  transform: translate(-50%, -100%);
+  margin-top: -8px;
+  
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.tooltip-box-portal::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: -1px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+/* --- Custom Scrollbar (for WebKit browsers like Chrome, Safari) --- */
+.tooltip-box-portal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tooltip-box-portal::-webkit-scrollbar-track {
+  background: #444; /* Scrollbar track color */
+  border-radius: 4px;
+}
+
+.tooltip-box-portal::-webkit-scrollbar-thumb {
+  background-color: #888; /* Scrollbar thumb color */
+  border-radius: 4px;
+  border: 2px solid #444; /* Padding around thumb */
+}
+
+.tooltip-box-portal::-webkit-scrollbar-thumb:hover {
+  background-color: #aaa; /* Thumb hover color */
+}
+
+.tooltip-box {
+  display: none;
+}

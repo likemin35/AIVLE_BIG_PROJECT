@@ -1,0 +1,240 @@
+/* 전체 레이아웃 (MainLayout 헤더 아래) */
+.image-main {
+  min-height: calc(100vh - 80px);
+  background-color: #ffffff;
+}
+
+.image-container {
+  display: flex;
+  height: calc(100vh - 80px);
+}
+
+/* 왼쪽: 업로드 + 변경 사항 */
+.image-left {
+  width: 400px;
+  background-color: #ffffff;
+  padding: 2rem;
+  overflow-y: auto;
+  border-right: 1px solid #e9ecef;
+  box-sizing: border-box;
+}
+
+.panel-card,
+.changes-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-sizing: border-box;
+}
+
+.panel-card { margin-bottom: 1rem; }
+
+.panel-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2d3436;
+}
+
+/* 파일 선택 UI (통일 버튼) */
+.file-picker {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.file-input-hidden { display: none; }
+
+.file-select-btn {
+  padding: 0.7rem 1rem;
+  background-color: #6c5ce7;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  text-align: center;
+  min-width: 110px;
+}
+
+.file-select-btn:hover { background-color: #5f4fcf; }
+
+.file-selected-name {
+  font-size: 0.9rem;
+  color: #2d3436;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover:not(:disabled) { background-color: #5f4fcf; }
+.action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error-banner {
+  margin-top: 0.75rem;
+  background: #ffe8e8;
+  border: 1px solid #ffc9c9;
+  color: #c92a2a;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* 변경 사항 리스트 (왼쪽 카드) */
+.result-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  text-align: left;
+}
+
+.changes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.change-item {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arrow { color: #6c5ce7; font-weight: 700; }
+
+.badge-before,
+.badge-after {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.badge-before {
+  background: #fff7e6;       /* before: 노랑 톤 */
+  border: 1px solid #ffe8b5;
+  color: #8c6d1f;
+}
+
+.badge-after {
+  background: #eaf7ef;       /* after: 초록 톤 */
+  border: 1px solid #c7e9d3;
+  color: #1e7d4e;
+}
+
+/* 오른쪽: 상단 다운로드 바 */
+.download-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.8rem;
+}
+
+.download-btn {
+  padding: 0.6rem 0.9rem;
+  background-color: #6c5ce7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.download-btn:hover { background-color: #5f4fcf; }
+.download-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* 오른쪽: 수정 전/후 전문 (좌우 2열) */
+.image-right {
+  flex: 1;
+  background-color: #f8f9fa;
+  padding: 2rem;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.preview-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #f1f3f4;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #636e72;
+  font-size: 1.05rem;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.two-col-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.result-card {
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.result-pre {
+  white-space: pre-wrap;    /* 줄바꿈 유지 */
+  word-break: break-word;   /* 긴 단어 줄바꿈 */
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* 반응형 */
+@media (max-width: 1024px) {
+  .image-left { width: 350px; }
+}
+
+@media (max-width: 900px) {
+  .two-col-results { grid-template-columns: 1fr; } /* 모바일에선 1열로 */
+}
+
+@media (max-width: 768px) {
+  .image-container {
+    flex-direction: column;
+    height: auto;
+  }
+  .image-left {
+    width: 100%;
+    padding: 1.5rem;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  .image-right { padding: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .image-left { padding: 1rem; }
+  .image-right { padding: 1rem; }
+}

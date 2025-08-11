@@ -48,10 +48,13 @@ public class PointController {
         return Mono.just(ResponseEntity.ok().body("포인트 충전 요청이 성공적으로 접수되었습니다."));
     }
 
-    // 포인트 수동 차감 API
+    // 포인트 수동 차감 API (reason 파라미터 추가)
     @PostMapping("/{firebaseUid}/reduce")
-    public Mono<ResponseEntity<Object>> reducePoint(@PathVariable String firebaseUid, @RequestParam Integer amount) {
-        return pointService.reducePointManually(firebaseUid, amount)
+    public Mono<ResponseEntity<Object>> reducePoint(
+            @PathVariable String firebaseUid,
+            @RequestParam Integer amount,
+            @RequestParam(defaultValue = "포인트 사용") String reason) {
+        return pointService.reducePointManually(firebaseUid, amount, reason)
                 .map(updatedPoint -> ResponseEntity.ok(new PointResponse(updatedPoint.getId(), updatedPoint.getUserId(), updatedPoint.getAmount())))
                 .cast(ResponseEntity.class)
                 .onErrorResume(IllegalArgumentException.class, e -> 

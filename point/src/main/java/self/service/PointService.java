@@ -119,7 +119,7 @@ public class PointService {
                 });
     }
 
-    public Mono<Point> reducePointManually(String userId, int amount) {
+    public Mono<Point> reducePointManually(String userId, int amount, String reason) {
         return getOrCreatePoint(userId)
                 .flatMap(point -> {
                     if (point.getAmount() < amount) {
@@ -133,7 +133,7 @@ public class PointService {
                     history.setUserId(userId);
                     history.setAmount(amount);
                     history.setType("DEDUCT_MANUAL");
-                    history.setDescription("수동 차감");
+                    history.setDescription(reason); // 전달받은 reason으로 설정
                     return pointHistoryRepository.save(history).thenReturn(savedPoint);
                 });
     }

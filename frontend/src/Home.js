@@ -1,86 +1,178 @@
 // src/Home.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import iconStandard from './assets/icon-standard.png';
-import iconRentMoney from './assets/icon-rent-money.png';
-import iconLabor from './assets/icon-labor.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
 import './App.css';
 
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
+  // 파일 선택창 열기
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  // 파일 선택 처리
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      alert('PDF 또는 Word 파일만 업로드 가능합니다.');
+      e.target.value = null;
+      setSelectedFile(null);
+      setContractText('');
+      return;
+    }
+
+    setSelectedFile(file);
+    setContractText(file.name); // 파일명 표시
+  };
+
+  // 업로드 버튼 클릭 처리
+  const handleUploadClick = () => {
+    if (!selectedFile) {
+      alert('약관 파일을 선택해주세요.');
+      return;
+    }
+
+    // FormData 생성
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    fetch('http://localhost:8080/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+        .then((res) => res.json())
+        .then((data) => {
+          alert(`업로드 완료: ${data.message || selectedFile.name}`);
+        })
+        .catch((err) => {
+          console.error(err);
+          alert('업로드 중 오류가 발생했습니다.');
+        });
+  };
+
+  // 파일 삭제 함수 추가
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setContractText('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // input 초기화
+    }
+  };
+
   const handleIconClick = (type) => {
-    if (type === 'standard') navigate('/create-standard');
-    else if (type === 'terms') navigate('/create-terms');
-    else alert('해당 서비스는 아직 준비중입니다.');
-  };
-
-  const handleSignUpClick = () => {
-    navigate('/signup');
-  };
-
-  const handleLoginClick = () => {
-    navigate('/login');
+    if (type === 'terms') {
+      navigate('/create-terms');
+    } else if (type === 'labor') {
+      navigate('/upload-image');
+    } else {
+      alert('해당 서비스는 준비중입니다.');
+    }
   };
 
   return (
-    <div className="HomeContainer">
+      <div className="HomeContainer">
+        <main className="main-content">
+          <div className="hero-section">
+            <h1 className="main-title">
+              <span className="highlight">딸깍</span>으로 약관 생성
+            </h1>
 
-      <main className="main-content">
-        <div className="hero-section">
-          <h1 className="main-title">
-            <span className="highlight">딸깍</span>으로 계약서 생성
-          </h1>
-
-          <div className="brand-section">
-            <div className="brand-icon">
-              <img src={logo} alt="보라계약 로고" className="brand-logo" />
-            </div>
-          </div>
-
-          <div className="upload-section">
-            <div className="upload-container">
-              <input
-                type="text"
-                placeholder="분석할 계약서를 업로드 하세요"
-                value={contractText}
-                onChange={(e) => setContractText(e.target.value)}
-                className="upload-input"
-              />
-              <button className="upload-btn">계약서 업로드</button>
-            </div>
-          </div>
-
-          <div className="contract-creation">
-            <h3 className="section-title">계약서 생성하기</h3>
-            <div className="contract-options">
-              <div className="contract-option" onClick={() => handleIconClick('standard')}>
-                <img src={iconStandard} alt="표준 계약서" className="option-icon" />
-                <span className="option-text">표준 계약서</span>
-              </div>
-              <div className="contract-option" onClick={() => handleIconClick('terms')}>
-                <img src={iconTerms} alt="표준약관" className="option-icon" />
-                <span className="option-text">표준약관</span>
-              </div>
-              <div className="contract-option" onClick={() => handleIconClick('labor')}>
-                <img src={iconLabor} alt="근로계약서" className="option-icon" />
-                <span className="option-text">근로계약서</span>
-              </div>
-              <div className="contract-option" onClick={() => handleIconClick('rent')}>
-                <img src={iconRentMoney} alt="차용증" className="option-icon" />
-                <span className="option-text">차용증</span>
+            <div className="brand-section">
+              <div className="brand-icon">
+                <img src={logo} alt="보라계약 로고" className="brand-logo" />
               </div>
             </div>
+
+            <div className="upload-section">
+              <div className="upload-container">
+                {/* 숨겨진 파일 입력 */}
+                <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                />
+
+                {/* 클릭 가능한 텍스트 입력 */}
+                <input
+                    type="text"
+                    placeholder="분석할 약관을 업로드 하세요"
+                    value={selectedFile ? selectedFile.name : ''}
+                    readOnly
+                    onClick={handleFileButtonClick}
+                    className="upload-input"
+                />
+
+                {/* X 버튼 (파일 선택 시만 표시) */}
+                {selectedFile && (
+                    <button
+                        onClick={handleRemoveFile}
+                        style={{
+                          marginLeft: '5px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'red',
+                          fontSize: '18px',
+                          cursor: 'pointer',
+                        }}
+                    >
+                      ✕
+                    </button>
+                )}
+
+                {/* 업로드 버튼 */}
+                <button className="upload-btn" onClick={handleUploadClick}>
+                  약관 업로드
+                </button>
+              </div>
+            </div>
+
+            <div className="contract-creation">
+              <div className="contract-options centered-options">
+                <div
+                    className="contract-option"
+                    onClick={() => handleIconClick('terms')}
+                >
+                  <img
+                      src={iconTerms}
+                      alt="약관 초안 생성"
+                      className="option-icon"
+                  />
+                  <span className="option-text">약관 초안 생성</span>
+                </div>
+                <div
+                    className="contract-option"
+                    onClick={() => handleIconClick('labor')}
+                >
+                  <img
+                      src={iconStandard}
+                      alt="이미지로 약관 검수"
+                      className="option-icon"
+                  />
+                  <span className="option-text">이미지로 약관 검수</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
   );
 }
 
 export default Home;
-
-//

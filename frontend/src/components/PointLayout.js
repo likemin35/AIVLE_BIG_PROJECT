@@ -3,6 +3,7 @@ import { useOutletContext, Link } from 'react-router-dom';
 import { getUserPoints } from '../api/point';
 import PointCharge from './PointCharge';
 import PointHistory from './PointHistory';
+import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './PointLayout.css';
 
 const PointLayout = () => {
@@ -32,8 +33,8 @@ const PointLayout = () => {
         }
     }, [user, authLoading, fetchPoints]);
 
-    if (authLoading) {
-        return <div className="loading-spinner"></div>;
+    if (authLoading || loading) {
+        return <LoadingSpinner />;
     }
 
     if (!user) {
@@ -50,10 +51,6 @@ const PointLayout = () => {
     
     if (error) {
         return <div className="error-message">{error}</div>;
-    }
-
-    if (loading) {
-        return <div className="loading-spinner"></div>;
     }
 
     return (

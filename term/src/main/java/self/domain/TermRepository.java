@@ -38,13 +38,27 @@ public class TermRepository {
         return Optional.empty();
     }
 
-    public void deleteById(String id) {
-        firestore.collection(COLLECTION_NAME).document(id).delete();
+    public void delete(Term term) {
+        if (term == null || term.getId() == null) {
+            return;
+        }
+        firestore.collection(COLLECTION_NAME).document(term.getId()).delete();
     }
 
     public List<Term> findByUserId(String userId) throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
                 .whereEqualTo("userId", userId)
+                .get();
+        
+        List<QueryDocumentSnapshot> documents = future.get().getDocuments();
+        return documents.stream()
+                .map(doc -> doc.toObject(Term.class))
+                .collect(Collectors.toList());
+    }
+
+    public List<Term> findByOrigin(String originId) throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> future = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("origin", originId)
                 .get();
         
         List<QueryDocumentSnapshot> documents = future.get().getDocuments();
