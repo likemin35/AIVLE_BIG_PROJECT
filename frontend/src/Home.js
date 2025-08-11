@@ -64,11 +64,8 @@ function Home({ user }) {
           </div>
 
           <div className="contract-creation">
-            <div className="contract-options">
-              {/* <div className="contract-option" onClick={() => handleIconClick('standard')}>
-                <img src={iconStandard} alt="표준 계약서" className="option-icon" />
-                <span className="option-text">표준 계약서</span>
-              </div> */}
+            {/* 가운데 정렬을 위해 div로 감싸고, grid를 2열로 조정 */}
+            <div className="contract-options centered-options">
               <div className="contract-option" onClick={() => handleIconClick('terms')}>
                 <img src={iconTerms} alt="약관 초안 생성" className="option-icon" />
                 <span className="option-text">약관 초안 생성</span>
@@ -77,10 +74,6 @@ function Home({ user }) {
                 <img src={iconStandard} alt="이미지로 약관 검수" className="option-icon" />
                 <span className="option-text">이미지로 약관 검수</span>
               </div>
-              {/* <div className="contract-option" onClick={() => handleIconClick('rent')}>
-                <img src={iconRentMoney} alt="차용증" className="option-icon" />
-                <span className="option-text">차용증</span>
-              </div> */}
             </div>
           </div>
         </div>
