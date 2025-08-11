@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from './assets/logo.png';
-import './App.css'; // Home.js와 동일한 CSS 파일을 사용합니다.
+import '../App.css'; // Home.js와 동일한 CSS 파일을 사용합니다.
 
 // 백엔드 Cloud Run 서비스의 URL을 여기에 입력하세요.
 // 예: 'https://image-ai-service-xxxxxxxx-uc.a.run.app'
