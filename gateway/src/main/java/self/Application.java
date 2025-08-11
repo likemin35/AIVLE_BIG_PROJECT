@@ -22,7 +22,8 @@ public class Application {
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(Arrays.asList("*"));
+        // corsConfig.setAllowedOrigins(Arrays.asList("*")); // 기존 코드 주석 처리
+        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // 새 코드 추가
         corsConfig.setMaxAge(3600L);
         corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.addAllowedHeader("*");

@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+# from flask_cors import CORS, cross_origin
 import vertexai
 import os
 from datetime import datetime
@@ -11,7 +11,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 import logging
-from Translate_Terms import translate_text
+
 
 import requests
 import json
@@ -19,7 +19,7 @@ from google.cloud import secretmanager
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # 로그 설정
 logging.basicConfig(level=logging.INFO)
@@ -31,11 +31,11 @@ POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085/a
 # --- Vertex AI 및 모델 설정 (Secret Manager 연동) ---
 PROJECT_ID = "aivle-team0721"
 LOCATION = "us-central1"
-SERVICE_ACCOUNT_FILE = "/app/src/main/Python/aivle-team0721-79f3f908cb54.json"
 
-# Vertex 인증
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE)
-vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+# Vertex AI 초기화
+# 로컬 환경에서는 gcloud auth application-default login 명령어로 인증된 사용자 계정을 사용하고,
+# GCP 배포 환경에서는 서비스 계정이 자동으로 사용됩니다.
+vertexai.init(project=PROJECT_ID, location=LOCATION)
 
 # LLM 및 임베딩 모델 초기화
 gemini_model = GenerativeModel("gemini-2.5-flash-lite")
@@ -43,42 +43,7 @@ embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L
 
 # ChromaDB 벡터 저장소 경로
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
 
-try:
-    # GCP 환경에서는 Secret Manager에서 키를 가져옴
-    secret_client = secretmanager.SecretManagerServiceClient()
-    secret_name = f"projects/{PROJECT_ID}/secrets/firebase-adminsdk/versions/latest"
-    response = secret_client.access_secret_version(name=secret_name)
-    secret_payload = response.payload.data.decode("UTF-8")
-    credentials_info = json.loads(secret_payload)
-    credentials = service_account.Credentials.from_service_account_info(credentials_info)
-    logging.info("Secret Manager에서 서비스 계정 키 로드 성공")
-
-except Exception as e:
-    logging.warning(f"Secret Manager 접근 실패: {e}. 로컬 키 파일로 대체합니다.")
-    # 로컬 환경에서는 파일에서 키를 가져옴 (기존 방식)
-    try:
-        if not os.path.exists(LOCAL_KEY_FILE):
-             raise FileNotFoundError("로컬 서비스 계정 키 파일을 찾을 수 없습니다: " + LOCAL_KEY_FILE)
-        credentials = service_account.Credentials.from_service_account_file(LOCAL_KEY_FILE)
-        logging.info("로컬 파일에서 서비스 계정 키 로드 성공")
-    except Exception as file_e:
-        logging.error(f"AI 서비스 초기화 실패: Secret Manager와 로컬 파일 모두 실패. ({file_e})")
-        credentials = None
-
-if credentials:
-    try:
-        vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
-        logging.info("Vertex AI 초기화 성공")
-        gemini_model = GenerativeModel("gemini-2.5-flash-lite")
-        embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        logging.info("언어 모델 초기화 성공")
-    except Exception as e:
-        logging.error(f"Vertex AI 또는 언어 모델 초기화 실패: {e}")
-        gemini_model = None
-else:
-    gemini_model = None
 
 VECTOR_DB_MAP = {
     'loan': os.path.join(BASE_DIR, '대출'),
@@ -128,15 +93,15 @@ PROMPT_TEMPLATE = """
 """
 
 # CORS Header 강제 삽입
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+# @app.after_request
+# def after_request(response):
+#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
+#     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+#     return response
 
 # API 엔드포인트
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
-@cross_origin(origin='*')
+# @cross_origin(origin='*')
 def generate_terms():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
@@ -147,7 +112,7 @@ def generate_terms():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({"error": "요청 데이터가 없습니다."}),
+            return jsonify({"error": "요청 데이터가 없습니다."}), 400
  
         company_name = data.get('companyName')
         category = data.get('category')
@@ -157,14 +122,16 @@ def generate_terms():
 
         if not all([company_name, category, product_name, wishlist, user_id]):
             logging.warning(f"필수 입력값 누락")
-            return jsonify({"error": "필수 입력값이 누락되었습니다."}),
+            return jsonify({"error": "필수 입력값이 누락되었습니다."}), 400
         
         # 1. 포인트 차감 요청
         try:
             deduction_amount = 5000
             # URL을 안전하게 조합 (기본 URL 끝에 /가 있든 없든 처리)
             base_url = POINT_SERVICE_URL.rstrip('/')
-            point_deduction_url = f"{base_url}/api/points/{user_id}/reduce?amount={deduction_amount}"
+            # point_deduction_url = f"{base_url}/api/points/{user_id}/reduce?amount={deduction_amount}"
+            point_deduction_url = f"{base_url}/{user_id}/reduce?amount={deduction_amount}"
+            
             logging.info(f"포인트 차감 요청: {point_deduction_url}")
             
             point_response = requests.post(point_deduction_url)
@@ -231,7 +198,8 @@ def generate_terms():
             logging.info(f"Term 서비스로 데이터 전송: {TERM_SERVICE_URL}")
             # URL을 안전하게 조합 (기본 URL 끝에 /가 있든 없든 처리하고 /terms 경로 추가)
             base_url = TERM_SERVICE_URL.rstrip('/')
-            term_creation_url = f"{base_url}/terms"
+            # term_creation_url = f"{base_url}/terms"
+            term_creation_url = TERM_SERVICE_URL
             term_response = requests.post(term_creation_url, json=term_payload, headers=headers)
             term_response.raise_for_status()
             logging.info(f"Term 서비스 응답: {term_response.status_code}")
@@ -248,46 +216,23 @@ def generate_terms():
                 logging.info("포인트 환불 성공")
                 
                 # 사용자에게는 최종 실패 메시지를 전달
-                return jsonify({"error": "약관 저장에 실패하여 포인트가 환불되었습니다."}), 500
+                return jsonify({"error": "약관 저장에 실패하여 포인트가 환불되었습니다."} ), 500
 
             except requests.exceptions.RequestException as refund_e:
                 logging.exception("!!! 포인트 환불 실패 !!!")
                 # 사용자에게는 최종 실패 메시지와 함께, 수동 확인이 필요함을 강력하게 경고
-                return jsonify({"error": "치명적인 오류: 약관 저장에 실패했으며 포인트 환불에도 실패했습니다. 즉시 관리자에게 문의하세요."}), 500
+                return jsonify({"error": "치명적인 오류: 약관 저장에 실패했으며 포인트 환불에도 실패했습니다. 즉시 관리자에게 문의하세요."} ), 500
             # === 롤백 로직 끝 ===
 
         return jsonify({"terms": generated_text}), 200
 
     except Exception as e:
-        logging.exception("약관 생성 중 오류")
-        return jsonify({"error": str(e)}),
+        print(f"ERROR: An exception occurred: {e}")
+        logging.error("약관 생성 중 오류", exc_info=True)
+        return jsonify({"error": "Internal server error. Check server logs for details."}), 500
 
-# 번역 API 엔드포인트
-@app.route('/api/translate', methods=['POST', 'OPTIONS'])
-@cross_origin(origin='*')
-def translate_terms_api():
-    if request.method == 'OPTIONS':
-        return jsonify({'status': 'ok'}), 200
 
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "요청 데이터가 없습니다."}),
-
-        text_to_translate = data.get('text')
-        target_language = data.get('target_language')
-
-        if not all([text_to_translate, target_language]):
-            return jsonify({"error": "필수 입력값이 누락되었습니다."}),
-
-        translated_text = translate_text(text_to_translate, target_language)
-
-        return jsonify({"translated_text": translated_text})
-
-    except Exception as e:
-        logging.exception("번역 중 오류")
-        return jsonify({"error": str(e)}),
 
 # 로컬 실행
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8082, debug=True)

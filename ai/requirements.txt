@@ -8,7 +8,7 @@ pypdf==5.9.0
 chromadb==1.0.15
 sentence-transformers==2.7.0
 google-cloud-aiplatform==1.105.0
-google-cloud-translate==3.13.0
+
 google-auth==2.40.3
 google-api-core==2.25.1
 google-cloud-core==2.4.3

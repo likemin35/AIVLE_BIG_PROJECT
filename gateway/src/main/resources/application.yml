@@ -18,7 +18,8 @@ spring:
         - id: ai
           uri: http://localhost:8082
           predicates:
-            - Path=/ais/**, 
+            # - Path=/ais/**, 
+            - Path=/api/generate, /api/translate, /ais/** 
         - id: term
           uri: http://localhost:8083
           predicates:
@@ -49,7 +50,8 @@ spring:
         - id: ai
           uri: http://ai:8080
           predicates:
-            - Path=/ais/**, 
+            # - Path=/ais/**, 
+            - Path=/api/generate, /api/translate, /ais/**, 
         - id: term
           uri: http://term:8080
           predicates:

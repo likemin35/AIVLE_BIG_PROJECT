@@ -16,7 +16,7 @@ function CreateTerms() {
   // ✅ 환경 변수 또는 기본값 사용
   const CLOUD_RUN_API_BASE_URL =
     process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
-    'https://terms-api-service-eck6h26cxa-uc.a.run.app';
+    'http://localhost:8088'; // 'https://terms-api-service-eck6h26cxa-uc.a.run.app';
 
   const categories = [
     { value: 'deposit', label: '예금' },
@@ -43,11 +43,16 @@ function CreateTerms() {
     setGeneratedTerms('');
 
     try {
+      // [수정된 부분] Firebase 인증 토큰을 가져옵니다.
+      const token = await user.getIdToken();
+
       const response = await fetch(`${CLOUD_RUN_API_BASE_URL}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-authenticated-user-uid': user.uid, // 2. user.uid 헤더 추가
+          // [수정된 부분] 'Authorization' 헤더에 토큰을 담아 보냅니다.
+          'Authorization': `Bearer ${token}`,
+          'x-authenticated-user-uid': user.uid,
         },
         body: JSON.stringify({
           companyName,
@@ -84,9 +89,7 @@ function CreateTerms() {
     }
   };
 
-  const handleGoToTranslation = () => {
-    navigate('/translation');
-  };
+  
 
   if (authLoading) {
     return <div>Loading...</div>;
@@ -175,13 +178,25 @@ function CreateTerms() {
               >
                 {isLoading ? '생성 중...' : 'AI 초안 딸각 (5,000P)'}
               </button>
-              {generatedTerms && (
-                <button
-                  onClick={handleGoToTranslation}
-                  className="translate-redirect-btn"
-                >
-                  번역 페이지로 이동
-                </button>
+              
+            </div>
+          </div>
+          {/* 오른쪽 미리보기 섹션 */}
+          <div className="preview-section">
+            <div className="preview-placeholder">
+              {isLoading ? (
+                  <p className="blinking">약관 초안을 생성 중입니다. 잠시만 기다려 주세요...</p>
+              ) : error ? (
+                  <p className="error-message">{error}</p>
+              ) : generatedTerms ? (
+                  <div className="generated-terms-content">
+                    <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>
+                      {productName ? `${productName} 약관` : '생성된 약관'}
+                    </h3>
+                    <pre>{generatedTerms}</pre>
+                  </div>
+              ) : (
+                  <p>AI 약관 초안이 여기에 표시됩니다.</p>
               )}
             </div>
           </div>
