@@ -195,3 +195,39 @@
   border-color: #007bff;
   cursor: default;
 }
+
+/* --- 비로그인 사용자 안내 --- */
+.login-prompt {
+    background-color: #fff;
+    padding: 3rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.login-prompt h2 {
+    margin-top: 0;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+.login-prompt p {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.login-btn-link {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background-color: #6c63ff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.login-btn-link:hover {
+    background-color: #5a54e1;
+}

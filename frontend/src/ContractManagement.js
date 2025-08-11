@@ -128,7 +128,19 @@ const ContractManagement = () => {
   };
 
   if (authLoading || loading) {
-    return <LoadingSpinner />; 
+    return <LoadingSpinner />;
+  }
+
+  if (!user) {
+    return (
+      <div className="contract-management-container">
+        <div className="login-prompt">
+          <h2>로그인 필요</h2>
+          <p>계약서 관리를 위해서는 로그인이 필요합니다.</p>
+          <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
