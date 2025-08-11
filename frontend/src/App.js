@@ -1,6 +1,6 @@
 // src/App.js
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom'; // ✅ 변경
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './Home';
 import SignUp from './components/SignUp';
 import Login from './components/Login';
@@ -20,6 +20,8 @@ import ResetPassword from './components/ResetPassword';
 import ContractManagement from './ContractManagement';
 import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
+
+// 업로드 페이지
 import UploadImage from './components/UploadImage';
 
 function App() {
@@ -47,6 +49,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* 네비게이션 바가 있는 페이지들 */}
         <Route element={<MainLayout user={user} authLoading={authLoading} />}>
           <Route path="/" element={<Home user={user} />} />
           <Route path="/create-terms" element={<CreateTerms />} />
@@ -61,12 +64,15 @@ function App() {
           <Route path="/contracts" element={<ContractManagement />} />
           <Route path="/contracts/:id" element={<ContractDetail />} />
 
+          {/* 생성 후 편집 페이지 */}
           <Route path="/terms/new/edit" element={<EditTerms />} />
           <Route path="/terms/:termId/edit" element={<EditTerms />} />
 
+          {/* 근로계약서 업로드 라우트 */}
           <Route path="/upload-image" element={<UploadImage />} />
         </Route>
 
+        {/* 네비게이션 바가 없는 페이지들 */}
         <Route
           path="/signup"
           element={
