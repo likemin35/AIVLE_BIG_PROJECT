@@ -75,8 +75,9 @@ def check_spelling():
         image_part = Part.from_data(data=img_bytes, mime_type=file.mimetype)
 
         prompt = (
-            "이 이미지에 있는 텍스트의 오탈자를 검수하고, 잘못된 부분을 올바른 단어로 고쳐줘. "
-            "다른 설명 없이 오탈자 수정 내용만 알려줘."
+            "이 약관 이미지에 있는 텍스트의 오탈자를 검수하고, 잘못된 부분을 올바른 단어로 고쳐줘. "
+            "수정한 전문을 출력해주고, 가장 하단에 $$수정전 내용 1 -> 수정후 내용1 $$수정전 내용2 -> 수정후 내용2 이렇게 출력해줘 예시를 들자면 $$태스트 -> 테스트 $$악관 -> 약관 이런식으로."
+            "다른 설명 없이 해당 내용만 출력해줘"
         )
 
         response = gemini_model.generate_content([prompt, image_part])
