@@ -257,3 +257,30 @@
     width: 120px;
   }
 }
+
+.file-display {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.remove-file-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 5px;
+  margin-left: -28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-icon {
+  font-size: 16px;
+  color: #999;
+  transition: color 0.2s ease;
+}
+
+.remove-file-btn:hover .remove-icon {
+  color: #ff4d4d;
+}
