@@ -154,7 +154,7 @@
 
 .download-btn {
   padding: 0.6rem 0.9rem;
-  background-color: #4dabf7;
+  background-color: #6c5ce7;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -163,7 +163,7 @@
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.download-btn:hover { background-color: #339af0; }
+.download-btn:hover { background-color: #5f4fcf; }
 .download-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* 오른쪽: 수정 전/후 전문 (좌우 2열) */

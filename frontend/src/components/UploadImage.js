@@ -179,7 +179,7 @@ function UploadImage() {
                   disabled={!afterText}
                   title={!afterText ? '수정 후 전문이 없습니다.' : undefined}
                 >
-                  수정 후 전문 .txt 다운로드
+                  수정본 txt로 다운로드
                 </button>
               </div>
 
