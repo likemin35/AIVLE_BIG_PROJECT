@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
-import { getContracts, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
+import { getContracts, getUploadTerms, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
 import LoadingSpinner from './components/LoadingSpinner';
 import Tooltip from './components/Tooltip';
 import './ContractManagement.css';
@@ -17,9 +17,14 @@ const ContractManagement = () => {
   const fetchContracts = async () => {
     setLoading(true);
     try {
-      const data = await getContracts();
-      
-      const contractMap = new Map(data.map(c => [c.id, c]));
+      const [contracts, uploadTerms] = await Promise.all([
+        getContracts(),
+        getUploadTerms()
+      ]);
+
+      // contracts와 uploadTerms를 합쳐서 동일한 로직으로 그룹화
+      const allData = [...contracts, ...uploadTerms];
+      const contractMap = new Map(allData.map(c => [c.id, c]));
 
       const findRoot = (contract) => {
         let current = contract;
@@ -31,7 +36,7 @@ const ContractManagement = () => {
         return current;
       };
 
-      const groupedByRoot = data.reduce((acc, contract) => {
+      const groupedByRoot = allData.reduce((acc, contract) => {
         const root = findRoot(contract);
         if (!acc[root.id]) {
           acc[root.id] = [];
@@ -61,7 +66,7 @@ const ContractManagement = () => {
 
       setContractGroups(groups);
     } catch (err) {
-      setError('계약서 목록을 불러오는 데 실패했습니다.');
+      setError('계약서/약관 목록을 불러오는 데 실패했습니다.');
       console.error(err);
     } finally {
       setLoading(false);
