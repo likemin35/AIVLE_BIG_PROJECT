@@ -6,7 +6,8 @@
 .logo{ display:flex; align-items:center; gap:0.8rem; }
 .logo-icon{ width:40px; height:40px; object-fit:contain; filter:none; }
 /* 다크모드에서 로고를 밝은 회색 */
-[data-theme="dark"] .logo-icon{ filter: invert(1) brightness(0.88); }
+[data-theme="dark"] .logo-icon{ filter: invert(92%) grayscale(1) brightness(0.95) contrast(1) !important;
+  opacity: 0.9; }
 
 .logo-text{ font-size:1.5rem; font-weight:bold; color:var(--text); }
 

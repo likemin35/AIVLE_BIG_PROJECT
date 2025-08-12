@@ -17,7 +17,7 @@
 
 [data-theme="dark"] {
   /* 배경을 더 진하게 조정 */
-  --bg: #1a1a1a;
+  --bg: #1f1f22;
   --text: #e9ecf1;
   --muted: #abb1c7;
   --subtext: #b9bdd1;
@@ -26,8 +26,8 @@
   --primary-hover: #6a5fe2;
 
   --border: #2a2f3a;
-  --card: #0f1218;
-  --soft: #101317;
+  --card: #1e2128;      /* 카드 색상은 기존처럼 유지 */
+  --soft: #0f1115; 
   --shadow-rgb: 20, 20, 40;
 }
 
@@ -119,7 +119,8 @@ html, body, #root {
 }
 /* 다크모드에서 로고를 밝은 회색으로 */
 [data-theme="dark"] .brand-logo {
-  filter: invert(1) brightness(0.88);
+  filter: invert(92%) grayscale(1) brightness(0.95) contrast(1) !important;
+  opacity: 0.9;
 }
 
 /* Upload Section */
