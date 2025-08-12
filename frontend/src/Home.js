@@ -54,6 +54,7 @@ function Home({ user }) {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
+    formData.append('uploaderUid', user?.uid || '');
 
     fetch(`${CLOUD_RUN_API_BASE_URL}/api/upload`, {
       method: 'POST',
