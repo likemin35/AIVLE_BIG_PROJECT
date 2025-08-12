@@ -139,7 +139,7 @@ export default function ExplainPage() {
 
       {/* 약관 초안 생성 */}
       <Section
-        eyebrow="About"
+        eyebrow="Create"
         title="AI가 맞춤 약관 초안을 준비합니다"
         desc={
           <>
