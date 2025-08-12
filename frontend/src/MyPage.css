@@ -15,7 +15,7 @@
     background-color: var(--card);
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(var(--shadow-rgb), 0.05);
 }
 
 /* 로딩 컨테이너 */
@@ -99,7 +99,7 @@
     margin-top: 1.5rem;
     padding: 0.8rem 1.5rem;
     background-color: var(--primary);
-    color: white;
+    color: var(--card);
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -137,7 +137,7 @@
     display: inline-block;
     padding: 0.8rem 2rem;
     background-color: var(--primary);
-    color: white;
+    color: var(--card);
     text-decoration: none;
     border-radius: 8px;
     font-weight: bold;
@@ -145,5 +145,32 @@
 }
 
 .login-btn-link:hover {
-    background-color: var(--primary-hover);
+    background-color: var(--primary);
 }
+
+/* --- Theme-aware form elements --- */
+input, select, textarea {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+input::placeholder, textarea::placeholder { color: var(--muted); }
+select { background: var(--card); color: var(--text); }
+button { color: var(--text); }
+
+/* Card-like containers */
+.preview-section, .login-container, .signup-container, .qna-detail-container, .mypage-view {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+/* Page backgrounds */
+.terms-main, .login-page, .signup-page, .qna-detail-page, .mypage-layout-container {
+  background: var(--bg) !important;
+  color: var(--text);
+}
+
+.mypage-view, .account-info, .password-form { background: var(--card); border: 1px solid var(--border); }
+.account-info h3, .password-form h3 { color: var(--text); }
+.account-info p { color: var(--muted); }

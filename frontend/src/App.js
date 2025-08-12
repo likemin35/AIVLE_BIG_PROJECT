@@ -22,6 +22,8 @@ import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
 import ContractVisualization from './components/ContractVisualization'; // 추가
 import Settings from './components/Settings';
+import { initTheme } from './utils/theme';
+
 
 // 업로드 페이지
 import UploadImage from './components/UploadImage';
@@ -53,6 +55,12 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+  // 페이지 첫 진입 시 저장된 선호도/시스템 상태 반영
+  initTheme();
+}, []);
+
 
   return (
     <Router>

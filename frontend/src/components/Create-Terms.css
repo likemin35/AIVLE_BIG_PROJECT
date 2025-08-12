@@ -4,7 +4,7 @@
 
 min-height: calc(100vh - 80px);
 
-background-color: white;
+background-color: var(--card);
 
 }
 
@@ -77,7 +77,7 @@ box-sizing: border-box;
 }
 
 .generated-terms-content pre {
-  white-space: pre-wrap; /* Wrap text */
+  var(--card)-space: pre-wrap; /* Wrap text */
   word-break: break-all; /* Break long words */
   font-family: inherit;
   font-size: 0.9rem;
@@ -90,7 +90,7 @@ box-sizing: border-box;
 
 width: 400px;
 
-background-color: white;
+background-color: var(--card);
 
 padding: 2rem;
 
@@ -196,7 +196,7 @@ font-size: 0.9rem;
 
 outline: none;
 
-background-color: white;
+background-color: var(--card);
 
 cursor: pointer;
 
@@ -290,7 +290,7 @@ padding: 1rem 2rem;
 
 background-color: var(--primary);
 
-color: white;
+color: var(--card);
 
 border: none;
 
@@ -401,3 +401,36 @@ padding: 1rem;
 .blinking-text {
   animation: blink 1.2s infinite;
 }
+
+
+/* --- Theme-aware form elements --- */
+input, select, textarea {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+input::placeholder, textarea::placeholder { color: var(--muted); }
+select { background: var(--card); color: var(--text); }
+button { color: var(--text); }
+
+/* Card-like containers */
+.preview-section, .login-container, .signup-container, .qna-detail-container, .mypage-view {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+/* Page backgrounds */
+.terms-main, .login-page, .signup-page, .qna-detail-page, .mypage-layout-container {
+  background: var(--bg) !important;
+  color: var(--text);
+}
+
+.preview-section { background: var(--soft); border-right: 1px solid var(--border); }
+.preview-placeholder { background: var(--soft-2); color: var(--muted); }
+.generated-terms-content { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.form-section { background: var(--card); }
+.form-input, .form-select, .form-textarea { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+.ai-draft-btn { background: var(--primary); }
+.ai-draft-btn:hover { background: var(--primary-hover); }
