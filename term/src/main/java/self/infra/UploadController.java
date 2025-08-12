@@ -1,56 +1,76 @@
 package self.infra;
 
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.StorageClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import self.domain.UploadTerm;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api")
 public class UploadController {
 
-    private final Storage storage;
+    private final StorageClient storageClient;
+    private final Firestore firestore;
 
-    public UploadController() {
-        // Firebase 기본 Storage 인스턴스 가져오기
-        this.storage = StorageClient.getInstance().bucket().getStorage();
+    @Autowired
+    public UploadController(StorageClient storageClient, Firestore firestore) {
+        this.storageClient = storageClient;
+        this.firestore = firestore;
     }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("uid") String uploaderUid // 업로더 UID 추가 파라미터
+            @RequestParam("uploaderUid") String uploaderUid 
     ) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "파일이 비어있습니다."));
         }
 
         try {
-            String bucketName = StorageClient.getInstance().bucket().getName();
-            String blobName = "uploads/" + file.getOriginalFilename();
+            // 1. Storage 업로드 (메타데이터 포함)
+            String bucketName = storageClient.bucket().getName();
+            String blobString = "uploads/" + file.getOriginalFilename();
 
-            // BlobInfo 생성 시 메타데이터에 업로더 UID 포함
-            BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, blobName)
-                    .setContentType(file.getContentType())
-                    .setMetadata(Map.of("uploaderUid", uploaderUid))
-                    .build();
+            Map<String, String> metadata = Map.of("uploaderUid", uploaderUid);
 
-            // Storage API를 사용해 업로드
-            storage.create(blobInfo, file.getBytes());
+            storageClient.bucket(bucketName)
+                    .create(blobString, file.getBytes(), file.getContentType())
+                    .toBuilder()
+                    .setMetadata(metadata)
+                    .build()
+                    .update();
+
+            // 2. 다운로드 URL 생성
+            String fileUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, blobString);
+
+            // 3. UploadTerm 객체 생성
+            UploadTerm uploadTerm = new UploadTerm();
+            uploadTerm.setUserId(uploaderUid);
+            uploadTerm.setFileName(file.getOriginalFilename());
+            uploadTerm.setFileUrl(fileUrl);
+            uploadTerm.setCreatedAt(new Date());
+
+            // 4. Firestore에 저장
+            firestore.collection("uploadTerms").add(uploadTerm).get();
 
             return ResponseEntity.ok(Map.of(
-                    "message", "파일 업로드 성공: " + file.getOriginalFilename(),
-                    "uploaderUid", uploaderUid
+                    "message", "파일 업로드 및 Firestore 저장 성공",
+                    "fileName", file.getOriginalFilename(),
+                    "fileUrl", fileUrl
             ));
-        } catch (IOException e) {
+
+        } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류가 발생했습니다."));
+            return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류 발생"));
         }
     }
 }
