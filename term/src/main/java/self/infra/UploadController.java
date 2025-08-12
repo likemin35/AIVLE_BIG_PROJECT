@@ -34,7 +34,7 @@ public class UploadController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("uploaderUid") String uploaderUid 
+            @RequestParam("uploaderUid") String uploaderUid
     ) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "파일이 비어있습니다."));
@@ -93,7 +93,7 @@ public class UploadController {
             List<UploadTerm> uploadTerms = new ArrayList<>();
             for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
                 UploadTerm uploadTerm = document.toObject(UploadTerm.class);
-                uploadTerm.setId(document.getId()); 
+                uploadTerm.setId(document.getId()); // 문서 ID 설정 (필요시)
                 uploadTerms.add(uploadTerm);
             }
 
