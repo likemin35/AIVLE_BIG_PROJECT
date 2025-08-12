@@ -103,93 +103,105 @@ function Home({ user }) {
   };
 
   return (
-      <div className="HomeContainer">
-        <main className="main-content">
-          <div className="hero-section">
-            <h1 className="main-title">
-              <span className="highlight">딸깍</span>으로 약관 생성
-            </h1>
+    <div className="HomeContainer">
+      <main className="main-content">
+        <div className="hero-section">
+          <h1 className="main-title">
+            <span className="highlight">딸깍</span>으로 약관 생성
+          </h1>
 
-            <div className="brand-section">
-              <div className="brand-icon">
-                <img src={logo} alt="보라계약 로고" className="brand-logo" />
-              </div>
+          <div className="brand-section">
+            <div className="brand-icon">
+              <img src={logo} alt="보라계약 로고" className="brand-logo" />
             </div>
+          </div>
 
-            <div className="upload-section">
-              <div className="upload-container">
-                {/* 숨겨진 파일 입력 */}
-                <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    ref={fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={handleFileChange}
-                />
+          <div className="upload-section">
+            <div className="upload-container">
+              {/* 숨겨진 파일 입력 */}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
 
-                {/* 클릭 가능한 텍스트 입력 */}
-                <input
-                    type="text"
-                    placeholder="분석할 약관을 업로드 하세요"
-                    value={selectedFile ? selectedFile.name : ''}
-                    readOnly
-                    onClick={handleFileButtonClick}
-                    className="upload-input"
-                />
+              {/* 클릭 가능한 텍스트 입력 */}
+              <input
+                type="text"
+                placeholder="분석할 약관을 업로드 하세요"
+                value={selectedFile ? selectedFile.name : ''}
+                readOnly
+                onClick={handleFileButtonClick}
+                className="upload-input"
+                aria-label="분석할 약관 파일 선택"
+              />
 
-                {/* X 버튼 (파일 선택 시만 표시) */}
-                {selectedFile && (
-                    <button
-                        onClick={handleRemoveFile}
-                        style={{
-                          marginLeft: '5px',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'red',
-                          fontSize: '18px',
-                          cursor: 'pointer',
-                        }}
-                    >
-                      ✕
-                    </button>
-                )}
-
-                {/* 업로드 버튼 */}
-                <button className="upload-btn" onClick={handleUploadClick}>
-                  약관 업로드
+              {/* X 버튼 (파일 선택 시만 표시) */}
+              {selectedFile && (
+                <button
+                  onClick={handleRemoveFile}
+                  className="remove-file-btn"
+                  aria-label="선택한 파일 제거"
+                >
+                  <span className="remove-icon">✕</span>
                 </button>
-              </div>
-            </div>
+              )}
 
-            <div className="contract-creation">
-              <div className="contract-options centered-options">
-                <div
-                    className="contract-option"
-                    onClick={() => handleIconClick('terms')}
-                >
-                  <img
-                      src={iconTerms}
-                      alt="약관 초안 생성"
-                      className="option-icon"
-                  />
-                  <span className="option-text">약관 초안 생성</span>
-                </div>
-                <div
-                    className="contract-option"
-                    onClick={() => handleIconClick('labor')}
-                >
-                  <img
-                      src={iconStandard}
-                      alt="이미지로 약관 검수"
-                      className="option-icon"
-                  />
-                  <span className="option-text">이미지로 약관 검수</span>
-                </div>
+              {/* 업로드 버튼 */}
+              <button className="upload-btn" onClick={handleUploadClick}>
+                약관 업로드
+              </button>
+            </div>
+          </div>
+
+          <div className="contract-creation">
+            <div className="contract-options centered-options">
+              <div
+                className="contract-option"
+                onClick={() => handleIconClick('terms')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleIconClick('terms')}
+                aria-label="약관 초안 생성 페이지로 이동"
+              >
+                <img
+                  src={iconTerms}
+                  alt="약관 초안 생성"
+                  className="option-icon"
+                />
+                <span className="option-text">약관 초안 생성</span>
+              </div>
+              <div
+                className="contract-option"
+                onClick={() => handleIconClick('labor')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleIconClick('labor')}
+                aria-label="이미지로 약관 검수 페이지로 이동"
+              >
+                <img
+                  src={iconStandard}
+                  alt="이미지로 약관 검수"
+                  className="option-icon"
+                />
+                <span className="option-text">이미지로 약관 검수</span>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
+
+      {/* ▶ 오른쪽 하단 플로팅 버튼 */}
+      <button
+        className="floating-about-btn"
+        onClick={() => navigate('/about')}
+        aria-label="보라계약 설명 페이지로 이동"
+      >
+        보라계약 알아보기<span className="arrow">→</span>
+      </button>
+    </div>
   );
 }
 
