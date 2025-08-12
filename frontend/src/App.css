@@ -1,13 +1,52 @@
+/* === 색상 토큰 (라이트/다크 공용) === */
+:root {
+  --bg: #ffffff;
+  --text: #2d3436;
+  --muted: #636e72;
+  --subtext: #4f4b6f;
+
+  --primary: #6c5ce7;
+  --primary-hover: #5f4fcf;
+
+  --border: #e9ecef;
+  --card: #ffffff;
+  --soft: #fbfaff;
+  --shadow-rgb: 108, 92, 231;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1115;
+  --text: #e9ecf1;
+  --muted: #a9adc1;
+  --subtext: #b9bdd1;
+
+  --primary: #7a6df0;       /* 약간 더 밝게 */
+  --primary-hover: #6a5fe2;
+
+  --border: #2a2f3a;
+  --card: #151922;
+  --soft: #111522;
+  --shadow-rgb: 20, 20, 40;
+}
+
+/* === 기본 리셋 === */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+}
+
 .App {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
-  background-color: white;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 /* Main Content */
@@ -20,13 +59,13 @@
 
 .main-title {
   font-size: 2.5rem;
-  color: #2d3436;
+  color: var(--text);
   margin-bottom: 4rem;
   font-weight: 600;
 }
 
 .main-title .highlight {
-  color: #6c5ce7;
+  color: var(--primary);
 }
 
 /* Brand Section */
@@ -42,19 +81,14 @@
   align-items: center;
   justify-content: center;
   padding: 25px;
+  background: transparent;
 }
 
 .brand-logo {
   width: 200px;
   height: 200px;
   object-fit: contain;
-}
-
-.brand-name {
-  font-size: 1.8rem;
-  color: #2d3436;
-  font-weight: 600;
-  margin: 1.5rem 0;
+  filter: none;
 }
 
 /* Upload Section */
@@ -73,38 +107,48 @@
 .upload-input {
   flex: 1;
   padding: 1rem 1.5rem;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--text);
   border-radius: 8px;
   font-size: 1rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-input::placeholder {
+  color: var(--muted);
 }
 
 .upload-input:focus {
-  border-color: #6c5ce7;
+  border-color: var(--primary);
 }
 
 .upload-btn {
-  background-color: #6c5ce7;
+  background-color: var(--primary);
   color: white;
-  border: none;
+  border: 1px solid var(--primary-hover);
   padding: 1rem 2rem;
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, transform 0.1s ease;
 }
 
 .upload-btn:hover {
-  background-color: #5f4fcf;
+  background-color: var(--primary-hover);
+}
+
+.upload-btn:active {
+  transform: translateY(1px);
 }
 
 /* Contract Creation Section */
 .section-title {
   font-size: 1.3rem;
-  color: #636e72;
+  color: var(--muted);
   margin-bottom: 1.5rem;
   font-weight: normal;
   position: relative;
@@ -119,10 +163,10 @@
   transform: translateX(-50%);
   width: 200px;
   height: 1px;
-  background-color: #e9ecef;
+  background-color: var(--border);
 }
 
-/* Updated styles for two centered icons */
+/* Two centered icons */
 .contract-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -141,12 +185,13 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: white;
+  background-color: var(--card);
+  box-shadow: 0 0 0 rgba(0,0,0,0);
 }
 
 .contract-option:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(108, 92, 231, 0.15);
+  box-shadow: 0 8px 25px rgba(var(--shadow-rgb), 0.15);
 }
 
 .option-icon {
@@ -154,16 +199,17 @@
   height: 75px;
   margin-bottom: 1rem;
   object-fit: contain;
+  filter: none;
 }
 
 .option-text {
   font-size: 1.35rem;
-  color: #636e72;
+  color: var(--muted);
   font-weight: 500;
   line-height: 1.3;
 }
 
-/* ▶ 오른쪽 하단 플로팅 버튼 */
+/* 오른쪽 하단 플로팅 버튼 */
 .floating-about-btn {
   position: fixed;
   right: 24px;
@@ -174,20 +220,20 @@
   gap: 8px;
   padding: 14px 18px;
   border-radius: 9999px;
-  border: 1px solid #5f51e3;
-  background: #6c5ce7;
+  border: 1px solid var(--primary-hover);
+  background: var(--primary);
   color: #fff;
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(108, 92, 231, 0.25);
+  box-shadow: 0 10px 24px rgba(var(--shadow-rgb), 0.25);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .floating-about-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(108, 92, 231, 0.35);
-  background: #5f4fcf;
+  box-shadow: 0 14px 30px rgba(var(--shadow-rgb), 0.35);
+  background: var(--primary-hover);
 }
 
 .floating-about-btn:active {
@@ -199,110 +245,30 @@
   margin-left: 2px;
 }
 
-@media (max-width: 480px) {
-  .floating-about-btn {
-    right: 16px;
-    bottom: 16px;
-    padding: 12px 16px;
-    font-size: 14px;
-  }
+/* 왼쪽 하단 다크모드 토글 버튼 */
+.floating-theme-toggle {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 6px 18px rgba(var(--shadow-rgb), 0.18);
+  cursor: pointer;
+  font-size: 18px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .main-content {
-    padding: 3rem 1rem;
-  }
-  
-  .main-title {
-    font-size: 2rem;
-  }
-  
-  .brand-icon {
-    width: 130px;
-    height: 130px;
-    padding: 20px;
-  }
-  
-  .brand-logo {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .upload-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .contract-options {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    max-width: 400px;
-  }
-  
-  .contract-option {
-    padding: 1.5rem 1rem;
-  }
-  
-  .option-icon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .option-text {
-    font-size: 1.1rem;
-  }
-  
-  .section-title::after {
-    width: 150px;
-  }
+.floating-theme-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(var(--shadow-rgb), 0.28);
 }
 
-@media (max-width: 480px) {
-  .main-title {
-    font-size: 1.7rem;
-    margin-bottom: 3rem;
-  }
-  
-  .brand-section {
-    margin-bottom: 3rem;
-  }
-  
-  .brand-icon {
-    width: 120px;
-    height: 120px;
-    padding: 18px;
-  }
-  
-  .brand-logo {
-    width: 84px;
-    height: 84px;
-  }
-  
-  .upload-section {
-    margin-bottom: 3rem;
-  }
-  
-  .contract-options {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    max-width: 300px;
-  }
-  
-  .option-icon {
-    width: 50px;
-    height: 50px;
-  }
-
-  .option-text {
-    font-size: 1rem;
-  }
-  
-  .section-title::after {
-    width: 120px;
-  }
-}
-
+/* 파일 제거 버튼 */
 .file-display {
   display: flex;
   align-items: center;
@@ -328,4 +294,113 @@
 
 .remove-file-btn:hover .remove-icon {
   color: #ff4d4d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 3rem 1rem;
+  }
+
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .brand-icon {
+    width: 130px;
+    height: 130px;
+    padding: 20px;
+  }
+
+  .brand-logo {
+    width: 90px;
+    height: 90px;
+  }
+
+  .upload-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .contract-options {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    max-width: 400px;
+  }
+
+  .contract-option {
+    padding: 1.5rem 1rem;
+  }
+
+  .option-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .option-text {
+    font-size: 1.1rem;
+  }
+
+  .section-title::after {
+    width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-title {
+    font-size: 1.7rem;
+    margin-bottom: 3rem;
+  }
+
+  .brand-section {
+    margin-bottom: 3rem;
+  }
+
+  .brand-icon {
+    width: 120px;
+    height: 120px;
+    padding: 18px;
+  }
+
+  .brand-logo {
+    width: 84px;
+    height: 84px;
+  }
+
+  .upload-section {
+    margin-bottom: 3rem;
+  }
+
+  .contract-options {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-width: 300px;
+  }
+
+  .option-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .option-text {
+    font-size: 1rem;
+  }
+
+  .section-title::after {
+    width: 120px;
+  }
+
+  .floating-about-btn {
+    right: 16px;
+    bottom: 16px;
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .floating-theme-toggle {
+    left: 12px;
+    bottom: 12px;
+    width: 40px;
+    height: 40px;
+  }
 }
