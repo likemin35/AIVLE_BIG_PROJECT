@@ -33,12 +33,18 @@
 		<dependency>
 			<groupId>com.google.firebase</groupId>
 			<artifactId>firebase-admin</artifactId>
-			<version>9.5.0</version>
+			<version>9.2.0</version> <!-- Working version from QnA service -->
 		</dependency>
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-secretmanager</artifactId>
 		</dependency>
+        <!-- 라이브러리 버전 충돌 해결을 위해 추가 -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>1.32.1</version>
+        </dependency>
       <!-- lombok -->
 		<dependency>
 				<groupId>org.projectlombok</groupId>
