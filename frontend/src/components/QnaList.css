@@ -1,126 +1,59 @@
-/* QnaList.css */
+/* --- QnaList (align buttons to pagination style) --- */
 .qna-container {
-    max-width: 900px;
-    margin: 2rem auto;
-    padding: 2rem;
-    background-color: var(--card);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: var(--card);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(var(--shadow-rgb), 0.1);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
-.qna-container h1 {
-    text-align: center;
-    margin-bottom: 2rem;
-}
+.qna-container h1 { text-align: center; margin-bottom: 2rem; color: var(--text); }
 
-.list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.total-posts-count {
-    color: var(--muted);
-}
+.list-header .total-posts-count { color: var(--muted); }
 
 .write-question-btn {
-    padding: 0.6rem 1.2rem;
-    background-color: var(--primary); /* 메인 페이지 버튼 색상 적용 */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: background-color 0.2s ease-in-out;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary-hover);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s;
 }
+.write-question-btn:hover { background-color: var(--primary-hover); }
 
-.write-question-btn:hover {
-    background-color: var(--primary-hover); /* 메인 페이지 버튼 호버 색상 적용 */
-}
+.qna-table { width: 100%; border-collapse: collapse; text-align: center; color: var(--text); }
+.qna-table th, .qna-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+.qna-table th { background-color: var(--soft); font-weight: 600; color: var(--muted); }
+.qna-table .qna-title-cell { text-align: left; width: 60%; }
+.qna-table a { text-decoration: none; color: var(--text); font-weight: 500; }
+.qna-table a:hover { text-decoration: underline; }
 
-.qna-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: center;
-}
+.image-icon { margin-left: 8px; color: var(--muted); vertical-align: middle; display: inline-flex; align-items: center; }
+.answer-count { margin-left: 8px; color: var(--primary); font-weight: 700; font-size: 0.9em; }
+.new-badge { display: inline-block; margin-left: 6px; padding: 2px 6px; background-color: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 1; border-radius: 8px; vertical-align: middle; }
 
-.qna-table th, .qna-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.qna-table th {
-    background-color: var(--soft);
-    font-weight: 600;
-}
-
-.qna-table .qna-title-cell {
-    text-align: left;
-    width: 60%;
-}
-
-.qna-table a {
-    text-decoration: none;
-    color: var(--text);
-    font-weight: 500;
-}
-
-.qna-table a:hover {
-    text-decoration: underline;
-}
-
-/* --- 제목 옆 아이콘들 스타일 --- */
-.image-icon {
-    margin-left: 8px;
-    color: var(--muted); /* 회색 아이콘 */
-    vertical-align: middle;
-    display: inline-flex;
-    align-items: center;
-}
-
-.answer-count {
-    margin-left: 8px;
-    color: var(--primary);
-    font-weight: bold;
-    font-size: 0.9em;
-}
-
-.new-badge {
-    display: inline-block;
-    margin-left: 6px;
-    padding: 2px 6px;
-    background-color: var(--danger);
-    color: white;
-    font-size: 0.65rem;
-    font-weight: bold;
-    line-height: 1;
-    border-radius: 8px;
-    vertical-align: middle;
-}
-
+/* Pagination same as ContractManagement */
 .pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 2rem;
-    gap: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 0.25rem;
 }
-
 .pagination-controls button {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--border);
-    background-color: white;
-    cursor: pointer;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--primary);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-
-.pagination-controls button:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
-.pagination-controls button.active-page {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
+.pagination-controls button:hover:not(:disabled) { background-color: var(--primary); color: #fff; border-color: var(--primary); }
+.pagination-controls button:disabled { cursor: not-allowed; opacity: 0.5; background: var(--soft); color: var(--muted); }
+.pagination-controls button.active-page { background-color: var(--primary); color: #fff; border-color: var(--primary); }
