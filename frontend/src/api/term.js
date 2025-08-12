@@ -1,6 +1,8 @@
 // src/api/term.js
 import axios from 'axios';
 import { auth } from '../firebase';
+import { getDocs, collection, query, where } from "firebase/firestore";
+
 
 const getApiUrl = () => {
   if (process.env.NODE_ENV === 'production') {
@@ -99,4 +101,10 @@ export const deleteAllContractsInGroup = async (id) => {
     console.error(`ID가 ${id}인 계약서 그룹을 삭제하는 중 오류가 발생했습니다.`, error);
     throw error;
   }
+};
+
+export const getUploadTerms = async (uid) => {
+  const q = query(collection(db, "uploadterms"), where("uid", "==", uid));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
