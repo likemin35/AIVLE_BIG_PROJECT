@@ -1,7 +1,7 @@
 /* 전체 레이아웃 (MainLayout 헤더 아래) */
 .image-main {
   min-height: calc(100vh - 80px);
-  background-color: #ffffff;
+  background-color: var(--bg);
 }
 
 .image-container {
@@ -12,17 +12,17 @@
 /* 왼쪽: 업로드 + 변경 사항 */
 .image-left {
   width: 400px;
-  background-color: #ffffff;
+  background-color: var(--card);
   padding: 2rem;
   overflow-y: auto;
-  border-right: 1px solid #e9ecef;
+  border-right: 1px solid var(--border);
   box-sizing: border-box;
 }
 
 .panel-card,
 .changes-card {
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.25rem;
   box-sizing: border-box;
@@ -34,7 +34,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #2d3436;
+  color: var(--text);
 }
 
 /* 파일 선택 UI (통일 버튼) */
@@ -50,8 +50,9 @@
 
 .file-select-btn {
   padding: 0.7rem 1rem;
-  background-color: #6c5ce7;
+  background-color: var(--primary);
   color: #fff;
+  border: 1px solid var(--primary-hover);
   border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -62,11 +63,11 @@
   min-width: 110px;
 }
 
-.file-select-btn:hover { background-color: #5f4fcf; }
+.file-select-btn:hover { background-color: var(--primary-hover); }
 
 .file-selected-name {
   font-size: 0.9rem;
-  color: #2d3436;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -75,9 +76,9 @@
 .action-btn {
   width: 100%;
   padding: 0.9rem 1rem;
-  background-color: #6c5ce7;
-  color: white;
-  border: none;
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary-hover);
   border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -85,14 +86,14 @@
   transition: background-color 0.2s;
 }
 
-.action-btn:hover:not(:disabled) { background-color: #5f4fcf; }
+.action-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
 .action-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .error-banner {
   margin-top: 0.75rem;
-  background: #ffe8e8;
-  border: 1px solid #ffc9c9;
-  color: #c92a2a;
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  color: var(--error-text);
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
   font-size: 0.9rem;
@@ -104,6 +105,7 @@
   font-weight: 700;
   margin-bottom: 0.8rem;
   text-align: left;
+  color: var(--text);
 }
 
 .changes-list {
@@ -121,7 +123,7 @@
   gap: 0.5rem;
 }
 
-.arrow { color: #6c5ce7; font-weight: 700; }
+.arrow { color: var(--primary); font-weight: 700; }
 
 .badge-before,
 .badge-after {
@@ -134,15 +136,15 @@
 }
 
 .badge-before {
-  background: #fff7e6;       /* before: 노랑 톤 */
-  border: 1px solid #ffe8b5;
-  color: #8c6d1f;
+  background: var(--badge-before-bg);       /* before */
+  border: 1px solid var(--badge-before-border);
+  color: var(--badge-before-text);
 }
 
 .badge-after {
-  background: #eaf7ef;       /* after: 초록 톤 */
-  border: 1px solid #c7e9d3;
-  color: #1e7d4e;
+  background: var(--badge-after-bg);        /* after */
+  border: 1px solid var(--badge-after-border);
+  color: var(--badge-after-text);
 }
 
 /* 오른쪽: 상단 다운로드 바 */
@@ -154,22 +156,22 @@
 
 .download-btn {
   padding: 0.6rem 0.9rem;
-  background-color: #6c5ce7;
+  background-color: var(--primary);
   color: #fff;
-  border: none;
+  border: 1px solid var(--primary-hover);
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s;
 }
-.download-btn:hover { background-color: #5f4fcf; }
+.download-btn:hover { background-color: var(--primary-hover); }
 .download-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* 오른쪽: 수정 전/후 전문 (좌우 2열) */
 .image-right {
   flex: 1;
-  background-color: #f8f9fa;
+  background-color: var(--soft);
   padding: 2rem;
   overflow-y: auto;
   box-sizing: border-box;
@@ -178,12 +180,12 @@
 .preview-placeholder {
   width: 100%;
   height: 100%;
-  background-color: #f1f3f4;
+  background-color: var(--soft-2);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #636e72;
+  color: var(--muted);
   font-size: 1.05rem;
   padding: 1rem;
   box-sizing: border-box;
@@ -196,8 +198,8 @@
 }
 
 .result-card {
-  background: #fff;
-  border: 1px solid #e9ecef;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.25rem;
 }
@@ -207,7 +209,7 @@
   word-break: break-word;   /* 긴 단어 줄바꿈 */
   font-family: inherit;
   font-size: 0.95rem;
-  color: #333;
+  color: var(--text);
   line-height: 1.6;
 }
 
@@ -229,7 +231,7 @@
     width: 100%;
     padding: 1.5rem;
     border-right: none;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border);
   }
   .image-right { padding: 1.5rem; }
 }

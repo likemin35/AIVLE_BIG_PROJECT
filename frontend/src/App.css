@@ -15,7 +15,7 @@
 }
 
 [data-theme="dark"] {
-  --bg: #0f1115;
+  --bg: #313131;
   --text: #e9ecf1;
   --muted: #a9adc1;
   --subtext: #b9bdd1;
@@ -28,6 +28,45 @@
   --soft: #111522;
   --shadow-rgb: 20, 20, 40;
 }
+
+:root {
+  /* 기존 변수들 … (생략) */
+
+  /* === 신규: 알림/배지/프리뷰용 === */
+  --error-bg: #ffe8e8;
+  --error-border: #ffc9c9;
+  --error-text: #c92a2a;
+
+  --badge-before-bg: #fff7e6;       /* 전(before) 배지 배경 */
+  --badge-before-border: #ffe8b5;
+  --badge-before-text: #8c6d1f;
+
+  --badge-after-bg: #eaf7ef;        /* 후(after) 배지 배경 */
+  --badge-after-border: #c7e9d3;
+  --badge-after-text: #1e7d4e;
+
+  --soft-2: #f1f3f4;                /* 프리뷰 플레이스홀더 배경 */
+}
+
+[data-theme="dark"] {
+  /* 기존 다크 변수들 … (생략) */
+
+  /* === 신규: 알림/배지/프리뷰용 (다크 튜닝) === */
+  --error-bg: #2a1316;
+  --error-border: #6b2a33;
+  --error-text: #ff8a8a;
+
+  --badge-before-bg: #2b2416;
+  --badge-before-border: #4a3b1a;
+  --badge-before-text: #e8c56e;
+
+  --badge-after-bg: #18261e;
+  --badge-after-border: #244a33;
+  --badge-after-text: #8fe0b4;
+
+  --soft-2: #171a20;
+}
+
 
 /* === 기본 리셋 === */
 * {
