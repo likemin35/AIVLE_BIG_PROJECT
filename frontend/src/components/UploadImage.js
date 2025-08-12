@@ -1,5 +1,6 @@
 // src/components/UploadImage.js
 import React, { useState, useMemo } from 'react';
+import { useOutletContext, Link } from 'react-router-dom';
 import '../App.css';
 import './UploadImage.css';
 
@@ -7,18 +8,19 @@ import './UploadImage.css';
 const API_URL = 'https://image-ai-service-eck6h26cxa-uc.a.run.app';
 
 function UploadImage() {
+  const { user, authLoading } = useOutletContext();
   const [selectedFile, setSelectedFile] = useState(null);
   const [spellCheckResult, setSpellCheckResult] = useState(''); // 원본 응답 텍스트
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ----- 파서: "수정 전 ## 수정 후 $$변경..." 포맷 분리 -----
+  // ----- 파서: "수정 전 ## 수정 후 $변경..." 포맷 분리 ----- 
   const { beforeText, afterText, changes } = useMemo(() => {
     const raw = (spellCheckResult || '').trim();
     if (!raw) return { beforeText: '', afterText: '', changes: [] };
 
-    // 먼저 변경 사항 시작 인덱스 (첫 $$)를 찾는다
-    const firstChangeIdx = raw.indexOf('$$');
+    // 먼저 변경 사항 시작 인덱스 (첫 $)를 찾는다
+    const firstChangeIdx = raw.indexOf('$');
     const mainSection = (firstChangeIdx >= 0 ? raw.slice(0, firstChangeIdx) : raw).trim();
     const changesSection = (firstChangeIdx >= 0 ? raw.slice(firstChangeIdx) : '').trim();
 
@@ -27,9 +29,9 @@ function UploadImage() {
     const before = (sepIdx >= 0 ? mainSection.slice(0, sepIdx) : mainSection).trim();
     const after = (sepIdx >= 0 ? mainSection.slice(sepIdx + 2) : '').trim();
 
-    // 변경 사항 파싱: "$$수정전 -> 수정후" 라인 다수
+    // 변경 사항 파싱: "$수정전 -> 수정후" 라인 다수
     const items = changesSection
-      .split('$$')
+      .split('$')
       .map(s => s.trim())
       .filter(Boolean)
       .map(line => {
@@ -85,7 +87,7 @@ function UploadImage() {
     }
   };
 
-  // ----- 다운로드: 수정 후 전문을 .txt로 저장 -----
+  // ----- 다운로드: 수정 후 전문을 .txt로 저장 ----- 
   const handleDownloadAfter = () => {
     if (!afterText) return;
     // 파일명: 원본파일명_수정본.txt (원본 없으면 corrected.txt)
@@ -107,10 +109,26 @@ function UploadImage() {
     URL.revokeObjectURL(url);
   };
 
+  if (authLoading) {
+    return <div className="loading-spinner">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <main className="image-main">
+        <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
+          <h2>로그인 필요</h2>
+          <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
+          <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="image-main">
       <div className="image-container">
-        {/* 왼쪽: 업로드 패널 + 변경 사항 */}
+        {/* 왼쪽: 업로드 패널 + 변경 사항 */} 
         <div className="image-left">
           <div className="panel-card">
             <h2 className="panel-title">이미지 업로드</h2>
@@ -143,7 +161,7 @@ function UploadImage() {
             {error && <div className="error-banner">{error}</div>}
           </div>
 
-          {/* 변경 사항: 업로드 카드 아래에 출력 */}
+          {/* 변경 사항: 업로드 카드 아래에 출력 */} 
           <div className="changes-card">
             <h3 className="result-title">변경 사항</h3>
             {!spellCheckResult ? (
@@ -164,7 +182,7 @@ function UploadImage() {
           </div>
         </div>
 
-        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */}
+        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */} 
         <div className="image-right">
           {!spellCheckResult ? (
             <div className="preview-placeholder">
