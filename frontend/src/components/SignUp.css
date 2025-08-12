@@ -1,110 +1,278 @@
-/* --- SignUp (fix layout & theming) --- */
-.signup-page {
-  min-height: 100vh;
-  background: var(--bg);
-  color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+/* === SignUp.css (hotfix, dark-mode aware) === */
+:root {
+  --bg: #ffffff;
+  --text: #2d3436;
+  --muted: #636e72;
+  --primary: #6c5ce7;
+  --primary-hover: #5f4fcf;
+  --border: #e9ecef;
+  --card: #ffffff;
+  --soft: #fbfaff;
 }
 
+[data-theme="dark"] {
+  --bg: #313131;
+  --text: #e9ecf1;
+  --muted: #a9adc1;
+  --primary: #7a6df0;
+  --primary-hover: #6a5fe2;
+  --border: #2a2f3a;
+  --card: #151922;
+  --soft: #111522;
+}
+
+/* 페이지 */
+.signup-page {
+  min-height: 100vh;
+  background-color: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 헤더(상단 바) */
 .signup-header {
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
+  background: var(--card);
 }
 
+.signup-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* 문제 원인: 전역 .logo-icon 과 충돌 가능성 → 네임스페이스 강제 */
+.signup-logo-icon {
+  width: 28px;  /* 고정 소형 */
+  height: 28px;
+  object-fit: contain;
+}
+
+/* 헤더의 햄버거 버튼 */
+.signup-menu-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: var(--muted);
+}
+
+/* 메인 */
 .signup-main {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: calc(100vh - 80px);
   padding: 2rem 1rem;
+  background: transparent;
 }
 
-.signup-container {
+/* 카드 컨테이너 */
+.signup-card {
   width: 100%;
-  max-width: 520px;
-  text-align: center;
+  max-width: 560px;             /* 모바일/데스크탑 균형 */
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 6px 22px rgba(var(--shadow-rgb), 0.18);
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
 }
 
-.signup-brand { margin-bottom: 1.25rem; }
-.signup-brand-icon {
-  width: 84px; height: 84px; margin: 0 auto 1rem;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+/* 브랜드 영역 */
+.signup-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.signup-brand-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 9999px;
   background: var(--primary);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.35);
 }
-.signup-brand-logo { width: 52px; height: 52px; object-fit: contain; filter: brightness(0) invert(1); }
-.signup-title { font-size: 1.6rem; color: var(--text); margin: 0 0 0.5rem 0; }
 
-.signup-form { display: flex; flex-direction: column; gap: 0.8rem; }
+/* 문제 원인: .signup-brand-logo 가 너무 커짐 → 명시적 크기 고정 */
+.signup-brand-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
 
-.form-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.signup-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border);
-  background: var(--card);
+.signup-title {
+  font-size: 1.6rem;
+  font-weight: 700;
   color: var(--text);
+  margin: 0;
+}
+
+/* 폼 */
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 8px;
+}
+
+.signup-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 0.95rem;
-}
-.signup-input::placeholder { color: var(--muted); }
-.signup-input.full-width { width: 100%; }
-
-.verification-check { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: var(--muted); }
-.verification-check input[type="checkbox"] { accent-color: var(--primary); }
-
-.agreements { margin: 0.8rem 0; text-align: left; }
-.agreement-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; color: var(--muted); }
-.agreement-item input[type="checkbox"] { accent-color: var(--primary); }
-.agreement-item .view-btn {
-  padding: 0.3rem 0.55rem;
-  border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
-  border-radius: 6px;
-  font-size: 0.8rem;
-  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
 }
 
+.signup-input::placeholder {
+  color: var(--muted);
+}
+
+.signup-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.15);
+}
+
+/* 한 줄에 입력 + 체크박스 */
+.signup-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.signup-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.signup-checkbox input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* 약관 동의 리스트 */
+.agreements {
+  margin: 6px 0 2px;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+}
+
+.agreement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.agreement-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.agreement-view-btn {
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 9999px;
+  background: var(--soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.agreement-view-btn:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+}
+
+/* 버튼 */
 .signup-submit-btn {
   width: 100%;
-  padding: 0.9rem 1rem;
+  padding: 0.95rem;
   background: var(--primary);
-  color: #fff;
   border: 1px solid var(--primary-hover);
-  border-radius: 8px;
+  color: #fff;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 0.4rem;
+  transition: background .2s, transform .1s;
+  margin-top: 8px;
 }
 .signup-submit-btn:hover { background: var(--primary-hover); }
+.signup-submit-btn:active { transform: translateY(1px); }
 
-.login-link { margin: 0.9rem 0; text-align: center; }
-.login-link span { color: var(--muted); font-size: 0.9rem; cursor: pointer; text-decoration: underline; }
-.login-link span:hover { color: var(--text); }
+/* 링크 */
+.signup-link {
+  text-align: center;
+  margin: 10px 0 2px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.signup-link span, .signup-link a {
+  color: var(--text);
+  text-decoration: underline;
+  cursor: pointer;
+}
 
+/* 구글 버튼 */
 .google-signin-btn {
   width: 100%;
-  padding: 0.7rem 0.9rem;
+  padding: 12px 14px;
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.95rem;
   color: var(--text);
-  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, transform .1s;
 }
-.google-icon { font-weight: 700; color: #4285f4; }
+.google-signin-btn:hover {
+  background: var(--soft);
+  border-color: var(--primary);
+}
 .google-icon-img { width: 20px; height: 20px; }
 
-@media (max-width: 520px) {
-  .signup-container { padding: 1.25rem; }
+/* 반응형 */
+@media (max-width: 768px) {
+  .signup-card { padding: 22px; max-width: 520px; }
+  .signup-brand-badge { width: 64px; height: 64px; }
+  .signup-brand-logo { width: 36px; height: 36px; }
+  .signup-title { font-size: 1.45rem; }
+}
+
+@media (max-width: 480px) {
+  .signup-card { padding: 18px; max-width: 440px; }
+  .signup-brand-badge { width: 56px; height: 56px; }
+  .signup-brand-logo { width: 30px; height: 30px; }
+  .signup-title { font-size: 1.35rem; }
 }

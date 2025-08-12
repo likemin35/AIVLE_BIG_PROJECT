@@ -110,13 +110,6 @@ export default function Settings() {
           </button>
         </div>
 
-        <div style={{ marginTop: 14, fontSize: 13, color: 'var(--muted)' }}>
-          현재 적용 테마:{' '}
-          <strong style={{ color: 'var(--text)' }}>
-            {document.documentElement.getAttribute('data-theme')}
-          </strong>{' '}
-          (선호도: {pref})
-        </div>
       </section>
     </div>
   );

@@ -1,57 +1,55 @@
+
 /* === 색상 토큰 (라이트/다크 공용) === */
 :root {
-  --bg: var(--card);
-  --text: var(--text);
+  --bg: #ffffff;
+  --text: #2d3436;
   --muted: #636e72;
   --subtext: #4f4b6f;
 
-  --primary: var(--primary);
-  --primary-hover: var(--primary-hover);
+  --primary: #6c5ce7;
+  --primary-hover: #5f4fcf;
 
-  --border: var(--border);
-  --card: var(--card);
+  --border: #e9ecef;
+  --card: #ffffff;
   --soft: #fbfaff;
   --shadow-rgb: 108, 92, 231;
 }
 
 [data-theme="dark"] {
-  --bg: #313131;
+  /* 요청: 배경을 더 진하게 (#1f1f1f 근접) */
+  --bg: #1f1f1f;
   --text: #e9ecf1;
   --muted: #a9adc1;
   --subtext: #b9bdd1;
 
-  --primary: #7a6df0;       /* 약간 더 밝게 */
+  --primary: #7a6df0;
   --primary-hover: #6a5fe2;
 
+  /* 카드/보조 배경은 너무 밝지 않도록 살짝 어둡게 */
   --border: #2a2f3a;
-  --card: #151922;
-  --soft: #111522;
+  --card: #0f1218;
+  --soft: #101317;
   --shadow-rgb: 20, 20, 40;
 }
 
 :root {
-  /* 기존 변수들 … (생략) */
-
   /* === 신규: 알림/배지/프리뷰용 === */
   --error-bg: #ffe8e8;
   --error-border: #ffc9c9;
   --error-text: #c92a2a;
 
-  --badge-before-bg: var(--card)7e6;       /* 전(before) 배지 배경 */
+  --badge-before-bg: #fff7e6;
   --badge-before-border: #ffe8b5;
   --badge-before-text: #8c6d1f;
 
-  --badge-after-bg: #eaf7ef;        /* 후(after) 배지 배경 */
+  --badge-after-bg: #eaf7ef;
   --badge-after-border: #c7e9d3;
   --badge-after-text: #1e7d4e;
 
-  --soft-2: var(--soft-2);                /* 프리뷰 플레이스홀더 배경 */
+  --soft-2: #f1f3f4;
 }
 
 [data-theme="dark"] {
-  /* 기존 다크 변수들 … (생략) */
-
-  /* === 신규: 알림/배지/프리뷰용 (다크 튜닝) === */
   --error-bg: #2a1316;
   --error-border: #6b2a33;
   --error-text: #ff8a8a;
@@ -69,11 +67,7 @@
 
 
 /* === 기본 리셋 === */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
   height: 100%;
@@ -103,14 +97,10 @@ html, body, #root {
   font-weight: 600;
 }
 
-.main-title .highlight {
-  color: var(--primary);
-}
+.main-title .highlight { color: var(--primary); }
 
 /* Brand Section */
-.brand-section {
-  margin-bottom: 4rem;
-}
+.brand-section { margin-bottom: 4rem; }
 
 .brand-icon {
   width: 150px;
@@ -130,10 +120,13 @@ html, body, #root {
   filter: none;
 }
 
-/* Upload Section */
-.upload-section {
-  margin-bottom: 4rem;
+/* 요청: 다크모드에서 메인 로고를 하얗게 보이도록 */
+[data-theme="dark"] .brand-logo {
+  filter: brightness(0) invert(1) contrast(1.05);
 }
+
+/* Upload Section */
+.upload-section { margin-bottom: 4rem; }
 
 .upload-container {
   display: flex;
@@ -155,13 +148,8 @@ html, body, #root {
   transition: border-color 0.2s, background 0.2s;
 }
 
-.upload-input::placeholder {
-  color: var(--muted);
-}
-
-.upload-input:focus {
-  border-color: var(--primary);
-}
+.upload-input::placeholder { color: var(--muted); }
+.upload-input:focus { border-color: var(--primary); }
 
 .upload-btn {
   background-color: var(--primary);
@@ -175,14 +163,8 @@ html, body, #root {
   white-space: nowrap;
   transition: background-color 0.2s, transform 0.1s ease;
 }
-
-.upload-btn:hover {
-  background-color: var(--primary-hover);
-}
-
-.upload-btn:active {
-  transform: translateY(1px);
-}
+.upload-btn:hover { background-color: var(--primary-hover); }
+.upload-btn:active { transform: translateY(1px); }
 
 /* Contract Creation Section */
 .section-title {
@@ -193,15 +175,12 @@ html, body, #root {
   position: relative;
   padding-bottom: 1rem;
 }
-
 .section-title::after {
   content: '';
   position: absolute;
-  bottom: 0;
-  left: 50%;
+  bottom: 0; left: 50%;
   transform: translateX(-50%);
-  width: 200px;
-  height: 1px;
+  width: 200px; height: 1px;
   background-color: var(--border);
 }
 
@@ -227,7 +206,6 @@ html, body, #root {
   background-color: var(--card);
   box-shadow: 0 0 0 rgba(0,0,0,0);
 }
-
 .contract-option:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(var(--shadow-rgb), 0.15);
@@ -261,28 +239,20 @@ html, body, #root {
   border-radius: 9999px;
   border: 1px solid var(--primary-hover);
   background: var(--primary);
-  color: var(--card);
+  color: #fff;
   font-weight: 700;
   font-size: 15px;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(var(--shadow-rgb), 0.25);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
-
 .floating-about-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 30px rgba(var(--shadow-rgb), 0.35);
   background: var(--primary-hover);
 }
-
-.floating-about-btn:active {
-  transform: translateY(0);
-}
-
-.floating-about-btn .arrow {
-  font-weight: 800;
-  margin-left: 2px;
-}
+.floating-about-btn:active { transform: translateY(0); }
+.floating-about-btn .arrow { font-weight: 800; margin-left: 2px; }
 
 /* 왼쪽 하단 다크모드 토글 버튼 */
 .floating-theme-toggle {
@@ -290,8 +260,7 @@ html, body, #root {
   left: 16px;
   bottom: 16px;
   z-index: 1001;
-  width: 44px;
-  height: 44px;
+  width: 44px; height: 44px;
   border-radius: 9999px;
   border: 1px solid var(--border);
   background: var(--card);
@@ -301,149 +270,51 @@ html, body, #root {
   font-size: 18px;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
-
 .floating-theme-toggle:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(var(--shadow-rgb), 0.28);
 }
 
 /* 파일 제거 버튼 */
-.file-display {
-  display: flex;
-  align-items: center;
-  position: relative;
-}
-
+.file-display { display: flex; align-items: center; position: relative; }
 .remove-file-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 0 5px;
-  margin-left: -28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: transparent; border: none; cursor: pointer; padding: 0 5px;
+  margin-left: -28px; display: flex; align-items: center; justify-content: center;
 }
-
-.remove-icon {
-  font-size: 16px;
-  color: #999;
-  transition: color 0.2s ease;
-}
-
-.remove-file-btn:hover .remove-icon {
-  color: #ff4d4d;
-}
+.remove-icon { font-size: 16px; color: #999; transition: color 0.2s ease; }
+.remove-file-btn:hover .remove-icon { color: #ff4d4d; }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .main-content {
-    padding: 3rem 1rem;
-  }
+  .main-content { padding: 3rem 1rem; }
+  .main-title { font-size: 2rem; }
+  .brand-icon { width: 130px; height: 130px; padding: 20px; }
+  .brand-logo { width: 90px; height: 90px; }
 
-  .main-title {
-    font-size: 2rem;
-  }
-
-  .brand-icon {
-    width: 130px;
-    height: 130px;
-    padding: 20px;
-  }
-
-  .brand-logo {
-    width: 90px;
-    height: 90px;
-  }
-
-  .upload-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .contract-options {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    max-width: 400px;
-  }
-
-  .contract-option {
-    padding: 1.5rem 1rem;
-  }
-
-  .option-icon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .option-text {
-    font-size: 1.1rem;
-  }
-
-  .section-title::after {
-    width: 150px;
-  }
+  .upload-container { flex-direction: column; gap: 1rem; }
+  .contract-options { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 400px; }
+  .contract-option { padding: 1.5rem 1rem; }
+  .option-icon { width: 60px; height: 60px; }
+  .option-text { font-size: 1.1rem; }
+  .section-title::after { width: 150px; }
 }
 
 @media (max-width: 480px) {
-  .main-title {
-    font-size: 1.7rem;
-    margin-bottom: 3rem;
-  }
+  .main-title { font-size: 1.7rem; margin-bottom: 3rem; }
+  .brand-section { margin-bottom: 3rem; }
+  .brand-icon { width: 120px; height: 120px; padding: 18px; }
+  .brand-logo { width: 84px; height: 84px; }
 
-  .brand-section {
-    margin-bottom: 3rem;
-  }
-
-  .brand-icon {
-    width: 120px;
-    height: 120px;
-    padding: 18px;
-  }
-
-  .brand-logo {
-    width: 84px;
-    height: 84px;
-  }
-
-  .upload-section {
-    margin-bottom: 3rem;
-  }
-
-  .contract-options {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    max-width: 300px;
-  }
-
-  .option-icon {
-    width: 50px;
-    height: 50px;
-  }
-
-  .option-text {
-    font-size: 1rem;
-  }
-
-  .section-title::after {
-    width: 120px;
-  }
+  .upload-section { margin-bottom: 3rem; }
+  .contract-options { grid-template-columns: 1fr; gap: 1.5rem; max-width: 300px; }
+  .option-icon { width: 50px; height: 50px; }
+  .option-text { font-size: 1rem; }
+  .section-title::after { width: 120px; }
 
   .floating-about-btn {
-    right: 16px;
-    bottom: 16px;
-    padding: 12px 16px;
-    font-size: 14px;
+    right: 16px; bottom: 16px; padding: 12px 16px; font-size: 14px;
   }
-
   .floating-theme-toggle {
-    left: 12px;
-    bottom: 12px;
-    width: 40px;
-    height: 40px;
+    left: 12px; bottom: 12px; width: 40px; height: 40px;
   }
 }
-
-
-/* Home 페이지 배경 통일 */
-.HomeContainer { background-color: var(--bg); min-height: 100vh; }
