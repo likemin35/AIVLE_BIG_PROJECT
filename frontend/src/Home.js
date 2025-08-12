@@ -60,13 +60,26 @@ function Home({ user }) {
       body: formData,
       mode: 'cors',
     })
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (!res.ok) {
+            // 에러일 경우 서버가 JSON을 보내면 메시지를 파싱
+            let errorMsg = `HTTP error! status: ${res.status}`;
+            try {
+              const errorData = await res.json();
+              errorMsg = errorData.message || errorMsg;
+            } catch {
+              // JSON 파싱 실패 시 기본 메시지 사용
+            }
+            throw new Error(errorMsg);
+          }
+          return res.json();
+        })
         .then((data) => {
           alert(`업로드 완료: ${data.message || selectedFile.name}`);
         })
         .catch((err) => {
           console.error(err);
-          alert('업로드 중 오류가 발생했습니다.');
+          alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
         });
   };
 
