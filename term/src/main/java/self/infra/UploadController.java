@@ -1,7 +1,12 @@
 package self.infra;
 
-import com.google.cloud.firestore.Firestore;
+import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.cloud.StorageClient;
+import com.google.cloud.firestore.Firestore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,9 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import self.domain.UploadTerm;
 
 import java.io.IOException;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -71,6 +76,32 @@ public class UploadController {
         } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류 발생"));
+        }
+    }
+
+    /**
+     * GET /api/upload-terms?userId={uid}
+     * 특정 사용자(uploaderUid)로 업로드된 약관 목록 조회
+     */
+    @GetMapping("/upload-terms")
+    public ResponseEntity<?> getUploadTerms(@RequestParam("userId") String userId) {
+        try {
+            CollectionReference uploadTermsRef = firestore.collection("uploadTerms");
+            Query query = uploadTermsRef.whereEqualTo("userId", userId);
+            ApiFuture<QuerySnapshot> querySnapshot = query.get();
+
+            List<UploadTerm> uploadTerms = new ArrayList<>();
+            for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
+                UploadTerm uploadTerm = document.toObject(UploadTerm.class);
+                uploadTerm.setId(document.getId()); 
+                uploadTerms.add(uploadTerm);
+            }
+
+            return ResponseEntity.ok(uploadTerms);
+
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "업로드 약관 조회 중 오류 발생"));
         }
     }
 }
