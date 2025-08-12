@@ -265,7 +265,7 @@ button { color: var(--text); }
 .qna-detail-container { background: var(--card); border: 1px solid var(--border); }
 .question-header, .actions, .answers-list .answer-item { border-color: var(--border); }
 .list-btn { background: var(--muted); border: 1px solid var(--muted); color: #fff; }
-.edit-btn { background: var(--primary); border: 1px solid var(--primary); color: #fff; }
+.edit-btn { background: #007bff; border: 1px solid #007bff; color: #fff; }
 .delete-btn { background: var(--danger); border: 1px solid var(--danger); color: #fff; }
 .answer-form textarea { background: var(--card); color: var(--text); border: 1px solid var(--border); }
 .dropdown-menu { background: var(--card); border: 1px solid var(--border); }
