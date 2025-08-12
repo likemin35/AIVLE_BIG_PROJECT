@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { auth } from '../firebase';
 import { getDocs, collection, query, where } from "firebase/firestore";
+import { db } from '../firebase';
 
 
 const getApiUrl = () => {
