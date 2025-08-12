@@ -74,7 +74,8 @@ function Home({ user }) {
         })
         .then((data) => {
           alert(`업로드 완료: ${data.message || selectedFile.name}`);
-          navigate('/contracts');  // 업로드 후 계약서 관리 페이지로 이동
+          navigate('/contracts', { replace: true });
+          window.location.reload(); 
         })
         .catch((err) => {
           console.error(err);
