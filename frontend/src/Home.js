@@ -1,4 +1,3 @@
-// src/Home.js
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import iconStandard from './assets/icon-standard.png';
@@ -13,6 +12,10 @@ function Home({ user }) {
   const navigate = useNavigate();
 
   // 파일 선택창 열기
+  const CLOUD_RUN_API_BASE_URL =
+      process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
+      'https://terms-api-service-eck6h26cxa-uc.a.run.app';
+
   const handleFileButtonClick = () => {
     fileInputRef.current.click();
   };
@@ -51,9 +54,11 @@ function Home({ user }) {
     const formData = new FormData();
     formData.append('file', selectedFile);
 
-    fetch('http://localhost:8080/api/upload', {
+    // API 요청 URL에 CLOUD_RUN_API_BASE_URL 사용
+    fetch(`${CLOUD_RUN_API_BASE_URL}/api/upload`, {
       method: 'POST',
       body: formData,
+      mode: 'cors',
     })
         .then((res) => res.json())
         .then((data) => {
