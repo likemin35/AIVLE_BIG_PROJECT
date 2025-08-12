@@ -1,5 +1,7 @@
 // src/components/ExplainPage.js
 import React from 'react';
+import CreateTermsImg from '../assets/CreateTerms.png';
+import ImageCheckImg from '../assets/ImageCheck.png';
 
 export default function ExplainPage() {
   const color = {
@@ -11,6 +13,7 @@ export default function ExplainPage() {
     bgSoft: '#faf9ff',
   };
 
+  // 공용 섹션 컴포넌트 (문자/JSX 모두 지원하는 imgLabel)
   const Section = ({ reverse = false, eyebrow, title, desc, children, imgLabel }) => (
     <section
       style={{
@@ -83,7 +86,9 @@ export default function ExplainPage() {
               fontSize: 13,
             }}
           >
-            (이미지/스크린샷 자리) {imgLabel}
+            {typeof imgLabel === 'string'
+              ? `(이미지/스크린샷 자리) ${imgLabel}`
+              : imgLabel}
           </div>
         </div>
       </div>
@@ -142,7 +147,13 @@ export default function ExplainPage() {
             문서로 저장해 보관하거나 전달할 수 있습니다.
           </>
         }
-        imgLabel="초안 생성 폼/결과 예시"
+        imgLabel={
+          <img
+            src={CreateTermsImg}
+            alt="초안 생성 폼/결과 예시"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       >
         <div
           style={{
@@ -161,8 +172,7 @@ export default function ExplainPage() {
             <li>필수 조항 및 희망사항</li>
           </ul>
           <p style={{ marginTop: 12, fontSize: 14, color: '#6b6a7f' }}>
-            입력 후 생성된 초안은 즉시 수정 가능하며, 필요 시 PDF나 Word 형식으로 정리해 내부 검토·배포에 활용할 수
-            있습니다.
+            입력 후 생성된 초안은 즉시 수정 가능하며, 필요 시 문서 파일로 정리해 내부 검토·배포에 활용할 수 있습니다.
           </p>
         </div>
       </Section>
@@ -179,7 +189,13 @@ export default function ExplainPage() {
             좋아요.
           </>
         }
-        imgLabel="이미지 업로드 & 검수 결과 예시"
+        imgLabel={
+          <img
+            src={ImageCheckImg}
+            alt="이미지 업로드 & 검수 결과 예시"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* 기존 약관 업로드/수정 · 버전 관리 */}
