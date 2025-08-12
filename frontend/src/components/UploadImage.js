@@ -1,11 +1,13 @@
 // src/components/UploadImage.js
 import React, { useState, useMemo } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
+import { reduceUserPoints } from '../api/point'; // 포인트 API import
 import '../App.css';
 import './UploadImage.css';
 
 // Cloud Run 서비스 URL (POST / 로 업로드)
 const API_URL = 'https://image-ai-service-eck6h26cxa-uc.a.run.app';
+const POINT_COST = 1000; // 포인트 소모량
 
 function UploadImage() {
   const { user, authLoading } = useOutletContext();
@@ -14,28 +16,25 @@ function UploadImage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ----- 파서: "수정 전 ## 수정 후 $변경..." 포맷 분리 ----- 
+  // ----- 파서: "수정 전 ## 수정 후 $$변경..." 포맷 분리 -----
   const { beforeText, afterText, changes } = useMemo(() => {
     const raw = (spellCheckResult || '').trim();
     if (!raw) return { beforeText: '', afterText: '', changes: [] };
 
-    // 먼저 변경 사항 시작 인덱스 (첫 $)를 찾는다
-    const firstChangeIdx = raw.indexOf('$');
+    const firstChangeIdx = raw.indexOf('$$');
     const mainSection = (firstChangeIdx >= 0 ? raw.slice(0, firstChangeIdx) : raw).trim();
     const changesSection = (firstChangeIdx >= 0 ? raw.slice(firstChangeIdx) : '').trim();
 
-    // 본문을 ##로 좌/우 분리
     const sepIdx = mainSection.indexOf('##');
     const before = (sepIdx >= 0 ? mainSection.slice(0, sepIdx) : mainSection).trim();
     const after = (sepIdx >= 0 ? mainSection.slice(sepIdx + 2) : '').trim();
 
-    // 변경 사항 파싱: "$수정전 -> 수정후" 라인 다수
     const items = changesSection
-      .split('$')
+      .split('$$')
       .map(s => s.trim())
       .filter(Boolean)
       .map(line => {
-        const firstLine = line.split('\n')[0]; // 혹시 줄바꿈 섞이면 첫 줄만
+        const firstLine = line.split('\n')[0];
         const arrowIdx = firstLine.indexOf('->');
         if (arrowIdx >= 0) {
           const beforePart = firstLine.slice(0, arrowIdx).trim();
@@ -63,39 +62,54 @@ function UploadImage() {
       return;
     }
     if (isLoading) return;
+    if (!user || !user.uid) {
+      alert('사용자 인증 정보가 없습니다. 다시 로그인해주세요.');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
     try {
+      // 1. 포인트 차감 먼저 시도
+      await reduceUserPoints(user.uid, POINT_COST, '이미지 약관 검수');
+
+      // 2. 포인트 차감 성공 시, 이미지 업로드 및 검수 진행
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
       const response = await fetch(API_URL, {
         method: 'POST',
         body: formData,
+        // 참고: 이미지 서비스는 별도 인증을 사용하지 않으므로 헤더 불필요
       });
-      if (!response.ok) throw new Error('API 호출에 실패했습니다.');
+
+      if (!response.ok) {
+        // 여기서 실패하면 포인트 롤백을 고려해야 할 수 있음 (현재는 롤백 API 호출)
+        throw new Error('이미지 검수 API 호출에 실패했습니다.');
+      }
 
       const data = await response.json();
       setSpellCheckResult(data.spell_check_result || '');
+
     } catch (err) {
-      setError(`오류가 발생했습니다: ${err.message}`);
+      // 포인트 부족 또는 API 오류 처리
+      const errorMessage = err.message || '알 수 없는 오류가 발생했습니다.';
+      setError(errorMessage);
+      alert(errorMessage); // 사용자에게 명확한 피드백 제공
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ----- 다운로드: 수정 후 전문을 .txt로 저장 ----- 
+  // ----- 다운로드: 수정 후 전문을 .txt로 저장 -----
   const handleDownloadAfter = () => {
     if (!afterText) return;
-    // 파일명: 원본파일명_수정본.txt (원본 없으면 corrected.txt)
     const base =
       (selectedFile?.name?.replace(/\.[^.]+$/, '') || 'corrected') + '_수정본';
     const filename = `${base}.txt`;
 
-    // UTF-8 BOM 추가로 메모장 한글 깨짐 방지
     const content = '\ufeff' + afterText;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -128,7 +142,7 @@ function UploadImage() {
   return (
     <main className="image-main">
       <div className="image-container">
-        {/* 왼쪽: 업로드 패널 + 변경 사항 */} 
+        {/* 왼쪽: 업로드 패널 + 변경 사항 */}
         <div className="image-left">
           <div className="panel-card">
             <h2 className="panel-title">이미지 업로드</h2>
@@ -155,13 +169,13 @@ function UploadImage() {
               disabled={isLoading || !selectedFile}
               title={!selectedFile ? '이미지를 먼저 선택하세요' : undefined}
             >
-              {isLoading ? '검수 중...' : '이미지 업로드 및 검수'}
+              {isLoading ? '검수 중...' : `이미지 업로드 및 검수 (${POINT_COST.toLocaleString()}P)`}
             </button>
 
             {error && <div className="error-banner">{error}</div>}
           </div>
 
-          {/* 변경 사항: 업로드 카드 아래에 출력 */} 
+          {/* 변경 사항: 업로드 카드 아래에 출력 */}
           <div className="changes-card">
             <h3 className="result-title">변경 사항</h3>
             {!spellCheckResult ? (
@@ -182,7 +196,7 @@ function UploadImage() {
           </div>
         </div>
 
-        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */} 
+        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */}
         <div className="image-right">
           {!spellCheckResult ? (
             <div className="preview-placeholder">
