@@ -1,53 +1,3 @@
-
-:root {
-  --bg: #ffffff;
-  --text: #2d3436;
-  --muted: #636e72;
-  --subtext: #4f4b6f;
-  --primary: #6c5ce7;
-  --primary-hover: #5f4fcf;
-  --border: #e9ecef;
-  --card: #ffffff;
-  --soft: #fbfaff;
-  --shadow-rgb: 108, 92, 231;
-  --error-bg: #ffe8e8;
-  --error-border: #ffc9c9;
-  --error-text: #c92a2a;
-  --badge-before-bg: #fff7e6;
-  --badge-before-border: #ffe8b5;
-  --badge-before-text: #8c6d1f;
-  --badge-after-bg: #eaf7ef;
-  --badge-after-border: #c7e9d3;
-  --badge-after-text: #1e7d4e;
-  --soft-2: #f1f3f4;
-  --danger: #dc3545;
-  --danger-soft: #fff5f5;
-}
-[data-theme="dark"] {
-  --bg: #313131;
-  --text: #e9ecf1;
-  --muted: #a9adc1;
-  --subtext: #b9bdd1;
-  --primary: #7a6df0;
-  --primary-hover: #6a5fe2;
-  --border: #2a2f3a;
-  --card: #151922;
-  --soft: #111522;
-  --shadow-rgb: 20, 20, 40;
-  --error-bg: #2a1316;
-  --error-border: #6b2a33;
-  --error-text: #ff8a8a;
-  --badge-before-bg: #2b2416;
-  --badge-before-border: #4a3b1a;
-  --badge-before-text: #e8c56e;
-  --badge-after-bg: #18261e;
-  --badge-after-border: #244a33;
-  --badge-after-text: #8fe0b4;
-  --danger: #ff6b6b;
-  --danger-soft: #2a171a;
-  --soft-2: #171a20;
-}
-
 .point-charge-container {
     display: flex;
     flex-direction: column;
@@ -55,7 +5,7 @@
 }
 
 .point-card {
-    background-color: #ffffff;
+    background-color: var(--card);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -70,8 +20,8 @@
     font-size: 1.5rem;
     margin-top: 0;
     margin-bottom: 20px;
-    color: #555;
-    border-bottom: 1px solid #eee;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 15px;
 }
 
@@ -85,14 +35,14 @@
 .amount-btn, .amount-input {
     padding: 15px;
     font-size: 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background-color: #f9f9f9;
+    background-color: var(--soft);
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     text-align: center;
     font-family: inherit;
-    color: #333;
+    color: var(--text);
 }
 
 .amount-btn:hover, .amount-input:hover {
@@ -101,9 +51,9 @@
 }
 
 .amount-btn.selected {
-    background-color: #6c63ff;
+    background-color: var(--primary);
     color: white;
-    border-color: #6c63ff;
+    border-color: var(--primary);
     font-weight: bold;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
@@ -114,7 +64,7 @@
 }
 .amount-input:focus {
     outline: none;
-    border-color: #6c63ff;
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
 }
 
@@ -127,7 +77,7 @@
 
 .payment-btn {
     padding: 15px;
-    border: 2px solid #ddd;
+    border: 2px solid var(--border);
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -137,7 +87,7 @@
     align-items: center;
     gap: 10px;
     font-weight: 500;
-    background-color: #fff;
+    background-color: var(--card);
 }
 
 .payment-btn svg {
@@ -160,14 +110,14 @@
 }
 
 .payment-btn.selected {
-    border-color: #6c63ff;
+    border-color: var(--primary);
     font-weight: bold;
-    color: #6c63ff;
+    color: var(--primary);
     box-shadow: 0 0 10px rgba(108, 99, 255, 0.3);
 }
 
 .payment-btn.selected svg {
-    color: #6c63ff;
+    color: var(--primary);
 }
 
 /* --- 최종 충전 버튼 --- */
@@ -176,7 +126,7 @@
     padding: 18px;
     font-size: 1.2rem;
     font-weight: bold;
-    background-color: #6c63ff;
+    background-color: var(--primary);
     color: white;
     border: none;
     border-radius: 10px;
@@ -186,7 +136,7 @@
 }
 
 .charge-submit-btn:hover {
-    background-color: #5a54e1;
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(108, 99, 255, 0.3);
 }
