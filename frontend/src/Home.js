@@ -61,35 +61,37 @@ function Home({ user }) {
       body: formData,
       mode: 'cors',
     })
-      .then(async (res) => {
-        if (!res.ok) {
-          let errorMsg = `HTTP error! status: ${res.status}`;
-          try {
-            const errorData = await res.json();
-            errorMsg = errorData.message || errorMsg;
-          } catch {}
-          throw new Error(errorMsg);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        alert(`업로드 완료: ${data.message || selectedFile.name}`);
-      })
-      .catch((err) => {
-        console.error(err);
-        alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
-      });
+        .then(async (res) => {
+          if (!res.ok) {
+            let errorMsg = `HTTP error! status: ${res.status}`;
+            try {
+              const errorData = await res.json();
+              errorMsg = errorData.message || errorMsg;
+            } catch {}
+            throw new Error(errorMsg);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          alert(`업로드 완료: ${data.message || selectedFile.name}`);
+          navigate('/contracts');  // 업로드 후 계약서 관리 페이지로 이동
+        })
+        .catch((err) => {
+          console.error(err);
+          alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
+        });
   };
 
-  // 파일 삭제
+// 파일 삭제 함수
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setContractText('');
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''; // input 초기화
     }
   };
 
+// 아이콘 클릭 함수
   const handleIconClick = (type) => {
     if (type === 'terms') {
       navigate('/create-terms');
