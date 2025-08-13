@@ -1,6 +1,7 @@
 // src/Home.js
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { uploadTermFile } from './api/term'; // 새로 만든 API 함수 import
 import iconStandard from './assets/icon-standard.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
@@ -9,14 +10,9 @@ import './App.css';
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false); // 로딩 상태 추가
+  const [isUploading, setIsUploading] = useState(false); // 로딩 상태
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
-  // API Base URL
-  const CLOUD_RUN_API_BASE_URL =
-    process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
-    'https://term-service-902267887946.us-central1.run.app';
 
   // 파일 선택창 열기
   const handleFileButtonClick = () => {
@@ -47,50 +43,29 @@ function Home({ user }) {
   };
 
   // 업로드 버튼 클릭 처리
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
     if (!selectedFile) {
       alert('약관 파일을 선택해주세요.');
       return;
     }
-    if (isUploading) return; // 업로드 중이면 중복 클릭 방지
+    if (isUploading) return;
 
-    setIsUploading(true); // 로딩 시작
+    setIsUploading(true);
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('uploaderUid', user?.uid || '');
-
-    fetch(`${CLOUD_RUN_API_BASE_URL}/api/upload`, {
-      method: 'POST',
-      body: formData,
-      mode: 'cors',
-    })
-        .then(async (res) => {
-          if (!res.ok) {
-            let errorMsg = `HTTP error! status: ${res.status}`;
-            try {
-              const errorData = await res.json();
-              errorMsg = errorData.message || errorMsg;
-            } catch {}
-            throw new Error(errorMsg);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          alert(`업로드 완료: ${data.message || selectedFile.name}`);
-          navigate('/contracts', { replace: true });
-          window.location.reload();  // 업로드 후 계약서 관리 페이지로 이동
-        })
-        .catch((err) => {
-          console.error(err);
-          alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
-        })
-        .finally(() => {
-          setIsUploading(false); // 로딩 종료 (성공/실패 모두)
-        });
+    try {
+      const data = await uploadTermFile(selectedFile);
+      alert(`업로드 완료: ${data.title || selectedFile.name}`);
+      navigate('/contracts', { replace: true });
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-// 파일 삭제 함수
+  // 파일 삭제 함수
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setContractText('');
@@ -99,7 +74,7 @@ function Home({ user }) {
     }
   };
 
-// 아이콘 클릭 함수
+  // 아이콘 클릭 함수
   const handleIconClick = (type) => {
     if (type === 'terms') {
       navigate('/create-terms');

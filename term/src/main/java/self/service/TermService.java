@@ -4,6 +4,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 import self.domain.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import com.google.firebase.cloud.StorageClient;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.Blob;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -154,5 +159,21 @@ public class TermService {
         newVersionTerm.setOrigin(originalTerm.getId());
 
         return newVersionTerm;
+    }
+
+    public String uploadFileAndGetUrl(MultipartFile file) throws IOException {
+        // Firebase Storage bucket 객체 가져오기
+        Bucket bucket = StorageClient.getInstance().bucket();
+
+        // 고유한 파일명 생성 (예: UUID + 원래 파일명)
+        String fileName = java.util.UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+        // 파일을 바이트 배열로 읽어서 업로드
+        Blob blob = bucket.create(fileName, file.getBytes(), file.getContentType());
+
+        // 업로드된 파일의 공개 URL 생성 (Firebase Storage 기본 규칙)
+        String publicUrl = String.format("https://storage.googleapis.com/%s/%s", bucket.getName(), fileName);
+
+        return publicUrl;
     }
 }

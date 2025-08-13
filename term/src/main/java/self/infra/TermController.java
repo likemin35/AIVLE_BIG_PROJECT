@@ -9,14 +9,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import self.domain.*;
 import self.service.TermService;
+import org.springframework.web.multipart.MultipartFile;
+import com.google.cloud.storage.Bucket;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.Blob;
 
+import com.google.firebase.cloud.StorageClient;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/terms")
 public class TermController {
+    @Value("${firebase.storage-bucket}")
+    private String storageBucket;
+
+    @Autowired
+    private StorageClient storageClient;
 
     @Autowired
     private TermService termService;
@@ -61,6 +72,8 @@ public class TermController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating term: " + e.getMessage());
         }
     }
+
+
 
     @GetMapping
     public ResponseEntity<?> getTermsByUserId(@RequestHeader("Authorization") String authorizationHeader) {
@@ -214,6 +227,47 @@ public class TermController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token verification failed: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadTerm(
+            @RequestParam("file") MultipartFile file,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            String userId = getUidFromToken(authorizationHeader);
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+
+            // StorageClient를 통해 Firebase Storage에 파일 업로드
+            Blob blob = storageClient.bucket()
+                    .create(fileName, file.getBytes(), file.getContentType());
+
+            // 공개 URL (기본적으로 Firebase Storage는 비공개)
+            String fileUrl = String.format("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media",
+                    storageBucket, java.net.URLEncoder.encode(fileName, "UTF-8"));
+
+            // Term 객체 생성 및 저장
+            Term term = new Term();
+            term.setUserId(userId);
+            term.setTitle(file.getOriginalFilename());
+            term.setFileUrl(fileUrl);
+            term.setVersion("1");
+            term.setCreatedAt(new Date());
+            term.setModifiedAt(null);
+            term.setMemo("");
+            term.setOrigin(null);
+
+            Term savedTerm = termService.createTerm(term);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedTerm);
+
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Failed to verify Firebase ID token: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error uploading term: " + e.getMessage());
         }
     }
 }
