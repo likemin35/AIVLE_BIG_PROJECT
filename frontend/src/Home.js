@@ -46,42 +46,46 @@ function Home({ user }) {
   };
 
   // 업로드 버튼 클릭 처리
-  const handleUploadClick = () => {
+  const handleUploadClick = async () => {
     if (!selectedFile) {
       alert('약관 파일을 선택해주세요.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('uploaderUid', user?.uid || '');
+    try {
+      // Firebase ID 토큰 얻기 (user 객체가 Firebase Auth User일 때)
+      const idToken = await user.getIdToken();
 
-    fetch(`${CLOUD_RUN_API_BASE_URL}/api/upload`, {
-      method: 'POST',
-      body: formData,
-      mode: 'cors',
-    })
-        .then(async (res) => {
-          if (!res.ok) {
-            let errorMsg = `HTTP error! status: ${res.status}`;
-            try {
-              const errorData = await res.json();
-              errorMsg = errorData.message || errorMsg;
-            } catch {}
-            throw new Error(errorMsg);
-          }
-          return res.json();
-        })
-        .then((data) => {
-          alert(`업로드 완료: ${data.message || selectedFile.name}`);
-          navigate('/contracts', { replace: true });
-          window.location.reload();  // 업로드 후 계약서 관리 페이지로 이동
-        })
+      const formData = new FormData();
+      formData.append('file', selectedFile);
 
-        .catch((err) => {
-          console.error(err);
-          alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
-        });
+      const res = await fetch(`${CLOUD_RUN_API_BASE_URL}/api/terms/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${idToken}`,  // 여기 추가
+        },
+        body: formData,
+        mode: 'cors',
+      });
+
+      if (!res.ok) {
+        let errorMsg = `HTTP error! status: ${res.status}`;
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.message || errorMsg;
+        } catch {}
+
+        throw new Error(errorMsg);
+      }
+
+      const data = await res.json();
+      alert(`업로드 완료: ${data.title || selectedFile.name}`);
+      navigate('/contracts', { replace: true });
+      window.location.reload();  // 업로드 후 계약서 관리 페이지로 이동
+    } catch (err) {
+      console.error(err);
+      alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
+    }
   };
 
 // 파일 삭제 함수
