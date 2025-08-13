@@ -193,6 +193,17 @@ const ContractDetail = () => {
             </button>
             <button className="action-btn download-btn word" onClick={handleDownloadWord}>Word로 다운로드</button>
           </div>
+          {contract.fileUrl && (
+            <a 
+              href={contract.fileUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="action-btn download-btn original-file"
+              style={{ textDecoration: 'none' }}
+            >
+              원본 파일 다운로드
+            </a>
+          )}
           <hr className="divider" />
           <button className="action-btn back-to-list-btn" onClick={() => navigate('/contracts')}>
             목록으로

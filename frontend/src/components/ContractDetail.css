@@ -38,7 +38,13 @@
   height: 100%;
   overflow-y: hidden;
   padding-right: 10px;
+  min-height: 0; /* Prevent flex item from overflowing parent */
 }
+
+.info-box {
+  flex-shrink: 0; /* Prevent info-box from shrinking */
+}
+
 
 .info-box, .actions-box {
   background-color: var(--soft);
@@ -92,15 +98,16 @@
 .actions-box {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem; /* 버튼 간격 줄임 */
   flex-grow: 1;
   background: var(--soft);
+  overflow-y: auto; /* 스크롤 기능은 유지 */
 }
 
 .action-btn {
   width: 100%;
-  padding: 0.55rem 0.8rem;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.8rem; /* 버튼 세로 크기 추가로 줄임 */
+  font-size: 0.85rem; /* 폰트 크기 약간 줄임 */
   font-weight: 600;
   border-radius: 8px;
   cursor: pointer;
