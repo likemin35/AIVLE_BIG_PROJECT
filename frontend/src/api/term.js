@@ -103,20 +103,12 @@ export const deleteAllContractsInGroup = async (id) => {
   }
 };
 
-export const uploadTermFile = async (file) => {
+export const getUploadTerms = async (uid) => {
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await apiClient.post('/terms/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
+    const response = await apiClient.get('/upload-terms', { params: { userId: uid } });
     return response.data;
   } catch (error) {
-    console.error('파일 업로드 중 오류가 발생했습니다.', error);
+    console.error('업로드된 약관 목록을 가져오는 중 오류가 발생했습니다.', error);
     throw error;
   }
 };
