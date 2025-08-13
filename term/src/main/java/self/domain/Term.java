@@ -33,6 +33,7 @@ public class Term {
     private String langCode;
     private String updateType;
     private String termType;
+    private String fileUrl;
 
     // JPA 관련 어노테이션 및 메소드 제거
     // @PrePersist, @PostPersist, @PostUpdate 등은 Service 레이어에서 처리해야 함
