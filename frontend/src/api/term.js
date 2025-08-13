@@ -1,8 +1,6 @@
 // src/api/term.js
 import axios from 'axios';
 import { auth } from '../firebase';
-import { getDocs, collection, query, where } from "firebase/firestore";
-import { db } from '../firebase';  // firebase.js 경로에 맞게 조정
 
 
 
@@ -105,15 +103,20 @@ export const deleteAllContractsInGroup = async (id) => {
   }
 };
 
-export const getUploadTerms = async (uid) => {
-  if (!uid) {
-    throw new Error("유저 ID가 없습니다.");
-  }
+export const uploadTermFile = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const q = query(
-      collection(db, "uploadterms"),
-      where("uid", "==", uid)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const response = await apiClient.post('/terms/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('파일 업로드 중 오류가 발생했습니다.', error);
+    throw error;
+  }
 };
