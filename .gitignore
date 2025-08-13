@@ -80,5 +80,8 @@ deploy_qna.sh
 **/.venv/
 ai/src/main/Python/예금/chroma.sqlite3
 ai/src/main/Python/자동차보험/chroma.sqlite3
-deploy_ai.sh
-deploy_term.sh
+
+ai/src/main/Python/예금/chroma.sqlite3
+ai/src/main/Python/자동차보험/chroma.sqlite3
+.gitignore
+frontend/package-lock.json

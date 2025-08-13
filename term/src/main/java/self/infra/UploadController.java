@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import self.domain.UploadTerm;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -41,10 +42,13 @@ public class UploadController {
         }
 
         try {
-            // 1. Storage 업로드 (메타데이터 포함)
+            // 1. 고유 파일 경로 생성
+            String originalFileName = file.getOriginalFilename();
+            String uniqueFileName = UUID.randomUUID().toString() + "-" + originalFileName;
+            String blobString = "uploads/" + uploaderUid + "/" + uniqueFileName;
+            
+            // 2. Storage 업로드 (메타데이터 포함)
             String bucketName = storageClient.bucket().getName();
-            String blobString = "uploads/" + file.getOriginalFilename();
-
             Map<String, String> metadata = Map.of("uploaderUid", uploaderUid);
 
             storageClient.bucket(bucketName)
@@ -54,24 +58,24 @@ public class UploadController {
                     .build()
                     .update();
 
-            // 2. 다운로드 URL 생성
+            // 3. 다운로드 URL 생성
             String fileUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, blobString);
 
-            // 3. UploadTerm 객체 생성
+            // 4. UploadTerm 객체 생성
             UploadTerm uploadTerm = new UploadTerm();
             uploadTerm.setUserId(uploaderUid);
-            uploadTerm.setFileName(file.getOriginalFilename());
+            uploadTerm.setFileName(originalFileName); // Firestore에는 원본 파일명 저장
             uploadTerm.setFileUrl(fileUrl);
             uploadTerm.setCreatedAt(new Date());
             uploadTerm.setVersion("1");
             String version = "1";
 
-            // 4. Firestore에 저장
+            // 5. Firestore에 저장
             firestore.collection("uploadTerms").add(uploadTerm).get();
 
             return ResponseEntity.ok(Map.of(
                     "message", "파일 업로드 성공",
-                    "fileName", file.getOriginalFilename(),
+                    "fileName", originalFileName,
                     "fileUrl", fileUrl,
                     "version", version
             ));
@@ -99,29 +103,5 @@ public class UploadController {
         return 0;  // 버전 정보 없으면 0 반환
     }
 
-    /**
-     * GET /api/upload-terms?userId={uid}
-     * 특정 사용자(uploaderUid)로 업로드된 약관 목록 조회
-     */
-    @GetMapping("/upload-terms")
-    public ResponseEntity<?> getUploadTerms(@RequestParam("userId") String userId) {
-        try {
-            CollectionReference uploadTermsRef = firestore.collection("uploadTerms");
-            Query query = uploadTermsRef.whereEqualTo("userId", userId);
-            ApiFuture<QuerySnapshot> querySnapshot = query.get();
-
-            List<UploadTerm> uploadTerms = new ArrayList<>();
-            for (QueryDocumentSnapshot document : querySnapshot.get().getDocuments()) {
-                UploadTerm uploadTerm = document.toObject(UploadTerm.class);
-                uploadTerm.setId(document.getId()); // 문서 ID 설정 (필요시)
-                uploadTerms.add(uploadTerm);
-            }
-
-            return ResponseEntity.ok(uploadTerms);
-
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("message", "업로드 약관 조회 중 오류 발생"));
-        }
-    }
+    
 }

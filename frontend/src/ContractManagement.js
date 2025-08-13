@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
-import { getContracts, getUploadTerms, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
+import { getContracts, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
 import LoadingSpinner from './components/LoadingSpinner';
 import Tooltip from './components/Tooltip';
 import './ContractManagement.css';
@@ -17,31 +17,9 @@ const ContractManagement = () => {
   const fetchContracts = async () => {
     setLoading(true);
     try {
-      const [contracts, uploadTerms] = await Promise.all([
-        getContracts(user.uid),      // 여기서 user.uid 전달
-        getUploadTerms(user.uid)
-      ]);
-
-      const cleanContracts = contracts.filter(c => c?.id && c?.title && c?.version);
-      const cleanUploadTerms = uploadTerms
-          .filter(t => t?.id && t?.fileName && t?.createdAt)
-          .map(t => ({
-            id: t.id,
-            title: t.fileName,
-            memo: '',
-            version: t.version || '1',
-            createdAt: t.createdAt,
-            modifiedAt: null,
-            origin: t.origin || null,
-            fileUrl: t.fileUrl,
-            userId: t.userId,
-          }));
-
-
-      const allData = [...cleanContracts, ...cleanUploadTerms];
-      const contractMap = new Map(allData.map(c => [c.id, c]));
-
-
+      const data = await getContracts();
+      
+      const contractMap = new Map(data.map(c => [c.id, c]));
 
       const findRoot = (contract) => {
         let current = contract;
@@ -53,7 +31,7 @@ const ContractManagement = () => {
         return current;
       };
 
-      const groupedByRoot = allData.reduce((acc, contract) => {
+      const groupedByRoot = data.reduce((acc, contract) => {
         const root = findRoot(contract);
         if (!acc[root.id]) {
           acc[root.id] = [];
@@ -83,7 +61,7 @@ const ContractManagement = () => {
 
       setContractGroups(groups);
     } catch (err) {
-      setError('계약서/약관 목록을 불러오는 데 실패했습니다.');
+      setError('계약서 목록을 불러오는 데 실패했습니다.');
       console.error(err);
     } finally {
       setLoading(false);

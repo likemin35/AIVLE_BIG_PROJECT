@@ -1,8 +1,6 @@
 // src/api/term.js
 import axios from 'axios';
 import { auth } from '../firebase';
-import { getDocs, collection, query, where } from "firebase/firestore";
-import { db } from '../firebase';  // firebase.js 경로에 맞게 조정
 
 
 
@@ -105,15 +103,4 @@ export const deleteAllContractsInGroup = async (id) => {
   }
 };
 
-export const getUploadTerms = async (uid) => {
-  if (!uid) {
-    throw new Error("유저 ID가 없습니다.");
-  }
 
-  const q = query(
-      collection(db, "uploadterms"),
-      where("uid", "==", uid)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};

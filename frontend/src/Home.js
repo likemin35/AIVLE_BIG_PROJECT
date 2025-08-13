@@ -9,6 +9,7 @@ import './App.css';
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false); // 로딩 상태 추가
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -51,6 +52,9 @@ function Home({ user }) {
       alert('약관 파일을 선택해주세요.');
       return;
     }
+    if (isUploading) return; // 업로드 중이면 중복 클릭 방지
+
+    setIsUploading(true); // 로딩 시작
 
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -77,10 +81,12 @@ function Home({ user }) {
           navigate('/contracts', { replace: true });
           window.location.reload();  // 업로드 후 계약서 관리 페이지로 이동
         })
-
         .catch((err) => {
           console.error(err);
           alert(`업로드 중 오류가 발생했습니다: ${err.message}`);
+        })
+        .finally(() => {
+          setIsUploading(false); // 로딩 종료 (성공/실패 모두)
         });
   };
 
@@ -157,8 +163,8 @@ function Home({ user }) {
               )}
 
               {/* 업로드 버튼 */}
-              <button className="upload-btn" onClick={handleUploadClick}>
-                약관 업로드
+              <button className="upload-btn" onClick={handleUploadClick} disabled={isUploading}>
+                {isUploading ? '업로드 중...' : '약관 업로드'}
               </button>
             </div>
           </div>
