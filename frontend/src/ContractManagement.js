@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
-import { getContracts, getUploadTerms, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
+import { getContracts,getUploadTerms, deleteLatestContract, deleteAllContractsInGroup } from './api/term';
 import LoadingSpinner from './components/LoadingSpinner';
 import Tooltip from './components/Tooltip';
 import './ContractManagement.css';
@@ -17,31 +17,12 @@ const ContractManagement = () => {
   const fetchContracts = async () => {
     setLoading(true);
     try {
-      const [contracts, uploadTerms] = await Promise.all([
-        getContracts(user.uid),      // 여기서 user.uid 전달
-        getUploadTerms(user.uid)
-      ]);
+
+      const contracts = await getContracts(user.uid);
 
       const cleanContracts = contracts.filter(c => c?.id && c?.title && c?.version);
-      const cleanUploadTerms = uploadTerms
-          .filter(t => t?.id && t?.fileName && t?.createdAt)
-          .map(t => ({
-            id: t.id,
-            title: t.fileName,
-            memo: '',
-            version: t.version || '1',
-            createdAt: t.createdAt,
-            modifiedAt: null,
-            origin: t.origin || null,
-            fileUrl: t.fileUrl,
-            userId: t.userId,
-          }));
 
-
-      const allData = [...cleanContracts, ...cleanUploadTerms];
-      const contractMap = new Map(allData.map(c => [c.id, c]));
-
-
+      const contractMap = new Map(cleanContracts.map(c => [c.id, c]));
 
       const findRoot = (contract) => {
         let current = contract;
@@ -53,7 +34,7 @@ const ContractManagement = () => {
         return current;
       };
 
-      const groupedByRoot = allData.reduce((acc, contract) => {
+      const groupedByRoot = cleanContracts.reduce((acc, contract) => {
         const root = findRoot(contract);
         if (!acc[root.id]) {
           acc[root.id] = [];
