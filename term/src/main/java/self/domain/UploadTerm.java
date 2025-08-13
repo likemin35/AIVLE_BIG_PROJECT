@@ -11,5 +11,13 @@ public class UploadTerm {
     private String userId;        // 업로더 UID
     private String fileName;      // 파일명
     private String fileUrl;       // Firebase Storage 다운로드 URL
-    private Date createdAt;       // 업로드 시간
+    private Date createdAt;
+    private String version;
+
+    public String getVersion() {
+        return version;
+    }
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }
