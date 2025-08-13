@@ -18,12 +18,15 @@ const ContractManagement = () => {
     setLoading(true);
     try {
       const [contracts, uploadTerms] = await Promise.all([
-        getContracts(),
-        getUploadTerms()
+        getContracts(user.uid),      // 여기서 user.uid 전달
+        getUploadTerms(user.uid)
       ]);
 
-      // contracts와 uploadTerms를 합쳐서 동일한 로직으로 그룹화
-      const allData = [...contracts, ...uploadTerms];
+      const cleanContracts = contracts.filter(c => c?.id && c?.title && c?.version);
+      const cleanUploadTerms = uploadTerms.filter(t => t?.id && t?.title && t?.version);
+
+
+      const allData = [...cleanContracts, ...cleanUploadTerms];
       const contractMap = new Map(allData.map(c => [c.id, c]));
 
       const findRoot = (contract) => {
