@@ -63,20 +63,40 @@ public class UploadController {
             uploadTerm.setFileName(file.getOriginalFilename());
             uploadTerm.setFileUrl(fileUrl);
             uploadTerm.setCreatedAt(new Date());
+            uploadTerm.setVersion("1");
+            String version = "1";
 
             // 4. Firestore에 저장
             firestore.collection("uploadTerms").add(uploadTerm).get();
 
             return ResponseEntity.ok(Map.of(
-                    "message", "파일 업로드 및 Firestore 저장 성공",
+                    "message", "파일 업로드 성공",
                     "fileName", file.getOriginalFilename(),
-                    "fileUrl", fileUrl
+                    "fileUrl", fileUrl,
+                    "version", version
             ));
 
         } catch (IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("message", "파일 업로드 중 오류 발생"));
         }
+    }
+    /**
+     * 파일명에서 버전 숫자를 추출하는 헬퍼 메서드
+     */
+    private int extractVersionFromFileName(String fileName) {
+        if (fileName == null) return 0;
+        // v1, ver2, V3, VER10 등 다양한 케이스 허용
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("v(?:er)?(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher matcher = pattern.matcher(fileName);
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;  // 버전 정보 없으면 0 반환
     }
 
     /**
