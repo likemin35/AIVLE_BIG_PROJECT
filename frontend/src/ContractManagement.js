@@ -23,11 +23,25 @@ const ContractManagement = () => {
       ]);
 
       const cleanContracts = contracts.filter(c => c?.id && c?.title && c?.version);
-      const cleanUploadTerms = uploadTerms.filter(t => t?.id && t?.title && t?.version);
+      const cleanUploadTerms = uploadTerms
+          .filter(t => t?.id && t?.fileName && t?.createdAt)
+          .map(t => ({
+            id: t.id,
+            title: t.fileName,
+            memo: '',
+            version: t.version || '1',
+            createdAt: t.createdAt,
+            modifiedAt: null,
+            origin: t.origin || null,
+            fileUrl: t.fileUrl,
+            userId: t.userId,
+          }));
 
 
       const allData = [...cleanContracts, ...cleanUploadTerms];
       const contractMap = new Map(allData.map(c => [c.id, c]));
+
+
 
       const findRoot = (contract) => {
         let current = contract;
