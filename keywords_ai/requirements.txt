@@ -9,4 +9,6 @@ google-cloud-secret-manager
 langchain_community
 langchain_huggingface
 chromadb
+networkx
+pyvis
 urllib3
