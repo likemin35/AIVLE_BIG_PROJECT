@@ -17,7 +17,7 @@ import urllib.parse
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
-# CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -127,11 +127,11 @@ JSON 스키마:
 """
 
 # 공통 CORS 헤더
-# @app.after_request
-# def after_request(response):
-#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-#     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-#     return response
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # 포인트 URL 안전 생성
 def _build_point_reduce_url(base: str, user_id: str, amount: int, reason: str) -> str:
@@ -330,7 +330,7 @@ def json_to_text(policy: dict) -> str:
 
 # 신규: 멀티파트 업로드 
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
-# @cross_origin(origin='*')
+@cross_origin(origin='*')
 def generate_terms_v2():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
