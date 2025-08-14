@@ -2,32 +2,33 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS, cross_origin
 import vertexai
 import os
+import json
+import logging
+import uuid
+import urllib.parse
 from datetime import datetime
 from google.oauth2 import service_account
 from vertexai.generative_models import GenerativeModel
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from transformers import BertModel
 from langchain_community.vectorstores import Chroma
 import logging
 import requests
 import json
 from google.cloud import secretmanager
-import urllib.parse
+import urllib.parse # URL 인코딩을 위해 추가
 
-# 추가 import
-import csv as _csv, io as _io
-
-# Flask App
+# Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
 # CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # 서비스 URL
 TERM_SERVICE_URL = os.environ.get("TERM_SERVICE_URL", "http://localhost:8083/terms")
-POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")  # 베이스만 둔다
+POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")
 
 # Vertex AI 설정
 PROJECT_ID = "aivle-team0721"
@@ -75,11 +76,11 @@ else:
     gemini_model = None
 
 VECTOR_DB_MAP = {
-    'loan': os.path.join(BASE_DIR, '대출'),
-    'cancer_insurance': os.path.join(BASE_DIR, '암보험'),
-    'deposit': os.path.join(BASE_DIR, '예금'),
-    'car_insurance': os.path.join(BASE_DIR, '자동차보험'),
-    'savings': os.path.join(BASE_DIR, '적금')
+    'loan': os.path.join(VECTOR_BASE_DIR, '대출'),
+    'cancer_insurance': os.path.join(VECTOR_BASE_DIR, '암보험'),
+    'deposit': os.path.join(VECTOR_BASE_DIR, '예금'),
+    'car_insurance': os.path.join(VECTOR_BASE_DIR, '자동차보험'),
+    'savings': os.path.join(VECTOR_BASE_DIR, '적금')
 }
 
 PROMPT_TEMPLATE_JSON = r"""
@@ -462,12 +463,31 @@ def generate_terms_v2():
                 "category": category,
                 "effectiveDate": effective_date,
             }
-        }), 200
+        }
+
+        if docx_filename:
+            download_url = request.host_url.rstrip('/') + f"/api/download/{urllib.parse.quote(docx_filename)}"
+            result['docxUrl'] = download_url
+
+        return jsonify(result), 200
 
     except Exception:
         logging.exception("약관 생성 중 오류")
         return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."} ), 500
 
-# 로컬 실행
+
+@app.route('/api/download/<path:filename>', methods=['GET'])
+def download_file(filename):
+    # Serve files from OUTPUT_DIR
+    safe_name = os.path.basename(filename)
+    return send_from_directory(OUTPUT_DIR, safe_name, as_attachment=True)
+
+
+# Health check
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "ai_initialized": gemini_model is not None}), 200
+
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080)), debug=True)

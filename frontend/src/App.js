@@ -19,6 +19,7 @@ import MainLayout from './components/MainLayout';
 import PointLayout from './components/PointLayout';
 import ResetPassword from './components/ResetPassword';
 import ContractManagement from './ContractManagement';
+import ContractRisk from './components/ContractRisk';
 import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
 import ContractVisualization from './components/ContractVisualization'; // 추가
@@ -76,6 +77,7 @@ function App() {
           <Route path="/points" element={<PointLayout />} />
           <Route path="/qna" element={<QnaList />} />
           <Route path="/qna/write" element={<QnaWrite />} />
+          <Route path="/analyze-terms" element={<ContractRisk />} />
           <Route path="/qna/:id" element={<QnaDetail />} />
           <Route path="/qna/edit/:id" element={<QnaEdit />} />
           <Route path="/reset-password" element={<ResetPassword />} />

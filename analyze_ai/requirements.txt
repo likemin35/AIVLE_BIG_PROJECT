@@ -1,0 +1,30 @@
+# Web
+Flask==3.0.3
+flask-cors==4.0.0
+requests==2.32.3
+
+# Google / Vertex AI
+google-cloud-aiplatform==1.63.0
+google-cloud-secret-manager==2.20.2
+google-auth==2.32.0
+
+# LangChain family
+langchain==0.2.10
+langchain-core==0.2.26
+langchain-community==0.2.10
+langchain-google-vertexai==2.0.3
+langchain-huggingface==0.0.3
+langchain-text-splitters==0.2.2
+
+# Embeddings (HF)
+sentence-transformers==2.7.0
+transformers==4.44.2
+tokenizers==0.21.0
+huggingface-hub==0.24.6
+
+# Vector DB
+chromadb==1.0.15
+
+# File handling
+pypdf==4.3.1
+python-docx==1.1.2
