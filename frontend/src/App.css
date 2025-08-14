@@ -1,4 +1,3 @@
-
 /* === 색상 토큰 (라이트/다크 공용) === */
 :root {
   --bg: #ffffff;
@@ -161,8 +160,8 @@ html, body, #root {
 }
 
 .contract-options {
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: 3rem; max-width: 600px; margin: 1.5rem auto 0; justify-content: center;
+  display: grid; grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 3rem; max-width: 900px; margin: 1.5rem auto 0; justify-content: center; justify-items: center;
 }
 .contract-option {
   display: flex; flex-direction: column; align-items: center;
