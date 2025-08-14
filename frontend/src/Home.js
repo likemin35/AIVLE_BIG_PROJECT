@@ -1,7 +1,7 @@
 // src/Home.js
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadTermFile } from './api/term'; // 새로 만든 API 함수 import
+import { uploadTermFile } from './api/term';
 import iconStandard from './assets/icon-standard.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
@@ -10,16 +10,14 @@ import './App.css';
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false); // 로딩 상태
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // 파일 선택창 열기
   const handleFileButtonClick = () => {
     fileInputRef.current.click();
   };
 
-  // 파일 선택 처리
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -42,7 +40,6 @@ function Home({ user }) {
     setContractText(file.name);
   };
 
-  // 업로드 버튼 클릭 처리
   const handleUploadClick = async () => {
     if (!selectedFile) {
       alert('약관 파일을 선택해주세요.');
@@ -51,7 +48,6 @@ function Home({ user }) {
     if (isUploading) return;
 
     setIsUploading(true);
-
     try {
       const data = await uploadTermFile(selectedFile);
       alert(`업로드 완료: ${data.title || selectedFile.name}`);
@@ -65,21 +61,20 @@ function Home({ user }) {
     }
   };
 
-  // 파일 삭제 함수
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setContractText('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // input 초기화
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // 아이콘 클릭 함수
+  // 홈 카드 클릭 핸들러
   const handleIconClick = (type) => {
     if (type === 'terms') {
       navigate('/create-terms');
     } else if (type === 'labor') {
       navigate('/upload-image');
+    } else if (type === 'risk') {
+      navigate('/analyze-terms'); 
     } else {
       alert('해당 서비스는 준비중입니다.');
     }
@@ -101,7 +96,6 @@ function Home({ user }) {
 
           <div className="upload-section">
             <div className="upload-container">
-              {/* 숨겨진 파일 입력 */}
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
@@ -110,7 +104,6 @@ function Home({ user }) {
                 onChange={handleFileChange}
               />
 
-              {/* 클릭 가능한 텍스트 입력 */}
               <input
                 type="text"
                 placeholder="분석할 약관을 업로드 하세요"
@@ -120,7 +113,6 @@ function Home({ user }) {
                 className="upload-input"
               />
 
-              {/* X 버튼 */}
               {selectedFile && (
                 <button
                   onClick={handleRemoveFile}
@@ -132,12 +124,13 @@ function Home({ user }) {
                     fontSize: '18px',
                     cursor: 'pointer',
                   }}
+                  aria-label="선택한 파일 제거"
+                  title="선택한 파일 제거"
                 >
                   ✕
                 </button>
               )}
 
-              {/* 업로드 버튼 */}
               <button className="upload-btn" onClick={handleUploadClick} disabled={isUploading}>
                 {isUploading ? '업로드 중...' : '약관 업로드'}
               </button>
@@ -146,34 +139,28 @@ function Home({ user }) {
 
           <div className="contract-creation">
             <div className="contract-options centered-options">
-              <div
-                className="contract-option"
-                onClick={() => handleIconClick('terms')}
-              >
-                <img
-                  src={iconTerms}
-                  alt="약관 초안 생성"
-                  className="option-icon"
-                />
+              {/* 약관 초안 생성 */}
+              <div className="contract-option" onClick={() => handleIconClick('terms')}>
+                <img src={iconTerms} alt="약관 초안 생성" className="option-icon" />
                 <span className="option-text">약관 초안 생성</span>
               </div>
-              <div
-                className="contract-option"
-                onClick={() => handleIconClick('labor')}
-              >
-                <img
-                  src={iconStandard}
-                  alt="이미지로 약관 검수"
-                  className="option-icon"
-                />
+
+              {/* 이미지로 약관 검수 */}
+              <div className="contract-option" onClick={() => handleIconClick('labor')}>
+                <img src={iconStandard} alt="이미지로 약관 검수" className="option-icon" />
                 <span className="option-text">이미지로 약관 검수</span>
+              </div>
+
+              {/* 약관 리스크 탐지 (신규) */}
+              <div className="contract-option" onClick={() => handleIconClick('risk')}>
+                <img src={iconStandard} alt="약관 리스크 탐지" className="option-icon" />
+                <span className="option-text">약관 리스크 탐지</span>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* 오른쪽 하단 플로팅 버튼 */}
       <button
         className="floating-about-btn"
         onClick={() => navigate('/about')}

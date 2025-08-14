@@ -1,6 +1,8 @@
-//js
+// ContractRisk.js
 import React, { useState, useRef } from 'react';
 import './ContractRisk.css';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { saveAs } from 'file-saver';
 
 const ANALYZE_API_BASE_URL =
   process.env.REACT_APP_ANALYZE_API_BASE_URL || 'http://localhost:8082';
@@ -36,6 +38,7 @@ export default function ContractRisk() {
   const [error, setError] = useState('');
   const [meta, setMeta] = useState({ count_clauses: 0, count_flagged: 0 });
   const [resultText, setResultText] = useState(''); // 하나의 큰 텍스트 블록
+  const [isSaving, setIsSaving] = useState(false);
   const fileRef = useRef(null);
 
   const onPickFile = () => fileRef.current?.click();
@@ -64,6 +67,53 @@ export default function ContractRisk() {
   const clearFile = () => {
     setSelectedFile(null);
     if (fileRef.current) fileRef.current.value = '';
+  };
+
+  // 저장 파일명 생성
+  const getBaseFilename = () => {
+    const base = selectedFile
+      ? selectedFile.name.replace(/\.[^.]+$/, '')
+      : '분석결과';
+    const date = new Date().toISOString().slice(0, 10);
+    return `${base}_리스크분석_${date}`;
+  };
+
+  const handleSaveDocx = async () => {
+    if (!resultText) return;
+    setIsSaving(true);
+    try {
+      const lines = resultText.split('\n');
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: lines.map((line) =>
+              new Paragraph({
+                children: [new TextRun(line || ' ')],
+              })
+            ),
+          },
+        ],
+      });
+      const blob = await Packer.toBlob(doc);
+      saveAs(blob, `${getBaseFilename()}.docx`);
+    } catch (e) {
+      console.error(e);
+      alert('파일 저장 중 오류가 발생했습니다: ' + (e?.message || e));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveTxt = () => {
+    if (!resultText) return;
+    try {
+      const blob = new Blob([resultText], { type: 'text/plain;charset=utf-8' });
+      saveAs(blob, `${getBaseFilename()}.txt`);
+    } catch (e) {
+      console.error(e);
+      alert('TXT 저장 중 오류가 발생했습니다: ' + (e?.message || e));
+    }
   };
 
   // 백엔드 기본값 사용: top_k/threshold/limit는 보내지 않음
@@ -102,7 +152,6 @@ export default function ContractRisk() {
           .map((r) => {
             const title = (r?.title || '').trim();
             const body  = (r?.analysis || '').trim();
-            // 제목 + 본문을 큰 블록으로
             return [title, body].filter(Boolean).join('\n');
           })
           .filter(Boolean)
@@ -187,6 +236,29 @@ export default function ContractRisk() {
             {loading ? '분석 중...' : '약관 분석'}
           </button>
 
+          {/* ▼ 업로드 버튼 바로 아래: 저장 버튼들 */}
+          <div className="form-group" style={{ marginTop: 12 }}>
+            <div className="hint" style={{ marginBottom: 6 }}>결과를 로컬 파일로 저장</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className="btn"
+                onClick={handleSaveDocx}
+                disabled={!resultText || isSaving}
+                title={!resultText ? '먼저 약관 분석을 실행하세요.' : 'DOCX로 저장'}
+              >
+                {isSaving ? '저장 중...' : '저장하기 (.docx)'}
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={handleSaveTxt}
+                disabled={!resultText}
+                title={!resultText ? '먼저 약관 분석을 실행하세요.' : 'TXT로 저장'}
+              >
+                TXT로 저장
+              </button>
+            </div>
+          </div>
+
           {error && <div className="alert error">{error}</div>}
         </aside>
 
@@ -221,4 +293,3 @@ export default function ContractRisk() {
     </div>
   );
 }
-
