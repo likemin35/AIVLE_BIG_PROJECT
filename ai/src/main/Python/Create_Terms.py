@@ -1,48 +1,40 @@
-from flask import Flask, request, jsonify
-# from flask_cors import CORS, cross_origin
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS, cross_origin
 import vertexai
 import os
 from datetime import datetime
 from google.oauth2 import service_account
 from vertexai.generative_models import GenerativeModel
-from vertexai.generative_models import GenerativeModel
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from transformers import BertModel
 from langchain_community.vectorstores import Chroma
 import logging
-
-
 import requests
 import json
 from google.cloud import secretmanager
-import urllib.parse # URL 인코딩을 위해 추가
+import urllib.parse
 
-# Flask App 초기화 및 CORS 설정
+# 추가 import
+import csv as _csv, io as _io
+
+# Flask App
 app = Flask(__name__)
 # CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# 로그 설정
 logging.basicConfig(level=logging.INFO)
 
-# 서비스 URL 정의 (이제 이 파일에서는 Term 서비스 직접 호출 안 함)
+# 서비스 URL
 TERM_SERVICE_URL = os.environ.get("TERM_SERVICE_URL", "http://localhost:8083/terms")
-POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085/api/points")
+POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")  # 베이스만 둔다
 
-# --- Vertex AI 및 모델 설정 (Secret Manager 연동) ---
+# Vertex AI 설정
 PROJECT_ID = "aivle-team0721"
 LOCATION = "us-central1"
 
-# Vertex AI 초기화
-# 로컬 환경에서는 gcloud auth application-default login 명령어로 인증된 사용자 계정을 사용하고,
-# GCP 배포 환경에서는 서비스 계정이 자동으로 사용됩니다.
-vertexai.init(project=PROJECT_ID, location=LOCATION)
+# 크로마 DB 저장소 경로
 
-# LLM 및 임베딩 모델 초기화
-gemini_model = GenerativeModel("gemini-2.5-flash-lite")
-embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-# ChromaDB 벡터 저장소 경로
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
 
@@ -68,13 +60,17 @@ except Exception as e:
 if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
-        logging.info("Vertex AI 초기화 성공")
         gemini_model = GenerativeModel("gemini-2.5-flash-lite")
-        embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        logging.info("언어 모델 초기화 성공")
+        logging.info("Vertex AI 초기화 성공")
     except Exception as e:
-        logging.error(f"Vertex AI 또는 언어 모델 초기화 실패: {e}")
+        logging.error(f"Vertex AI Gemini 모델 초기화 실패: {e}")
         gemini_model = None
+    try:
+        embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        logging.info("허깅페이스 임베딩 초기화 성공")
+    except Exception as e:
+        logging.error(f"허깅페이스 임베딩 초기화 실패: {e}")
+        embedding = None
 else:
     gemini_model = None
 
@@ -86,84 +82,302 @@ VECTOR_DB_MAP = {
     'savings': os.path.join(BASE_DIR, '적금')
 }
 
-# 프롬프트 템플릿
-PROMPT_TEMPLATE = """
-기업 이름은 다음과 같아:
-{company_name}
+PROMPT_TEMPLATE_JSON = r"""
+너는 보험 약관 작성 전문가다. 아래 정보를 참고하여 오직 JSON만 출력하라.
+텍스트 목차/서문/설명/마크다운/코드블럭/주석/별표(*)는 절대 출력하지 말 것.
+만약 출력된다면, 잘못된 결과
 
-상품 이름은 다음과 같아:
-{product_name}
-
-다음은 기업이 제공한 상품 정보야:
+입력:
+- 기업 이름: {company_name}
+- 상품 이름: {product_name}
+- 기업 제공 상품 정보(원문):
 {wishlist}
 
-다음은 해당 약관/계약의 시행 날짜야:
-{date}
-
-그리고 아래는 참고용 약관 문서야:
+- 참고 약관 문서(요약/발췌):
 {context}
 
-위의 상품 정보와 약관 문서를 참고해서 이 상품에 맞는 보험 약관 초안을 자세하게 작성해줘.
-기업에서 바로 약관으로 사용할 수 있을 정도로 자세하게 작성해주고, 독소조항과 소비자의 악용이 우려되는 내용은 특히 신경써줘.
-참고하라고 준 약관 이외에도 네가 이미 알고있는 약관을 참고해서 작성해도 돼. 최대한 자세하게 작성하는게 네 역할이야.
-작성한 약관 초안 앞뒤로 아무 코멘트 달지 말고, **과 같은 마크업은 절대 사용하지마. 그냥 약관 내용에 '*' 기호를 하나도 넣지 마.
-최소 50 조항 이상 작성해줘. 그리고 조항에 따른 하위 조항도 여러개 추가해주고, 그것에 대한 설명도 자세히 해줘.
-조항을 번호를 표기할 때 예시로는 제1조, 제2조, 1., 2. 이런식으로 제n조와 n.으로만 표기해줘.
-조항을 작성할 때 메인이 되는 부분은 보장 관련된 내용이여야 해. 보장 관련 금액과 보장이 안 되는 부분 등 상세히 작성해줘.
-약관 초안의 전체 길이를 최대한 길게 작성해줘.
-작성할 때 '일정 금액', '일정 기간'과 같은 추상적인 표현은 사용하지 말고, 구체적인 숫자, 기간, 기준 또는 참조 가능한 공시 위치를 명시해줘.
-중요한 책임 및 면책조항에서 법률 용어를 사용하되, 고객이 이해하기 쉽도록 풀어서 작성하거나, 예시를 추가해줘.
-이 외에도 중요한 조항에는 구체적인 절차나 방법을 명시하고, 애매할 수 있는 표현이 없도록 구체적인 조건을 제시해줘.
-약관을 보는 고객이 오해할 만한 내용을 없애고 모든 내용을 구체적으로 명시해야해.
-예시를 들자면 '소정의 이자'라는 내용이 약관 내용에 들어간다면, '여기서 '소정의 이자'라 함은 약정 이자율과 예금보험공사가 정하는 이자율 중 낮은 이자율을 말합니다.'와 같은 구체적인 명시적 설명이 있어야해.
-그리고 '중과실', '부당하다고 판단 되는 경우'와 같이 여러 해석이 가능한 내용은 구체적인 예시를 드는 등 부가설명을 해줘.
-약관의 목적이 상품 정보 전달 뿐만 아니라, 고객과의 오해 소지를 최소화하고, 기업의 내부 정책 및 절차를 더욱 명확히 하여 분쟁 발생 시 기업의 입장을 더욱 공고히 하려는 목적도 있음을 명심하고 작성해.
-반복되는 문구, 예를 들어서 '중과실' 같은 내용이 여러 조항에서 반복된다면, 매번 설명하지 말고 용어를 정의하는 조항에 작성해서 간결하게 작성해줘.
-가능하다면 절차를 진행할 방법을 하나만 두지 말고, 메인으로 진행하는 방법 하나와 해당 방법을 사용할 수 없을 때를 위한 예비 방법을 추가로 기재해줘.
-마지막으로 출력하기 전에 한 번 읽어보고 미흡한 점이나 독소조항, 리스크 등 수정할 부분을 확인하고 수정할 부분이 있다면 수정해서 출력해줘.
+요구사항:
+1) 보장은 구체적 수치·기간·조건으로 명시(추상표현 금지).
+2) 독소조항·악용 우려 포인트는 정의/절차/예시로 명확화.
+3) 반복 용어는 '용어의 정의'에 1회 정의 후 본문에서는 용어만 사용.
+4) 각 절차는 주 경로와 예비 경로 2가지 제시.
+5) 최소 6개 관 이상, 총 50개 조 이상. 각 조는 다수의 하위항 포함.
+6) '목차'라는 단어 자체를 출력하지 말 것.
+7) 아래 JSON 스키마 그대로 출력. 키 누락 금지. 값은 문자열 또는 문자열 리스트만.
+8) 자체 점검: 출력 직전에 전체 조(articles) 개수가 50개 이상인지 확인하고, 부족하면 추가 작성하여 50개 이상이 되도록 할 것.
+
+JSON 스키마:
+{{
+  "title": "문서 제목(예: '{product_name} 약관 초안')",
+  "sections": [
+    {{
+      "name": "제1관 총칙",
+      "articles": [
+        {{
+          "title": "제1조(목적)",
+          "clauses": ["① ...", "② ...", "1. ...", "2. ..."]
+        }}
+      ]
+    }}
+  ],
+  "tables": ["해약환급금", "지급기준표"]
+}}
+
+주의:
+- 출력은 JSON 본문만.
+- 각 조의 'clauses'는 실제 조문을 충분히 길게 작성.
 """
 
-# CORS Header 강제 삽입
+# 공통 CORS 헤더
 # @app.after_request
 # def after_request(response):
 #     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
 #     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
 #     return response
 
-# API 엔드포인트
+# 포인트 URL 안전 생성
+def _build_point_reduce_url(base: str, user_id: str, amount: int, reason: str) -> str:
+    base = base.rstrip('/')
+    if "/api/points" in base:
+        return f"{base}/{user_id}/reduce?amount={amount}&reason={reason}"
+    else:
+        return f"{base}/api/points/{user_id}/reduce?amount={amount}&reason={reason}"
+
+# Gemini 호출
+def _gen_with_gemini(prompt: str) -> str:
+    try:
+        resp = gemini_model.generate_content(
+            prompt,
+            generation_config={
+                "max_output_tokens": 24000,
+                "temperature": 0.3
+            }
+        )
+        return resp.candidates[0].content.parts[0].text
+    except Exception:
+        logging.exception("Gemini 호출 실패")
+        raise
+
+# JSON 파서
+def _parse_json_loose(raw: str) -> dict:
+    try:
+        return json.loads(raw)
+    except:
+        pass
+    start = raw.find("{"); end = raw.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidate = raw[start:end+1]
+        try:
+            return json.loads(candidate)
+        except:
+            candidate2 = candidate.replace("“", "\"").replace("”", "\"").replace("’", "'")
+            return json.loads(candidate2)
+    raise ValueError("LLM JSON 파싱 실패")
+
+
+
+# 통합 CSV 파서(업로드용)
+def parse_unified_product_csv_upload(file_storage):
+    """
+    product_info.csv 하나로부터 모든 정보를 파싱한다.
+    섹션 구성:
+      1) 항목,내용  (Key-Value 영역)
+      2) 경과기간,납입보험료,해약환급금  (해약환급금 표)
+      3) 급부명,지급 사유,지급 금액    (지급기준표)
+    """
+    raw_bytes = file_storage.stream.read()
+    file_storage.stream.seek(0)
+
+    # 인코딩 자동 판별
+    text = None
+    for enc in ("utf-8", "cp949", "euc-kr"):
+        try:
+            text = raw_bytes.decode(enc)
+            break
+        except:
+            pass
+    if text is None:
+        text = raw_bytes.decode("utf-8", errors="ignore")
+
+    sample = text[:2000]
+    try:
+        dialect = _csv.Sniffer().sniff(sample, delimiters=",;\t")
+        delim = dialect.delimiter
+    except:
+        delim = ","
+
+    rdr = _csv.reader(_io.StringIO(text), delimiter=delim)
+    rows = [row for row in rdr if any((c or "").strip() for c in row)]
+
+    def _norm(s): return (s or "").strip()
+    def _nk(s): return (s or "").strip().lower().replace(" ", "")
+
+    def _to_number(x):
+        s = str(x or "").strip().replace(",", "").replace("원", "").replace("₩", "")
+        try:
+            return float(s) if s else 0.0
+        except:
+            return 0.0
+
+    def _fmt_money(n):
+        f = float(n)
+        return f"{int(f):,}" if f.is_integer() else f"{f:,.0f}"
+
+    # 섹션 헤더
+    KV_HDR = ("항목", "내용")
+    REFUND_HDR = ("경과기간", "납입보험료", "해약환급금")
+    CRITERIA_HDR = ("급부명", "지급 사유", "지급 금액")
+
+    section = None
+    kv_pairs = []
+    refund_rows_raw = []
+    criteria_rows_raw = []
+
+    for row in rows:
+        cols = [_norm(c) for c in row]
+        ncols = [_nk(c) for c in row]
+
+        if len(ncols) >= 2 and ncols[0] == _nk(KV_HDR[0]) and ncols[1] == _nk(KV_HDR[1]):
+            section = "kv"; continue
+        if len(ncols) >= 3 and ncols[0] == _nk(REFUND_HDR[0]) and ncols[1] == _nk(REFUND_HDR[1]) and ncols[2] == _nk(REFUND_HDR[2]):
+            section = "refund"; continue
+        if len(ncols) >= 3 and ncols[0] == _nk(CRITERIA_HDR[0]) and ncols[1] == _nk(CRITERIA_HDR[1]) and ncols[2] == _nk(CRITERIA_HDR[2]):
+            section = "criteria"; continue
+
+        if section == "kv":
+            key = cols[0] if len(cols) >= 1 else ""
+            val = cols[1] if len(cols) >= 2 else ""
+            if key:
+                kv_pairs.append((key, val))
+        elif section == "refund":
+            if len(cols) >= 3:
+                refund_rows_raw.append([cols[0], cols[1], cols[2]])
+        elif section == "criteria":
+            if len(cols) >= 3:
+                # 큰따옴표로 감싼 셀 내 개행 보존됨
+                criteria_rows_raw.append([cols[0], cols[1], cols[2]])
+
+    kv = {k: v for k, v in kv_pairs}
+    company_name = kv.get("회사명", "").strip()
+    product_name = kv.get("상품명", "").strip()
+    wishlist_lines = [f"{k}: {v}" if v else k for k, v in kv_pairs]
+    wishlist_text = "\n".join(wishlist_lines)
+
+    # 해약환급금 스펙
+    refund_rows_out = []
+    for r in refund_rows_raw:
+        term = str(r[0]).strip()
+        a = _to_number(r[1]); b = _to_number(r[2])
+        rate = "0.0%" if a == 0 else f"{round(b/a*100, 1)}%"
+        refund_rows_out.append([term, _fmt_money(a), _fmt_money(b), rate])
+
+    refund_spec = None
+    if refund_rows_out:
+        refund_spec = {
+            "title": "해약환급금 예시",
+            "headers": ["경과기간", "납입보험료 (A)", "해약환급금 (B)", "환급률 (B/A)"],
+            "rows": refund_rows_out
+        }
+
+    # 지급기준표 스펙
+    criteria_rows = []
+    for r in criteria_rows_raw:
+        criteria_rows.append([r[0], r[1], r[2]])
+
+    criteria_spec = None
+    if criteria_rows:
+        criteria_spec = {
+            "title": "보험금 지급기준표",
+            "headers": ["급부명", "지급 사유", "지급 금액"],
+            "rows": criteria_rows,
+            "merge": []
+        }
+
+    return {
+        "company_name": company_name,
+        "product_name": product_name,
+        "wishlist_text": wishlist_text,
+        "refund_spec": refund_spec,
+        "criteria_spec": criteria_spec
+    }
+
+# JSON을 텍스트로 변환
+def json_to_text(policy: dict) -> str:
+    full_text = []
+    if not isinstance(policy, dict):
+        return ""
+
+    # Add main title
+    if policy.get("title"):
+        full_text.append(policy.get("title"))
+        full_text.append("") # Add a blank line
+
+    # Process sections and articles
+    for section in policy.get("sections", []):
+        if section.get("name"):
+            full_text.append(section.get("name"))
+        
+        for article in section.get("articles", []):
+            article_parts = []
+            if article.get("title"):
+                article_parts.append(article.get("title"))
+            
+            article_parts.extend(article.get("clauses", []))
+            
+            # Join the parts of a single article with newlines
+            full_text.append("\n".join(article_parts))
+
+    # Join all articles with two newlines to create a space between them
+    return "\n\n".join(full_text)
+
+# 신규: 멀티파트 업로드 + JSON 스키마 + DOCX 옵션 (통합 CSV 전용)
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
 # @cross_origin(origin='*')
-def generate_terms():
+def generate_terms_v2():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
     if not gemini_model:
-        return jsonify({"error": "AI 모델이 초기화되지 않았습니다. 서버 로그를 확인하세요."}), 500
+        return jsonify({"error": "AI 모델 초기화 실패"}), 500
+
+    if not request.content_type or "multipart/form-data" not in request.content_type:
+        return jsonify({"error": "multipart/form-data 로 전송해 주세요."} ), 400
 
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "요청 데이터가 없습니다."}), 400
- 
-        company_name = data.get('companyName')
-        category = data.get('category')
-        product_name = data.get('productName')
-        wishlist = data.get('requirements')
+        form = request.form
+        files = request.files
+
+        # 선택 입력(없어도 CSV로 덮어씀)
+        company_name = form.get('companyName', '').strip()
+        product_name = form.get('productName', '').strip()
+        category= form.get('category', '').strip()
+        wishlist= form.get('requirements', '').strip()
+        effective_date = form.get('effectiveDate', '').strip()
+        
         user_id = request.headers.get('x-authenticated-user-uid')
-        effective_date = data.get('effectiveDate')
 
-        if not all([company_name, category, product_name, wishlist, user_id, effective_date]):
-            logging.warning("필수 입력값 누락")
-            return jsonify({"error": "필수 입력값이 누락되었습니다."}),
+        # user_id는 헤더에서 가져옴
+        # effective_date는 현재 테스트에서 사용되지 않으므로 생략
 
-        # 1) 포인트 차감
+         # 통합 CSV 파싱 (회사명/상품명/위시리스트 텍스트/표 스펙)
+        parsed = parse_unified_product_csv_upload(files['productMeta'])
+        if parsed["company_name"]:
+            company_name = parsed["company_name"]
+        if parsed["product_name"]:
+            product_name = parsed["product_name"]
+        if parsed["wishlist_text"]:
+            wishlist = parsed["wishlist_text"]
+
+        # 하드 검증 (테스트용 값으로 대체)
+        if not all([company_name, product_name, wishlist, user_id, category]):
+            return jsonify({"error": "테스트용 필수 입력값(회사명, 상품명, 상품정보, 사용자ID, 카테고리) 누락"}), 400
+        # --- 테스트용 하드코딩 값 끝 ---
+
+        # 포인트 차감
         try:
             deduction_amount = 5000
-            reason = "AI 약관 초안 생성"
-            encoded_reason = urllib.parse.quote(reason) # 한글을 URL 인코딩
-            base_url = POINT_SERVICE_URL.rstrip('/')
-            point_deduction_url = f"{base_url}/api/points/{user_id}/reduce?amount={deduction_amount}&reason={encoded_reason}"
-            
+            reason = urllib.parse.quote("AI 약관 초안 생성")
+            point_deduction_url = _build_point_reduce_url(POINT_SERVICE_URL, user_id, deduction_amount, reason)
             logging.info(f"포인트 차감 요청: {point_deduction_url}")
             point_response = requests.post(point_deduction_url)
             if not point_response.ok:
@@ -173,61 +387,86 @@ def generate_terms():
                     if "error" in error_data:
                         error_message = error_data["error"]
                 except requests.exceptions.JSONDecodeError:
-                    error_message = point_response.text if point_response.text else error_message
-                logging.warning(f"포인트 차감 실패: {error_message}")
+                    error_message = point_response.text or error_message
                 return jsonify({"error": error_message}), 400
-            logging.info(f"포인트 차감 성공: {point_response.json()}")
         except requests.exceptions.RequestException:
-            logging.exception("Point 서비스 호출 실패 (네트워크 오류)")
-            return jsonify({"error": "포인트 서비스에 연결할 수 없습니다."}), 500
+            logging.exception("Point 서비스 호출 실패")
+            return jsonify({"error": "포인트 서비스에 연결할 수 없습니다."} ), 500
 
-        # 2) 약관 생성 (RAG)
-        db_category_key = VECTOR_DB_MAP.get(category)
-        if not db_category_key:
-            logging.error(f"'{category}'에 해당하는 약관 유형을 찾을 수 없습니다.")
-            return jsonify({"error": f"'{category}'에 해당하는 약관 유형을 찾을 수 없습니다."}), 400
         
-        persist_dir = db_category_key
-        if not os.path.isdir(persist_dir):
-            logging.error(f"{category}에 해당하는 벡터 저장소 폴더가 없습니다: {persist_dir}")
-            return jsonify({"error": f"'{category}'에 해당하는 벡터 저장소 폴더가 없습니다."}), 400
-        
-        vectorstore = Chroma(
-            persist_directory=persist_dir, 
-            embedding_function=embedding
-        )
-        
+        if not category:
+            return jsonify({"error": "category가 필요합니다."}), 400
+        persist_dir = VECTOR_DB_MAP.get(category)
+        if not persist_dir or not os.path.isdir(persist_dir):
+            return jsonify({"error": f"'{category}' 벡터 저장소를 찾을 수 없습니다."}), 400
+        vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embedding)
         retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
-        docs = retriever.invoke(wishlist)
-        context = "\n\n".join([doc.page_content for doc in docs])
 
-        prompt = PROMPT_TEMPLATE.format(
-            context=context,
+        # docs = retriever.invoke(wishlist)
+        # context = "\n\n".join([d.page_content for d in docs])[:12000]
+        
+        # logging.info(f"DB 검색어: '{retrieval_query}'")
+        # docs = retriever.invoke(retrieval_query)
+        retrieval_query = product_name
+        logging.info(f"DB 검색어: '{product_name}'")
+        try:
+            docs = retriever.invoke(product_name)
+        except Exception as e:
+            logging.error(f"DB 검색 실패: {e}")
+            return jsonify({"error": "DB 검색 중 오류가 발생했습니다."}), 500
+        
+        
+        
+        
+        # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
+        context = "\n\n".join([d.page_content for d in docs])
+
+        # 표 스펙 구성(통합 CSV에서)
+        parsed = parse_unified_product_csv_upload(files['productMeta'])
+
+        user_tables = {}
+        if parsed["refund_spec"]:
+            user_tables["해약환급금"] = parsed["refund_spec"]
+            user_tables["해약환급금예시"] = parsed["refund_spec"]  # 동일 스펙 재사용
+        if parsed["criteria_spec"]:
+            user_tables["지급기준표"] = parsed["criteria_spec"]
+
+        # JSON 약관 생성
+        prompt = PROMPT_TEMPLATE_JSON.format(
             company_name=company_name,
             product_name=product_name,
             wishlist=wishlist,
-            date=effective_date
+            context=context
         )
-        response = gemini_model.generate_content(prompt)
-        generated_text = response.candidates[0].content.parts[0].text
+        raw = _gen_with_gemini(prompt)
+        policy = _parse_json_loose(raw)
 
-        # 3) 여기서 더 이상 자동 저장하지 않음
-        #    프론트의 Edit-Terms에서 최초 저장(POST) 수행
+        # tables 기본값 보정(LLM이 비워둘 때만)
+        if not isinstance(policy.get("tables"), list) or not policy["tables"]:
+            fallback_tables = []
+            if "해약환급금" in user_tables:
+                fallback_tables.append("해약환급금")
+            if "지급기준표" in user_tables:
+                fallback_tables.append("지급기준표")
+            policy["tables"] = fallback_tables
 
+        
+
+        # JSON을 텍스트로 변환하여 반환
+        policy_text = json_to_text(policy)
         return jsonify({
-            "terms": generated_text,
+            "policy": policy_text,
             "meta": {
                 "companyName": company_name,
-                "category": category,
                 "productName": product_name,
-                "requirements": wishlist,
-                "effectiveDate": effective_date
+                "category": category,
+                "effectiveDate": effective_date,
             }
         }), 200
 
     except Exception:
-        logging.exception("약관 생성 중 오류 발생")
-        return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."}), 500
+        logging.exception("약관 생성 중 오류")
+        return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."} ), 500
 
 # 로컬 실행
 if __name__ == '__main__':

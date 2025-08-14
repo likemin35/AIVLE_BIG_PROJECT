@@ -19,8 +19,9 @@ public class Application {
         applicationContext = SpringApplication.run(Application.class, args);
     }
 
+        /*
     @Bean
-    public CorsWebFilter corsWebFilter() {
+    public CorsWebFilter corsWebfilter() {
         CorsConfiguration corsConfig = new CorsConfiguration();
         // corsConfig.setAllowedOrigins(Arrays.asList("*")); // 기존 코드 주석 처리
         corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // 새 코드 추가
@@ -34,4 +35,5 @@ public class Application {
 
         return new CorsWebFilter(source);
     }
+    */
 }

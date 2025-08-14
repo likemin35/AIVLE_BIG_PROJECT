@@ -28,10 +28,10 @@ spring:
 #<<< API Gateway / Routes
       routes:
         - id: ai
-          uri: http://localhost:8082
+          uri: http://localhost:8080
           predicates:
             # - Path=/ais/**, 
-            - Path=/api/generate, /api/translate, /ais/** 
+            - Path=/api/generate/**, /ais/** 
         - id: term
           uri: http://localhost:8083
           predicates:
@@ -44,10 +44,10 @@ spring:
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
-        - id: frontend
-          uri: http://localhost:8080
-          predicates:
-            - Path=/**
+        # - id: frontend
+        #   uri: http://localhost:8080
+        #   predicates:
+        #     - Path=/**
 #>>> API Gateway / Routes
       
 
@@ -75,7 +75,7 @@ spring:
           uri: http://ai:8080
           predicates:
             # - Path=/ais/**, 
-            - Path=/api/generate, /api/translate, /ais/**, 
+            - Path=/api/generate, /ais/**, 
         - id: term
           uri: http://term:8080
           predicates:
