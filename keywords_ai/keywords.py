@@ -200,6 +200,13 @@ RE_COND_END_TOKEN = re.compile(
     r'시(?:에(?:는)?|엔)?)$'
 )
 
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "8081"))
+    logger.info(f">>> service_ner STARTED from {__file__}")
+    app.run(host="0.0.0.0", port=port, debug=True)
+
+
+
 def _cond_ends_ok(s: str) -> bool:
     return bool(RE_COND_END_TOKEN.search((s or '').strip()))
 

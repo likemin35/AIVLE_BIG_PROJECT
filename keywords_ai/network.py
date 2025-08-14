@@ -21,17 +21,13 @@ from pyvis.network import Network
 # Flask / CORS
 # -----------------------
 app = Flask(__name__)
-CORS(app,
-     resources={r"/api/*": {"origins": "*"}},
-     supports_credentials=False,
-     allow_headers=["Content-Type"],
-     methods=["GET", "POST", "OPTIONS"])
+CORS(app, supports_credentials=True)
 
 logger = logging.getLogger("service_graph")
 logging.basicConfig(level=logging.INFO)
 
 NER_BASE_URL = os.getenv("NER_BASE_URL", "http://localhost:8081")
-PORT = int(os.getenv("PORT", "8082"))
+PORT = int(os.getenv("PORT", "8080"))
 
 # -----------------------
 # 텍스트/HTML 유틸

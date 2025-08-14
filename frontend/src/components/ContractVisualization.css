@@ -75,7 +75,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--border);
   padding-bottom: 1rem;
   margin-bottom: 2rem;
 }
@@ -83,32 +83,57 @@
 .visualization-header h1 {
   margin: 0;
   font-size: 1.8rem;
+  color: var(--text);
 }
 
-.back-btn {
+.visualization-header div {
+  display: flex;
+  gap: 10px;
+}
+
+.back-btn, .network-btn {
   padding: 0.6rem 1.2rem;
   font-size: 0.95rem;
   font-weight: 500;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  background-color: #6c757d;
-  color: white;
-  border: 1px solid #6c757d;
+  border: 1px solid transparent;
+}
+
+.back-btn {
+  background-color: var(--soft-2);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 .back-btn:hover {
-  background-color: #5a6268;
-  border-color: #545b62;
+  background-color: var(--border);
+}
+
+.network-btn {
+  background-color: var(--primary);
+  color: white;
+}
+
+.network-btn:hover {
+  background-color: var(--primary-hover);
 }
 
 .error-message {
   text-align: center;
   padding: 3rem;
-  color: #e74c3c;
+  color: var(--error-text);
+  background-color: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 8px;
   font-size: 1.1rem;
 }
 
-.visualization-content {
+.highlight-content {
   line-height: 1.8;
+  background-color: var(--card);
+  padding: 2rem;
+  border-radius: 8px;
 }
+
