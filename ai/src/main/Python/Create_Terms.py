@@ -4,20 +4,17 @@ import vertexai
 import os
 import json
 import logging
-import uuid
 import urllib.parse
 from datetime import datetime
 from google.oauth2 import service_account
 from vertexai.generative_models import GenerativeModel
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 import logging
 import requests
-import json
 from google.cloud import secretmanager
-import urllib.parse # URL 인코딩을 위해 추가
+import urllib.parse
+import _csv
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
@@ -76,11 +73,12 @@ else:
     gemini_model = None
 
 VECTOR_DB_MAP = {
-    'loan': os.path.join(VECTOR_BASE_DIR, '대출'),
-    'cancer_insurance': os.path.join(VECTOR_BASE_DIR, '암보험'),
-    'deposit': os.path.join(VECTOR_BASE_DIR, '예금'),
-    'car_insurance': os.path.join(VECTOR_BASE_DIR, '자동차보험'),
-    'savings': os.path.join(VECTOR_BASE_DIR, '적금')
+    'loan': os.path.join(BASE_DIR, '대출'),
+    'cancer_insurance': os.path.join(BASE_DIR, '암보험'),
+    'deposit': os.path.join(BASE_DIR, '예금'),
+    'car_insurance': os.path.join(BASE_DIR, '자동차보험'),
+    'savings': os.path.join(BASE_DIR, '적금'),
+    'laws': os.path.join(BASE_DIR, '법령')
 }
 
 PROMPT_TEMPLATE_JSON = r"""
@@ -372,7 +370,6 @@ def generate_terms_v2():
         # 하드 검증 (테스트용 값으로 대체)
         if not all([company_name, product_name, wishlist, user_id, category]):
             return jsonify({"error": "테스트용 필수 입력값(회사명, 상품명, 상품정보, 사용자ID, 카테고리) 누락"}), 400
-        # --- 테스트용 하드코딩 값 끝 ---
 
         # 포인트 차감
         try:
@@ -463,11 +460,11 @@ def generate_terms_v2():
                 "category": category,
                 "effectiveDate": effective_date,
             }
-        }
+        })
 
-        if docx_filename:
-            download_url = request.host_url.rstrip('/') + f"/api/download/{urllib.parse.quote(docx_filename)}"
-            result['docxUrl'] = download_url
+        # if docx_filename:
+        #     download_url = request.host_url.rstrip('/') + f"/api/download/{urllib.parse.quote(docx_filename)}"
+        #     result['docxUrl'] = download_url
 
         return jsonify(result), 200
 
