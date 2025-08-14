@@ -12,16 +12,16 @@ service_graph.py
 import os, re, json, logging, math
 from collections import Counter, defaultdict
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+# from flask_cors import CORS <- CORS 라이브러리 제거
 import requests
 import networkx as nx
 from pyvis.network import Network
 
-# -----------------------
+# ----------------------- 
 # Flask / CORS
-# -----------------------
+# ----------------------- 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+# CORS(app, ...) <- CORS 관련 설정 완전 제거
 
 logger = logging.getLogger("service_graph")
 logging.basicConfig(level=logging.INFO)
@@ -29,10 +29,10 @@ logging.basicConfig(level=logging.INFO)
 NER_BASE_URL = os.getenv("NER_BASE_URL", "http://localhost:8081")
 PORT = int(os.getenv("PORT", "8080"))
 
-# -----------------------
+# ----------------------- 
 # 텍스트/HTML 유틸
-# -----------------------
-_HTML_ESCAPE_MAP = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}
+# ----------------------- 
+_HTML_ESCAPE_MAP = {"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"}
 def html_escape(s: str) -> str:
     return "".join(_HTML_ESCAPE_MAP.get(ch, ch) for ch in (s or ""))
 
@@ -69,9 +69,9 @@ def clause_tooltip_text(cid: str, full_text: str) -> str:
         return clean_text_for_tooltip(f"{header}\n{body}")
     return clean_text_for_tooltip(header)
 
-# -----------------------
+# ----------------------- 
 # 색상
-# -----------------------
+# ----------------------- 
 NODE_COLORS = {
     "CLAUSE": "#4f46e5",       # 진한 인디고 (점이 커져도 식별 용이)
     "CLAUSE_REF": "#60a5fa",
@@ -80,9 +80,9 @@ NODE_COLORS = {
     "CONDITION": "#ef4444",
 }
 
-# -----------------------
+# ----------------------- 
 # NER 호출
-# -----------------------
+# ----------------------- 
 def call_ner_visualize(text: str):
     url = f"{NER_BASE_URL}/api/visualize"
     resp = requests.post(url, json={"text": text}, timeout=120)
@@ -90,9 +90,9 @@ def call_ner_visualize(text: str):
     j = resp.json()
     return j.get("items", []), j.get("html", "")
 
-# -----------------------
+# ----------------------- 
 # TF-IDF + PageRank 기반 크기 산정
-# -----------------------
+# ----------------------- 
 ENT_FOR_TFIDF = {"ORGANIZATION", "TIME_DURATION", "CONDITION"}  # CLAUSE_REF 제외
 TFIDF_LABEL_WEIGHTS = {
     "ORGANIZATION": 1.00,
@@ -131,9 +131,9 @@ def _compute_clause_tfidf(clause_entities: dict) -> dict:
         tfidf_sum[cid] = s
     return tfidf_sum
 
-# -----------------------
+# ----------------------- 
 # 그래프 구성
-# -----------------------
+# ----------------------- 
 def build_graph_from_items(items):
     G = nx.DiGraph()
     nodes, edges = [], []
@@ -248,16 +248,16 @@ def build_graph_from_items(items):
 
     return G, nodes, edges
 
-# -----------------------
+# ----------------------- 
 # Legend 스타일 & HTML
-# -----------------------
+# ----------------------- 
 def _legend_css() -> str:
     return """
     <style>
       .vis-tooltip{
         white-space: pre-wrap !important;
         max-width: 920px;
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        font-family: ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", Roboto, \"Noto Sans KR\", \"Apple SD Gothic Neo\", \"Malgun Gothic\", sans-serif;
         line-height: 1.45;
         font-size: 13px;
       }
@@ -287,9 +287,9 @@ def _legend_html() -> str:
     foot = '<div class="foot">* CLAUSE 노드 크기 = TF-IDF + PageRank (value 기반)</div>'
     return f'<div class="legend"><h4>Legend</h4>{li}{foot}</div>'
 
-# -----------------------
+# ----------------------- 
 # HTML 생성
-# -----------------------
+# ----------------------- 
 def graph_to_html(G: nx.DiGraph, height="780px", physics=True):
     net = Network(height=height, width="100%", directed=True, notebook=False, cdn_resources="in_line")
     net.toggle_physics(physics)
@@ -329,9 +329,9 @@ def graph_to_html(G: nx.DiGraph, height="780px", physics=True):
     html_doc = html_doc.replace("<body>", "<body>" + _legend_html())
     return html_doc
 
-# -----------------------
+# ----------------------- 
 # Routes
-# -----------------------
+# ----------------------- 
 @app.route("/api/health", methods=["GET", "OPTIONS"])
 def health():
     if request.method == "OPTIONS": return ("", 204)
@@ -356,12 +356,12 @@ def graph_build():
     data = request.get_json(silent=True) or {}
     text = extract_text_field(data)
     if not text.strip():
-        return jsonify({"error": "text가 비어 있습니다."}), 400
+        return jsonify({"error": "text가 비어 있습니다."} ), 400
 
     try:
         items, _ = call_ner_visualize(text)
     except Exception as e:
-        return jsonify({"error": f"NER 호출 실패: {e}"}), 502
+        return jsonify({"error": f"NER 호출 실패: {e}"} ), 502
 
     G, nodes, edges = build_graph_from_items(items)
     html_doc = graph_to_html(G, physics=True)
@@ -379,9 +379,9 @@ def graph_build():
 
     return jsonify({"html": html_doc, "nodes": nodes, "edges": edges, "summary": summary})
 
-# -----------------------
+# ----------------------- 
 # Entrypoint
-# -----------------------
+# ----------------------- 
 if __name__ == "__main__":
     logger.info(f">>> service_graph STARTED (NER_BASE_URL={NER_BASE_URL})")
     app.run(host="0.0.0.0", port=PORT, debug=True)
