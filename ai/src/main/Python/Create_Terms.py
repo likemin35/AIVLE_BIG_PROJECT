@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS, cross_origin
 import vertexai
-import os
+import os, _csv, _io
 import json
 import logging
 import urllib.parse
@@ -14,7 +14,6 @@ import logging
 import requests
 from google.cloud import secretmanager
 import urllib.parse
-import _csv
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
@@ -92,7 +91,7 @@ PROMPT_TEMPLATE_JSON = r"""
 - 기업 제공 상품 정보(원문):
 {wishlist}
 
-- 참고 약관 문서(요약/발췌):
+- 참고 약관 문서 및 법령자료):
 {context}
 
 요구사항:
@@ -329,7 +328,7 @@ def json_to_text(policy: dict) -> str:
     # Join all articles with two newlines to create a space between them
     return "\n\n".join(full_text)
 
-# 신규: 멀티파트 업로드 + JSON 스키마 + DOCX 옵션 (통합 CSV 전용)
+# 신규: 멀티파트 업로드 
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
 # @cross_origin(origin='*')
 def generate_terms_v2():
@@ -358,7 +357,7 @@ def generate_terms_v2():
         # user_id는 헤더에서 가져옴
         # effective_date는 현재 테스트에서 사용되지 않으므로 생략
 
-         # 통합 CSV 파싱 (회사명/상품명/위시리스트 텍스트/표 스펙)
+        # 통합 CSV 파싱 (회사명/상품명/위시리스트 텍스트/표 스펙)
         parsed = parse_unified_product_csv_upload(files['productMeta'])
         if parsed["company_name"]:
             company_name = parsed["company_name"]
@@ -405,19 +404,29 @@ def generate_terms_v2():
         
         # logging.info(f"DB 검색어: '{retrieval_query}'")
         # docs = retriever.invoke(retrieval_query)
-        retrieval_query = product_name
-        logging.info(f"DB 검색어: '{product_name}'")
+        # retrieval_query = product_name
+
+        # 두  벡터db 임시 쿼리로 상품명
+        logging.info(f"초안카테고리DB 검색어: '{product_name}'")
         try:
             docs = retriever.invoke(product_name)
         except Exception as e:
-            logging.error(f"DB 검색 실패: {e}")
-            return jsonify({"error": "DB 검색 중 오류가 발생했습니다."}), 500
+            logging.error(f"초안카테고리DB 검색 실패: {e}")
+            return jsonify({"error": "초안카테고리DB 검색 중 오류가 발생했습니다."}), 500
         
+        logging.info(f"법령DB 검색어: '{product_name}'")
+        try:
+            law_docs = retriever.invoke(product_name)
+        except Exception as e:
+            logging.error(f"법령DB 검색 실패: {e}")
+            return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500
         
         
         
         # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
         context = "\n\n".join([d.page_content for d in docs])
+        context = "\n\n".join([d.page_content for d in law_docs])
+        
 
         # 표 스펙 구성(통합 CSV에서)
         parsed = parse_unified_product_csv_upload(files['productMeta'])
@@ -462,22 +471,11 @@ def generate_terms_v2():
             }
         })
 
-        # if docx_filename:
-        #     download_url = request.host_url.rstrip('/') + f"/api/download/{urllib.parse.quote(docx_filename)}"
-        #     result['docxUrl'] = download_url
-
-        return jsonify(result), 200
+        
 
     except Exception:
         logging.exception("약관 생성 중 오류")
         return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."} ), 500
-
-
-@app.route('/api/download/<path:filename>', methods=['GET'])
-def download_file(filename):
-    # Serve files from OUTPUT_DIR
-    safe_name = os.path.basename(filename)
-    return send_from_directory(OUTPUT_DIR, safe_name, as_attachment=True)
 
 
 # Health check
