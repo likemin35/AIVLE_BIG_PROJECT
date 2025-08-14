@@ -133,7 +133,7 @@ judgment_prompt = ChatPromptTemplate.from_template("""
 당신은 기업에서 약관 리스크를 전문적으로 점검하는 법률 전문가입니다.
 
 입력:
-- 검토 대상 약관 조항({clause})
+- 검토 대상 약관 조항({clause})   # ← 제목이 제거된 '본문'만 전달됨
 - 실제 판례 발췌 모음({similar_cases})
 
 필수 규칙:
@@ -151,37 +151,75 @@ judgment_prompt = ChatPromptTemplate.from_template("""
 6) 관련 판례가 **없는** 경우에는 출력 블록에서 **‘관련 판례:’ 줄을 완전히 생략**하세요.
 7) 아무런 리스크가 없으면 **그 조항은 아예 출력하지 마세요.**
 8) 결과는 **순수 텍스트**만 쓰고, 머리말/꼬리말/요약/마크다운/불릿/번호 체계 등 **어떠한 추가 문구도 금지**합니다.
+9) **첫 줄은 반드시 ‘조항 본문에서 발췌한 핵심 문장’만 적고, ‘제 1 조 (목적)’ 같은 제목은 쓰지 마세요.**
+10) **‘관련 판례:’는 한 줄 요약만**, 형식 예: `관련 판례: 대법원 2018.3.15. (2017다12345) – 고지의무 범위 한정`. 
+    (날짜/사건번호가 없으면 법원+핵심요지만 간결히)
 
 출력 형식(조항 하나당 아래 3~4줄, 판례가 없으면 3줄, 리스크가 없으면 아무것도 출력하지 않음):
-[문제가 되는 조항] 원문 일부/핵심 문장
+[문제가 되는 조항] 원문 일부/핵심 문장      ← 제목 금지 (본문 문장만)
 설명: 무엇이 왜 문제인지(모호·불명확·설명의무 위반 등). 필요한 경우 **구체 수치/기한/기준**을 들어 설명.
 수정 제안: 소비자가 즉시 이해할 수 있도록 **구체 문구**로 재작성(수치·기한·정의 포함). 예시값 제시 가능.
-관련 판례: (선택) 선고일자/사건번호/핵심 요지
+관련 판례: (선택) 한 줄 요약 (법원/날짜/사건번호/핵심요지 중 가능한 정보만)
 
 아래 입력을 검토해 위 형식으로, **문서 등장 순서대로** 필요한 블록만 출력하세요.
 {clause}
 {similar_cases}
 """)
+
 judgment_chain = (judgment_prompt | llm | StrOutputParser()) if llm else None
 
 # =============================================================================
 # Helpers
 # =============================================================================
-CLAUSE_REGEX = re.compile(r"(제\d+조\s*(?:\([^)]+\))?[\s\S]*?)(?=제\d+조|$)")
-TITLE_REGEX  = re.compile(r"^(제\d+조[^\n]*)")
+CLAUSE_HEADER = r"제\s*\d+\s*조"
+CLAUSE_REGEX  = re.compile(rf"({CLAUSE_HEADER}\s*(?:\([^)]+\))?[\s\S]*?)(?={CLAUSE_HEADER}|$)")
+TITLE_REGEX   = re.compile(rf"^({CLAUSE_HEADER}[^\n\r]*)")
+
+def _split_title_body(block: str):
+    m = TITLE_REGEX.search(block)
+    if not m:
+        return None, block.strip()
+    title = m.group(1).strip()
+    body  = block[m.end():].strip()
+    return title, body
 
 def split_into_clauses(text: str) -> List[dict]:
-    """제목 패턴이 없으면 길이 기반 안전 분할로 대체"""
-    matches = CLAUSE_REGEX.findall(text or "")
-    if not matches:
-        splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=120)
-        chunks = splitter.split_text(text or "")
-        return [{"index": i+1, "title": f"블록{i+1}", "content": c.strip()} for i, c in enumerate(chunks)]
+    raw = text or ""
+    matches = CLAUSE_REGEX.findall(raw)
+
     clauses = []
-    for idx, m in enumerate(matches, start=1):
-        title = TITLE_REGEX.findall(m)
-        clauses.append({"index": idx, "title": title[0] if title else f"제{idx}조", "content": m.strip()})
-    return clauses
+    if matches:
+        for idx, m in enumerate(matches, start=1):
+            t, b = _split_title_body(m)
+            title = t or f"제{idx}조"
+            clauses.append({
+                "index": idx,
+                "title": title,
+                "content": m.strip(),  # 전체 블록(참고용)
+                "body": b,             # ← LLM에는 이 '본문'만 보냄
+            })
+    else:
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=0)
+        chunks = splitter.split_text(raw)
+        for i, c in enumerate(chunks):
+            t, b = _split_title_body(c)
+            clauses.append({
+                "index": i+1,
+                "title": t or f"블록{i+1}",
+                "content": c.strip(),
+                "body": b or c.strip(),
+            })
+
+    # 중복 제거
+    seen = set()
+    uniq = []
+    for c in clauses:
+        key = re.sub(r"\s+", "", (c["title"] + "|" + (c["body"][:160] or "")))
+        if key in seen:
+            continue
+        seen.add(key)
+        uniq.append(c)
+    return uniq
 
 def load_user_text_from_pdf(pdf_dir: str|None = None, pdf_file: str|None = None) -> str:
     if pdf_file and os.path.isfile(pdf_file):
@@ -241,7 +279,8 @@ def _search_docs(vectorstore: Chroma, query: str, k: int, threshold: float):
         logging.error(f"[VECTOR] 상위 k 백업도 실패: {e3}")
         return []
 
-def analyze_single_clause(clause_text: str, vectorstore: Chroma, top_k: int = TOP_K_DEFAULT, threshold: float = THRESHOLD_DEFAULT) -> str:
+def analyze_single_clause(clause_text: str, vectorstore: Chroma,
+                          top_k: int = TOP_K_DEFAULT, threshold: float = THRESHOLD_DEFAULT) -> str:
     docs = _search_docs(vectorstore, clause_text, k=top_k, threshold=threshold)
     if not docs:
         return ""
@@ -358,10 +397,23 @@ def analyze_terms():
 
         results, flagged = [], 0
         for c in clauses:  # 문서 등장 순서대로
-            analysis = analyze_single_clause(c["content"], vectorstore, top_k=TOP_K_DEFAULT, threshold=THRESHOLD_DEFAULT)
+            # ★ CHANGED: 제목이 아닌 '본문(body)'을 우선 사용
+            clause_text_for_llm = (c.get("body") or c.get("content") or "").strip()
+
+            analysis = analyze_single_clause(
+                clause_text_for_llm,             # ← 본문만 분석
+                vectorstore,
+                top_k=TOP_K_DEFAULT,
+                threshold=THRESHOLD_DEFAULT
+            )
             if analysis:
                 flagged += 1
-                results.append({"index": c["index"], "title": c["title"], "analysis": analysis})
+                results.append({
+                    "index": c["index"],
+                    "title": c["title"],
+                    "analysis": analysis
+                })
+
 
         text_joined = "\n\n".join([r["analysis"] for r in results])
 
@@ -424,10 +476,23 @@ def analyze_terms_upload():
 
         results, flagged = [], 0
         for c in clauses:  # 문서 등장 순서대로
-            analysis = analyze_single_clause(c["content"], vectorstore, top_k=TOP_K_DEFAULT, threshold=THRESHOLD_DEFAULT)
+            # ★ CHANGED: 제목이 아닌 '본문(body)'을 우선 사용
+            clause_text_for_llm = (c.get("body") or c.get("content") or "").strip()
+
+            analysis = analyze_single_clause(
+                clause_text_for_llm,             # ← 본문만 분석
+                vectorstore,
+                top_k=TOP_K_DEFAULT,
+                threshold=THRESHOLD_DEFAULT
+            )
             if analysis:
                 flagged += 1
-                results.append({"index": c["index"], "title": c["title"], "analysis": analysis})
+                results.append({
+                    "index": c["index"],
+                    "title": c["title"],
+                    "analysis": analysis
+                })
+
 
         text_joined = "\n\n".join([r["analysis"] for r in results])
 

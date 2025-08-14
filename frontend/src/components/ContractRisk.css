@@ -206,3 +206,36 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* 저장 힌트/보조 텍스트 */
+.hint {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+/* 저장 버튼 비활성화 상태 가독성 */
+.btn:disabled,
+.btn-ghost:disabled,
+.btn-primary:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  filter: grayscale(0.05);
+}
+
+/* 저장 버튼 묶음 레이아웃 (원하면 JS쪽 inline 대신 class로 교체 가능) */
+.save-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 긴 분석 결과 줄바꿈 안정화 */
+.results-body {
+  word-break: break-word; /* 길게 이어지는 문장도 줄바꿈 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+/* 좌측 폼 간격 조금 여유 */
+.form-group + .form-group {
+  margin-top: 12px;
+}
