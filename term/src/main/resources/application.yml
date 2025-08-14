@@ -9,6 +9,7 @@ spring:
 firebase:
   secret-id: "firebase-adminsdk"
   project-id: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
+  storage-bucket: "aivle-team0721.firebasestorage.app" # qna 서비스와 동일한 스토리지 버킷으로 수정
 
 ---
 
@@ -73,5 +74,3 @@ spring:
         event-out:
           destination: self
           contentType: application/json
-
-

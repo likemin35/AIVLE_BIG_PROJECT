@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -33,18 +33,24 @@
 		<dependency>
 			<groupId>com.google.firebase</groupId>
 			<artifactId>firebase-admin</artifactId>
-			<version>9.5.0</version>
+			<version>9.2.0</version> <!-- Working version from QnA service -->
 		</dependency>
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloud-secretmanager</artifactId>
 		</dependency>
-      <!-- lombok -->
+		<!-- 라이브러리 버전 충돌 해결을 위해 추가 -->
 		<dependency>
-				<groupId>org.projectlombok</groupId>
-				<artifactId>lombok</artifactId>
-				<version>1.18.30</version>
-				<scope>provided</scope>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>1.32.1</version>
+		</dependency>
+		<!-- lombok -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.30</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
@@ -89,6 +95,30 @@
 			<artifactId>cucumber-spring</artifactId>
 			<version>${cucumber.version}</version>
 			<scope>test</scope>
+		</dependency>
+
+		<!-- Apache PDFBox for PDF text extraction -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>2.0.27</version>
+		</dependency>
+
+		<!-- Apache POI for Word document text extraction -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>5.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>5.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+			<version>5.2.3</version>
 		</dependency>
 	</dependencies>
 

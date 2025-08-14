@@ -69,3 +69,25 @@ export const chargeUserPoints = async (firebaseUid, amount) => { // 파라미터
         throw error;
     }
 };
+
+/**
+ * ✅ 특정 사용자의 포인트를 사용(차감)합니다.
+ */
+export const reduceUserPoints = async (firebaseUid, amount, reason) => {
+    try {
+        const response = await apiClient.post(`/api/points/${firebaseUid}/reduce`, null, {
+            params: {
+                amount,
+                reason,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Error reducing points:", error);
+        // 서버에서 보낸 에러 메시지를 그대로 전달
+        if (error.response && error.response.data && error.response.data.error) {
+            throw new Error(error.response.data.error);
+        }
+        throw error;
+    }
+};

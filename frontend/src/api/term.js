@@ -4,10 +4,10 @@ import { auth } from '../firebase';
 
 const getApiUrl = () => {
   if (process.env.NODE_ENV === 'production') {
-        // GCP 배포 환경
+    // GCP 배포 환경
     return 'https://term-service-902267887946.us-central1.run.app';
   }
-    // 로컬 개발 환경
+  // 로컬 개발 환경
   return 'http://localhost:8088';
 };
 
@@ -33,6 +33,28 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * 약관 파일을 업로드합니다.
+ */
+export const uploadTermFile = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    // TermController의 /terms/upload 엔드포인트를 호출합니다.
+    const response = await apiClient.post('/terms/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('약관 파일 업로드 중 오류가 발생했습니다.', error);
+    throw error;
+  }
+};
+
 
 /**
  * 사용자의 모든 계약서 목록을 가져옵니다.

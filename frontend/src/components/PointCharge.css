@@ -5,7 +5,7 @@
 }
 
 .point-card {
-    background-color: #ffffff;
+    background-color: var(--card);
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -20,8 +20,8 @@
     font-size: 1.5rem;
     margin-top: 0;
     margin-bottom: 20px;
-    color: #555;
-    border-bottom: 1px solid #eee;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 15px;
 }
 
@@ -35,14 +35,14 @@
 .amount-btn, .amount-input {
     padding: 15px;
     font-size: 1rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background-color: #f9f9f9;
+    background-color: var(--soft);
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     text-align: center;
     font-family: inherit;
-    color: #333;
+    color: var(--text);
 }
 
 .amount-btn:hover, .amount-input:hover {
@@ -51,9 +51,9 @@
 }
 
 .amount-btn.selected {
-    background-color: #6c63ff;
+    background-color: var(--primary);
     color: white;
-    border-color: #6c63ff;
+    border-color: var(--primary);
     font-weight: bold;
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
@@ -64,7 +64,7 @@
 }
 .amount-input:focus {
     outline: none;
-    border-color: #6c63ff;
+    border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
 }
 
@@ -77,7 +77,7 @@
 
 .payment-btn {
     padding: 15px;
-    border: 2px solid #ddd;
+    border: 2px solid var(--border);
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
@@ -87,7 +87,7 @@
     align-items: center;
     gap: 10px;
     font-weight: 500;
-    background-color: #fff;
+    background-color: var(--card);
 }
 
 .payment-btn svg {
@@ -110,14 +110,14 @@
 }
 
 .payment-btn.selected {
-    border-color: #6c63ff;
+    border-color: var(--primary);
     font-weight: bold;
-    color: #6c63ff;
+    color: var(--primary);
     box-shadow: 0 0 10px rgba(108, 99, 255, 0.3);
 }
 
 .payment-btn.selected svg {
-    color: #6c63ff;
+    color: var(--primary);
 }
 
 /* --- 최종 충전 버튼 --- */
@@ -126,7 +126,7 @@
     padding: 18px;
     font-size: 1.2rem;
     font-weight: bold;
-    background-color: #6c63ff;
+    background-color: var(--primary);
     color: white;
     border: none;
     border-radius: 10px;
@@ -136,7 +136,7 @@
 }
 
 .charge-submit-btn:hover {
-    background-color: #5a54e1;
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(108, 99, 255, 0.3);
 }

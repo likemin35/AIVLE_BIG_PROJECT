@@ -22,9 +22,18 @@ import ContractManagement from './ContractManagement';
 import EditTerms from './components/Edit-Terms';
 import ContractDetail from './components/ContractDetail';
 import ContractVisualization from './components/ContractVisualization'; // 추가
+import Settings from './components/Settings';
+import { initTheme } from './utils/theme';
+
 
 // 업로드 페이지
 import UploadImage from './components/UploadImage';
+
+// 설명 페이지 추가
+import ExplainPage from './components/ExplainPage';
+
+// (선택) 어디서든 설명 페이지로 이동하는 버튼 컴포넌트
+import GoToExplainButton from './components/GoToExplainButton';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -48,6 +57,12 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+  // 페이지 첫 진입 시 저장된 선호도/시스템 상태 반영
+  initTheme();
+}, []);
+
+
   return (
     <Router>
       <Routes>
@@ -67,6 +82,7 @@ function App() {
           <Route path="/contracts" element={<ContractManagement />} />
           <Route path="/contracts/:id" element={<ContractDetail />} />
           <Route path="/contracts/:id/visualize" element={<ContractVisualization />} /> {/* 추가 */}
+          <Route path="/settings" element={<Settings />} />
 
           {/* 생성 후 편집 페이지 */}
           <Route path="/terms/new/edit" element={<EditTerms />} />
@@ -74,6 +90,9 @@ function App() {
 
           {/* 근로계약서 업로드 라우트 */}
           <Route path="/upload-image" element={<UploadImage />} />
+
+          {/* 설명(소개) 페이지 라우트 — navbar 유지 */}
+          <Route path="/about" element={<ExplainPage />} />
         </Route>
 
         {/* 네비게이션 바가 없는 페이지들 */}
@@ -90,6 +109,12 @@ function App() {
         <Route path="/login" element={<Login user={user} authLoading={authLoading} />} />
         <Route path="/complete-signup" element={<CompleteSignUp />} />
       </Routes>
+
+      {/* (선택) 전역에서 떠다니는 소개 버튼을 쓰고 싶다면 아래를 활성화하세요.
+          위치를 고정하려면 스타일을 수정하세요. */}
+      {/* <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50 }}>
+        <GoToExplainButton />
+      </div> */}
     </Router>
   );
 }

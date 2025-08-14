@@ -151,11 +151,13 @@ const ContractDetail = () => {
       <div className="detail-right-panel">
         <div className="info-box">
           <h2>{contract.title}</h2>
-          {!isLatest && (
-            <div className="version-warning">
-              <p>이 계약서는 최신 버전이 아닙니다. 일부 기능은 최신 버전에서만 사용할 수 있습니다.</p>
-            </div>
-          )}
+          <div className="warning-placeholder">
+            {!isLatest && (
+              <div className="version-warning">
+                <p>이 계약서는 최신 버전이 아닙니다. 일부 기능은 최신 버전에서만 사용할 수 있습니다.</p>
+              </div>
+            )}
+          </div>
           <div className="info-grid">
             <span className="info-label">최초 생성일</span>
             <span className="info-value">{formatDate(contract.createdAt)}</span>
@@ -191,6 +193,17 @@ const ContractDetail = () => {
             </button>
             <button className="action-btn download-btn word" onClick={handleDownloadWord}>Word로 다운로드</button>
           </div>
+          {contract.fileUrl && (
+            <a 
+              href={contract.fileUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="action-btn download-btn original-file"
+              style={{ textDecoration: 'none' }}
+            >
+              원본 파일 다운로드
+            </a>
+          )}
           <hr className="divider" />
           <button className="action-btn back-to-list-btn" onClick={() => navigate('/contracts')}>
             목록으로

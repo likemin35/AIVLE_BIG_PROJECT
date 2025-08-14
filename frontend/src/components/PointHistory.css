@@ -2,7 +2,7 @@
     margin-top: 0;
     margin-bottom: 1.5rem;
     font-size: 1.2rem;
-    color: #333;
+    color: var(--text);
 }
 
 .history-table {
@@ -13,15 +13,15 @@
 .history-table th, .history-table td {
     padding: 0.85rem 0.75rem;
     text-align: center; /* 이 부분을 left -> center로 변경 */
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border);
 }
 
 .history-table th {
-    background-color: #f8f9fa;
+    background-color: var(--soft);
     font-weight: 600;
 }
 
-.history-table td:nth-child(1) { width: 23%; color: #666; }
+.history-table td:nth-child(1) { width: 23%; color: var(--text); }
 .history-table td:nth-child(2) { width: 51%; }
 .history-table td:nth-child(3) {
     width: 26%;
@@ -30,18 +30,18 @@
 }
 
 .history-table .charge {
-    color: #007bff;
+    color: var(--primary);
 }
 
 .history-table .deduct {
-    color: #dc3545;
+    color: var(--danger);
 }
 
 .error-message {
     padding: 1rem;
-    color: #721c24;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
+    color: var(--error-text);
+    background-color: var(--error-bg);
+    border: 1px solid var(--error-border);
     border-radius: 4px;
     text-align: center;
 }

@@ -1,24 +1,20 @@
+/* --- ContractDetail (dark-aware) --- */
 .contract-detail-container {
   display: flex;
   gap: 2rem;
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
-  align-items: flex-start;
+  align-items: stretch;
   height: 90vh;
   overflow-y: hidden;
-}
-
-.error-container {
-  justify-content: center;
-  align-items: center;
-  min-height: 60vh;
+  color: var(--text);
 }
 
 .detail-left-panel {
   flex: 3;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
+  background-color: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 2rem;
   height: 100%;
@@ -31,7 +27,7 @@
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: 1rem;
   line-height: 1.7;
-  color: #333;
+  color: var(--text);
 }
 
 .detail-right-panel {
@@ -39,158 +35,128 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  position: sticky;
-  top: 2rem;
-  height: auto; /* 높이를 내용에 맞게 자동 조절 */
-  overflow-y: visible; /* 스크롤바 생기지 않도록 변경 */
+  height: 100%;
+  overflow-y: hidden;
+  padding-right: 10px;
+  min-height: 0; /* Prevent flex item from overflowing parent */
 }
 
+.info-box {
+  flex-shrink: 0; /* Prevent info-box from shrinking */
+}
+
+
 .info-box, .actions-box {
-  background-color: #f9f9f9;
-  border: 1px solid #e0e0e0;
+  background-color: var(--soft);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
 }
 
 .info-box h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.3rem;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 0.8rem;
+  margin: 0 0 0.6rem 0;
+  font-size: 1.1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.6rem;
+  color: var(--text);
 }
 
 .info-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.7rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
 }
 
 .info-label {
   font-weight: 600;
-  color: #555;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
 .info-value {
-  color: #333;
+  color: var(--text);
   font-size: 0.9rem;
 }
 
-.info-memo .info-label {
-  margin-bottom: 0.4rem;
-  display: block;
-}
+.info-memo .info-label { margin-bottom: 0.3rem; display: block; }
 
 .memo-content {
   margin: 0;
-  padding: 0.8rem;
-  background-color: #fff;
+  padding: 0.6rem;
+  background-color: var(--card);
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  min-height: 30px;
-  max-height: 100px;
+  border: 1px solid var(--border);
+  min-height: 28px;
+  max-height: 60px;
   overflow-y: auto;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   white-space: pre-wrap;
+  color: var(--text);
 }
 
 .actions-box {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem; /* 버튼 간격 줄임 */
+  flex-grow: 1;
+  background: var(--soft);
+  overflow-y: auto; /* 스크롤 기능은 유지 */
 }
 
 .action-btn {
   width: 100%;
-  padding: 0.35rem 0.8rem; /* 버튼 상하 패딩 약간 더 줄임 */
-  font-size: 0.85rem;
-  font-weight: 500;
-  border-radius: 5px;
+  padding: 0.4rem 0.8rem; /* 버튼 세로 크기 추가로 줄임 */
+  font-size: 0.85rem; /* 폰트 크기 약간 줄임 */
+  font-weight: 600;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s ease-in-out;
   text-align: center;
-  background-color: transparent;
-  color: #4338ca;
-  border: 1px solid #4338ca;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
 }
-
-.action-btn:hover {
-  background-color: #4338ca;
-  color: white;
-}
+.action-btn:hover { background: var(--primary); color: #fff; }
 
 .divider {
   border: none;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--border);
   margin: 0.3rem 0;
 }
 
-.back-to-list-btn {
+.action-btn.back-to-list-btn {
   background-color: #6c757d;
-  color: white;
+  color: #fff;
   border-color: #6c757d;
+  margin-top: auto;
 }
+.action-btn.back-to-list-btn:hover:not(:disabled) { background: #5a6268; border-color: #545b62; }
 
-.back-to-list-btn:hover {
-  background-color: #5a6268;
-  border-color: #545b62;
-}
+.warning-placeholder { min-height: 42px; margin-bottom: 0.6rem; }
 
 .version-warning {
-  background-color: #fffbe6;
+  background-color: rgba(255, 229, 143, 0.08);
   border: 1px solid #ffe58f;
   border-radius: 6px;
-  padding: 0.7rem;
-  margin-bottom: 0.8rem;
+  padding: 0.6rem;
 }
-
-.version-warning p {
-  margin: 0;
-  color: #d46b08;
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
+.version-warning p { margin: 0; color: #d4b106; font-size: 0.8rem; line-height: 1.4; }
 
 .action-btn:disabled {
-  background-color: #f5f5f5;
-  color: #adb5bd;
-  border-color: #dee2e6;
+  background-color: var(--soft);
+  color: var(--muted);
+  border-color: var(--border);
   cursor: not-allowed;
 }
 
-.action-btn:disabled:hover {
-  background-color: #f5f5f5;
-  color: #adb5bd;
-  border-color: #dee2e6;
-}
-
+/* 다운로드 버튼 그룹 */
 .download-actions {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
-
-.download-btn {
-  flex: 1;
-}
-
-.download-btn.pdf {
-  background-color: #dc3545;
-  color: white;
-  border-color: #dc3545;
-}
-.download-btn.pdf:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
-}
-
-.download-btn.word {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
-}
-.download-btn.word:hover {
-  background-color: #0069d9;
-  border-color: #0062cc;
-}
+.action-btn.download-btn { flex: 1; }
+.action-btn.download-btn.pdf { background: #d64545; border-color: #d64545; color: #fff; }
+.action-btn.download-btn.pdf:hover { background: #c53b3b; }
+.action-btn.download-btn.word { background: #007bff; border-color: #007bff; color: #fff; }
+.action-btn.download-btn.word:hover { background: #0069d9; border-color: #0062cc;}

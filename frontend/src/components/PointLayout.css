@@ -10,7 +10,7 @@
 }
 
 .current-points-card {
-    background-color: #6c5ce7;
+    background-color: var(--primary);
     color: white;
     padding: 2rem;
     border-radius: 8px;
@@ -42,7 +42,7 @@
     list-style: none;
     padding: 0;
     margin: 0;
-    background-color: #fff;
+    background-color: var(--card);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
@@ -50,7 +50,7 @@
 .point-menu li {
     padding: 1rem;
     cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border);
     transition: background-color 0.2s;
 }
 
@@ -59,17 +59,17 @@
 }
 
 .point-menu li:hover {
-    background-color: #f8f9fa;
+    background-color: var(--soft);
 }
 
 .point-menu li.active {
-    background-color: #e9ecef;
+    background-color: var(--border);
     font-weight: bold;
 }
 
 .point-view {
     flex-grow: 1;
-    background-color: #fff;
+    background-color: var(--card);
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
@@ -77,7 +77,7 @@
 
 /* --- 비로그인 사용자 안내 --- */
 .login-prompt {
-    background-color: #fff;
+    background-color: var(--card);
     padding: 3rem;
     border-radius: 8px;
     text-align: center;
@@ -87,19 +87,19 @@
 .login-prompt h2 {
     margin-top: 0;
     font-size: 1.8rem;
-    color: #333;
+    color: var(--text);
 }
 
 .login-prompt p {
     font-size: 1.1rem;
-    color: #666;
+    color: var(--text);
     margin-bottom: 2rem;
 }
 
 .login-btn-link {
     display: inline-block;
     padding: 0.8rem 2rem;
-    background-color: #6c63ff;
+    background-color: var(--primary);
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -108,5 +108,5 @@
 }
 
 .login-btn-link:hover {
-    background-color: #5a54e1;
+    background-color: var(--primary-hover);
 }

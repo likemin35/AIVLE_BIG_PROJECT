@@ -1,149 +1,138 @@
-/* --- 전체 레이아웃 컨테이너 (PointLayout과 통일) --- */
+/* MyPage.css — 테마 토큰 적용 버전 */
+
 .mypage-layout-container {
-    max-width: 960px;
-    margin: 2rem auto;
-    padding: 2rem;
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 2rem;
+  color: var(--text);
+  background: var(--bg); /* 페이지 바탕도 토큰 사용 */
 }
 
 .mypage-layout-container h1 {
-    text-align: center;
-    margin-bottom: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--text);
 }
 
-/* --- 메인 컨텐츠 카드 (PointLayout의 .point-view와 통일) --- */
+/* 메인 컨텐츠 카드 */
 .mypage-view {
-    background-color: #fff;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background-color: var(--card);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(var(--shadow-rgb), 0.15);
+  border: 1px solid var(--border);
 }
 
-/* 로딩 컨테이너 */
-.loading-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 80vh;
-    font-family: sans-serif;
-    color: #636e72;
-}
-
-/* 계정 정보 스타일 */
+/* 계정 정보 카드 */
 .account-info {
-    background-color: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+  background-color: var(--card);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .account-info h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #2d3436;
-    font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
 }
 
 .account-info p {
-    margin: 0.75rem 0;
-    color: #636e72;
-    line-height: 1.5;
+  margin: 0.75rem 0;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .highlight {
-    color: #6c5ce7;
-    font-weight: 600;
+  color: var(--primary);
+  font-weight: 600;
 }
 
-/* 비밀번호 변경 폼 스타일 */
+/* 비밀번호 변경 폼 */
 .password-form {
-    margin-top: 2rem; /* 계정 정보와의 간격 */
-    background-color: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
+  margin-top: 2rem;
+  background-color: var(--card);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
 .password-form h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #2d3436;
-    font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
 }
 
 .password-form label {
-    display: block;
-    margin-top: 1rem;
-    margin-bottom: 0.3rem;
-    color: #2d3436;
-    font-weight: 500;
-    font-size: 0.9rem;
+  display: block;
+  margin: 1rem 0 0.3rem;
+  color: var(--text);
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .password-form input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    transition: border-color 0.2s ease;
-    box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--card);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
+.password-form input::placeholder { color: var(--muted); }
+
 .password-form input:focus {
-    outline: none;
-    border-color: #6c5ce7;
-    box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.1);
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(var(--shadow-rgb), 0.2);
 }
 
 .password-form button {
-    margin-top: 1.5rem;
-    padding: 0.8rem 1.5rem;
-    background-color: #6c5ce7;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
+  margin-top: 1.5rem;
+  padding: 0.9rem 1.25rem;
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid var(--primary-hover);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: background-color 0.2s;
 }
 
-.password-form button:hover {
-    background-color: #5f4fcf;
-}
+.password-form button:hover { background-color: var(--primary-hover); }
 
-/* --- 비로그인 사용자 안내 --- */
+/* 비로그인 안내 */
 .login-prompt {
-    background-color: #fff;
-    padding: 3rem;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background-color: var(--card);
+  padding: 3rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(var(--shadow-rgb), 0.15);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
-.login-prompt h2 {
-    margin-top: 0;
-    font-size: 1.8rem;
-    color: #333;
-}
-
-.login-prompt p {
-    font-size: 1.1rem;
-    color: #666;
-    margin-bottom: 2rem;
-}
+.login-prompt h2 { color: var(--text); }
+.login-prompt p { color: var(--muted); }
 
 .login-btn-link {
-    display: inline-block;
-    padding: 0.8rem 2rem;
-    background-color: #6c63ff;
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-weight: bold;
-    transition: background-color 0.2s;
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  background-color: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 700;
+  border: 1px solid var(--primary-hover);
+  transition: background-color 0.2s;
 }
-
-.login-btn-link:hover {
-    background-color: #5a54e1;
-}
+.login-btn-link:hover { background-color: var(--primary-hover); }
