@@ -22,7 +22,7 @@ function CreateTerms() {
 
   const CLOUD_RUN_API_BASE_URL =
     process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
-    'http://localhost:8088'; // 'https://terms-api-service-eck6h26cxa-uc.a.run.app';
+    'https://terms-api-service-eck6h26cxa-uc.a.run.app';
 
 
   const categories = [
