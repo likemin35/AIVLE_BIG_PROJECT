@@ -2,6 +2,8 @@
 import React from 'react';
 import CreateTermsImg from '../assets/CreateTerms.png';
 import ImageCheckImg from '../assets/ImageCheck.png';
+import VersionManageImg from '../assets/VersionManage.png';
+import TermsNodeImg from '../assets/TermsNode.png';
 
 export default function ExplainPage() {
   // 공용 섹션 컴포넌트 (문자/JSX 모두 지원하는 imgLabel)
@@ -202,7 +204,13 @@ export default function ExplainPage() {
             필요한 시점에 최신본을 문서파일로 다운로드받을 수 있습니다.
           </>
         }
-        imgLabel="업로드 → 수정 → 버전 타임라인 예시"
+        imgLabel={
+          <img
+            src={VersionManageImg}
+            alt="버전관리"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* 리스크 탐지 */}
@@ -232,7 +240,13 @@ export default function ExplainPage() {
  
           </>
         }
-        imgLabel="네트워크/그래프 시각화 예시"
+        imgLabel={
+          <img
+            src={TermsNodeImg}
+            alt="시각화"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* FOOTER */}
