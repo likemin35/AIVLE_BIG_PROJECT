@@ -2,6 +2,8 @@
 import React from 'react';
 import CreateTermsImg from '../assets/CreateTerms.png';
 import ImageCheckImg from '../assets/ImageCheck.png';
+import VersionManageImg from '../assets/VersionManage.png';
+import TermsNodeImg from '../assets/TermsNode.png';
 
 export default function ExplainPage() {
   // 공용 섹션 컴포넌트 (문자/JSX 모두 지원하는 imgLabel)
@@ -165,7 +167,7 @@ export default function ExplainPage() {
             <li>필수 조항 및 희망사항</li>
           </ul>
           <p style={{ marginTop: 12, fontSize: 14, color: 'var(--muted)' }}>
-            입력 후 생성된 초안은 즉시 수정 가능하며, 필요 시 문서 파일로 정리해 내부 검토·배포에 활용할 수 있습니다.
+            입력 후 생성된 초안은 직접수정과 AI수정이 가능하며, 필요 시 문서 파일로 정리해 내부 검토·배포에 활용할 수 있습니다.
           </p>
         </div>
       </Section>
@@ -174,7 +176,7 @@ export default function ExplainPage() {
       <Section
         reverse
         eyebrow="Quality Check"
-        title="약관 이미지 업로드로 오탈자·누락을 자동 검수"
+        title="약관 이미지 업로드로 오탈자와 표기 용어 자동 검수"
         desc={
           <>
             스캔본이나 캡처본처럼 이미지 형태의 약관도 업로드만 하면 AI가 텍스트를 추출하고 문장·용어·표기 일관성을
@@ -194,25 +196,34 @@ export default function ExplainPage() {
       {/* 기존 약관 업로드/수정 · 버전 관리 */}
       <Section
         eyebrow="Editing Flow"
-        title="기존 약관을 업로드해 빠르게 수정하고, 버전으로 깔끔하게 관리"
+        title="기존 약관 업로드부터 AI 수정, 버전 관리까지 한 번에"
         desc={
           <>
-            이미 운영 중인 약관을 불러와 변경 사항을 반영하세요. 변경 이력은 버전으로 쌓여 언제든 과거 상태를 확인할
-            수 있습니다. 필요한 시점에 최신본을 문서로 정리해 내부 승인 및 배포 절차에 활용할 수 있습니다.
+            이미 운영 중인 약관을 불러와 보라계약에 저장하세요.
+            저장된 약관은 사이트에서 직접 수정하거나 AI로 손쉽게 재작성할 수 있습니다.
+            모든 변경 이력은 버전으로 기록되어 언제든 과거 상태를 확인할 수 있으며,
+            필요할 때 최신본을 문서 파일로 다운로드할 수 있습니다.
           </>
         }
-        imgLabel="업로드 → 수정 → 버전 타임라인 예시"
+        imgLabel={
+          <img
+            src={VersionManageImg}
+            alt="버전관리"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* 리스크 탐지 */}
       <Section
         reverse
         eyebrow="Risk Insight"
-        title="AI가 약관 속 리스크를 찾아 맥락과 함께 제시"
+        title="AI가 약관 속 리스크를 찾아 개선 방안 제시"
         desc={
           <>
-            저장된 약관을 분석해 모호한 표현, 과도한 면책, 최신 규정 미반영 등 위험 구간을 표시합니다. 각 리스크는
-            근거 문장과 함께 제시되어 팀이 빠르게 논의하고 반영할 수 있도록 돕습니다.
+            AI가 약관을 검토하여 ‘모호한 표현’, ‘설명의무 위반’, ‘오탈자’ 등 문서상의 오류를 탐지하고, 
+            실제 판례에 기반한 개선 사항을 제시합니다. 개선 사항은 사용자의 문서에 바로 적용하여 
+            팀이 신속하게 논의하고 반영할 수 있도록 돕습니다.
           </>
         }
         imgLabel="리스크 목록/심각도 예시"
@@ -221,14 +232,22 @@ export default function ExplainPage() {
       {/* 조항 연관도 시각화 */}
       <Section
         eyebrow="Relationship Map"
-        title="조항 간 연관도를 시각화해, 수정의 파급효과를 예측"
+        title="약관의 시각화로 약관의 중요한 부분을 강조하고, 연관된 약관을 확인 가능."
         desc={
           <>
-            한 조항을 변경하면 어떤 조항들이 함께 영향받는지 연결 관계로 보여줍니다. 이 연관도 맵은 개정 범위와
-            우선순위를 정하는 데 유용하며, 협업 과정에서 변경 범위를 명확히 공유할 수 있게 해줍니다.
+            노드의 크기로 각 조항이 약관에 기여하는 영향력을 확인할 수 있습니다.
+            조항과 연관된 내용들이 시각적으로 표시되어서 복잡한 조항을 한번에 찾을 수 있습니다.
+            조항과 연관된 내용들을 확인할 수 있어서 조항 수정시에 각 조항끼리 모순되지 않도록 도와줍니다.
+ 
           </>
         }
-        imgLabel="네트워크/그래프 시각화 예시"
+        imgLabel={
+          <img
+            src={TermsNodeImg}
+            alt="시각화"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* FOOTER */}

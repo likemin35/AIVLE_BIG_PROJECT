@@ -85,3 +85,5 @@ ai/src/main/Python/예금/chroma.sqlite3
 ai/src/main/Python/자동차보험/chroma.sqlite3
 .gitignore
 frontend/package-lock.json
+/test/
+erd.dbml

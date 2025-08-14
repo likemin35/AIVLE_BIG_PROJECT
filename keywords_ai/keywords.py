@@ -11,7 +11,7 @@ service_ner.py (LAW_REF 제거 + CONDITION 자동 확장 + CONDITION ≤5자 제
 import os, re, json, logging, unicodedata
 from string import Template
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+# from flask_cors import CORS  <- CORS 라이브러리 제거
 import vertexai
 from google.oauth2 import service_account
 from google.cloud import secretmanager
@@ -23,16 +23,12 @@ from spacy import displacy
 # Flask & CORS
 # -------------------------
 app = Flask(__name__)
-CORS(app,
-     resources={r"/api/*": {"origins": "*"}},
-     supports_credentials=False,
-     allow_headers=["Content-Type"],
-     methods=["GET", "POST", "OPTIONS"])
+# CORS(app, ...)  <- CORS 관련 설정 완전 제거
 
 logger = logging.getLogger("service_ner")
 logging.basicConfig(level=logging.INFO)
 
-# 모든 /api/* OPTIONS는 204
+# 모든 /api/* OPTIONS는 204 (게이트웨이에서 처리하므로 사실상 불필요하지만 안전장치로 둠)
 @app.route("/api/<path:_any>", methods=["OPTIONS"])
 def any_options(_any):
     return ("", 204)

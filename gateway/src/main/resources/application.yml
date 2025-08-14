@@ -27,6 +27,18 @@ spring:
             allowCredentials: true
 #<<< API Gateway / Routes
       routes:
+        - id: keywords-ner
+          uri: http://localhost:8081
+          predicates:
+            - Path=/ner/**
+          filters:
+            - StripPrefix=1
+        - id: keywords-ai
+          uri: http://localhost:8080
+          predicates:
+            - Path=/keywords/**
+          filters:
+            - StripPrefix=1
         - id: ai
           uri: http://localhost:8080
           predicates:
@@ -44,10 +56,10 @@ spring:
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
-        # - id: frontend
-        #   uri: http://localhost:8080
-        #   predicates:
-        #     - Path=/**
+        - id: frontend
+          uri: http://localhost:3000
+          predicates:
+            - Path=/**
 #>>> API Gateway / Routes
       
 

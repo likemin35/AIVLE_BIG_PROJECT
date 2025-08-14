@@ -135,6 +135,17 @@
 
 .warning-placeholder { min-height: 42px; margin-bottom: 0.6rem; }
 
+.action-btn.download-btn.original-file {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+
 .version-warning {
   background-color: rgba(255, 229, 143, 0.08);
   border: 1px solid #ffe58f;
