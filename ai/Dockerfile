@@ -13,11 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ai/src/main/Python/ .
 
 # ✅ ChromaDB 벡터 저장소 폴더 복사
-COPY ai/src/main/Python/대출 /app/대출
-COPY ai/src/main/Python/암보험 /app/암보험
-COPY ai/src/main/Python/예금 /app/예금
-COPY ai/src/main/Python/자동차보험 /app/자동차보험
-COPY ai/src/main/Python/적금 /app/적금
+COPY ai/src/main/Python/ /app/
+
 
 EXPOSE 8080
 
