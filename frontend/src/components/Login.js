@@ -31,6 +31,14 @@ function Login({ user, authLoading }) { // user와 authLoading props를 받음
 
   const handleLogin = async () => {
     setLoginError('');
+
+    // 이메일 형식 유효성 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setLoginError('올바른 이메일 형식이 아닙니다.');
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;

@@ -58,7 +58,7 @@ const PointCharge = ({ user, onChargeSuccess }) => {
                 onChargeSuccess();
             }
         } catch (error) {
-            alert(`포인트 충전에 실패했습니다: ${error.response?.data?.message || error.message}`);
+            alert(`포인트 충전에 실패했습니다: ${error.message}`);
         }
     };
 
