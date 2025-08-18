@@ -1,31 +1,42 @@
 server:
   port: 8088
 
-# Firebase 설정
+# Firebase 설정 (원래 값 유지)
 firebase:
   secret-id: "firebase-adminsdk"
-  database-url: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
-  project-id: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
+  database-url: "aivle-team0721"
+  project-id: "aivle-team0721"
 
 ---
-
 spring:
   profiles: default
   cloud:
     gateway:
+      # [추가] 중복 CORS 헤더 제거
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_LAST
+
+      # [수정] global CORS (키명/옵션 교정)
       globalcors:
-        cors-configurations:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000"
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://127.0.0.1:3000"
             allowedMethods:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders: "*"
+              - HEAD
+            allowedHeaders:
+              - "*"
             allowCredentials: true
-#<<< API Gateway / Routes
+
+      # [기존 라우트 유지]
       routes:
         - id: keywords-ner
           uri: http://localhost:8081
@@ -33,78 +44,92 @@ spring:
             - Path=/ner/**
           filters:
             - StripPrefix=1
+
         - id: keywords-ai
           uri: http://localhost:8080
           predicates:
             - Path=/keywords/**
           filters:
             - StripPrefix=1
+
         - id: ai
           uri: http://localhost:8080
           predicates:
-            # - Path=/ais/**, 
-            - Path=/api/generate/**, /ais/** 
+            - Path=/api/generate/**, /ais/**
+
         - id: term
           uri: http://localhost:8083
           predicates:
             - Path=/terms/**, /getTerms/**
+
         - id: point
           uri: http://localhost:8085
           predicates:
             - Path=/points/**, /getPoints/**, /api/points/**
+
         - id: qna
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
+
         - id: frontend
           uri: http://localhost:3000
           predicates:
             - Path=/**
-#>>> API Gateway / Routes
-      
-
 
 ---
-
 spring:
   profiles: docker
   cloud:
     gateway:
+      # [추가] Docker에서도 중복 헤더 제거
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_LAST
+
+      # [수정] global CORS
       globalcors:
-        cors-configurations:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
           '[/**]':
-            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}" # GCP 배포시 환경변수로 주입, 없을 경우 로컬
+            allowedOrigins:
+              - "${FRONTEND_URL:http://localhost:3000}"
             allowedMethods:
               - GET
               - POST
               - PUT
+              - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders: "*"
+              - HEAD
+            allowedHeaders:
+              - "*"
             allowCredentials: true
+
       routes:
         - id: ai
           uri: http://ai:8080
           predicates:
-            # - Path=/ais/**, 
-            - Path=/api/generate, /ais/**, 
+            - Path=/api/generate/**, /ais/**
+
         - id: term
           uri: http://term:8080
           predicates:
-            - Path=/terms/**, 
+            - Path=/terms/**
+
         - id: point
           uri: http://point:8080
           predicates:
-            - Path=/points/**, 
+            - Path=/points/**
+
         - id: qna
           uri: http://qna:8080
           predicates:
-            - Path=/qna/**, 
+            - Path=/qna/**
+
         - id: frontend
           uri: http://frontend:8080
           predicates:
             - Path=/**
-      
 
 server:
-  port: 8080
+  port: 8088
