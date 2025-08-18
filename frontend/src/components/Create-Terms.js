@@ -1,4 +1,3 @@
-
 // src/components/Create-Terms.js
 import React, { useState } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
@@ -270,19 +269,24 @@ function CreateTerms() {
                 />
               </div>
 
-              {/* CSV 업로드 (단일) */}
+              {/* CSV 업로드 (단일) - 커스텀 툴팁 아이콘 추가 */}
               <div className="form-group">
-                <label className="form-label">약관 csv파일 (필수)</label>
+                <label className="form-label">
+                  약관 csv파일 (필수)
+                  <div className="tooltip-container">
+                    <span className="info-icon">ⓘ</span>
+                    <div className="tooltip-content">
+                      상단에는 '항목,내용' 섹션(회사명/상품명 등), <br />중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
+                    </div>
+                  </div>
+                </label>
                 <input
                   type="file"
                   accept=".csv"
-                  className="form-input"
+                  className="form-input file-input"
                   onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
                   disabled={isLoading}
                 />
-                <div className="file-hint">
-                  상단에는 "항목,내용" 섹션(회사명/상품명 등), 중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
-                </div>
               </div>
 
               <button
