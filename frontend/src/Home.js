@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { uploadTermFile } from './api/term';
 import iconStandard from './assets/icon-standard.png';
 import iconTerms from './assets/icon-terms.png';
+import iconRisk from './assets/icon-risk.png';
 import logo from './assets/logo.png';
 import './App.css';
 
@@ -153,7 +154,7 @@ function Home({ user }) {
 
               {/* 약관 리스크 탐지 (신규) */}
               <div className="contract-option" onClick={() => handleIconClick('risk')}>
-                <img src={iconStandard} alt="약관 리스크 탐지" className="option-icon" />
+                <img src={iconRisk} alt="약관 리스크 탐지" className="option-icon" />
                 <span className="option-text">약관 리스크 탐지</span>
               </div>
             </div>
