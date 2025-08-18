@@ -5,7 +5,6 @@ import os, _csv, _io
 import json
 import logging
 import urllib.parse
-from datetime import datetime
 from google.oauth2 import service_account
 from vertexai.generative_models import GenerativeModel
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
