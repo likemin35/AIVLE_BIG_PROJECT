@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { getIdToken } from '../firebase'; // ← 경로 주의!
+import { getIdToken } from '../firebase'; 
 
 // 분석 API(Flask)
 const ANALYZE_API_BASE_URL =
@@ -248,6 +248,23 @@ export default function ContractRisk() {
       setLoading(false);
     }
   };
+
+  // 추가: 인증 상태에 따른 렌더링
+  if (authLoading) {
+    return <div className="loading-spinner">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <main className="risk-page">
+        <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
+          <h2>로그인 필요</h2>
+          <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
+          <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="risk-page">

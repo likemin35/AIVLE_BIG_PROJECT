@@ -10,17 +10,14 @@ from google.oauth2 import service_account
 from vertexai.generative_models import GenerativeModel
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-import logging
 import requests
 from google.cloud import secretmanager
-import urllib.parse
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
-# CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # 서비스 URL
 TERM_SERVICE_URL = os.environ.get("TERM_SERVICE_URL", "http://localhost:8083/terms")
@@ -70,6 +67,7 @@ if credentials:
         embedding = None
 else:
     gemini_model = None
+    embedding = None
 
 VECTOR_DB_MAP = {
     'loan': os.path.join(BASE_DIR, '대출'),
@@ -127,11 +125,11 @@ JSON 스키마:
 """
 
 # 공통 CORS 헤더
-# @app.after_request
-# def after_request(response):
-#     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-#     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-#     return response
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # 포인트 URL 안전 생성
 def _build_point_reduce_url(base: str, user_id: str, amount: int, reason: str) -> str:
@@ -161,18 +159,15 @@ def _parse_json_loose(raw: str) -> dict:
     try:
         return json.loads(raw)
     except:
-        pass
-    start = raw.find("{"); end = raw.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        candidate = raw[start:end+1]
-        try:
-            return json.loads(candidate)
-        except:
-            candidate2 = candidate.replace("“", "\"").replace("”", "\"").replace("’", "'")
-            return json.loads(candidate2)
-    raise ValueError("LLM JSON 파싱 실패")
-
-
+        start = raw.find("{"); end = raw.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            candidate = raw[start:end+1]
+            try:
+                return json.loads(candidate)
+            except:
+                candidate2 = candidate.replace("“", "\"").replace("”", "\"").replace("’", "'")
+                return json.loads(candidate2)
+        raise ValueError("LLM JSON 파싱 실패")
 
 # 통합 CSV 파서(업로드용)
 def parse_unified_product_csv_upload(file_storage):
@@ -330,7 +325,7 @@ def json_to_text(policy: dict) -> str:
 
 # 신규: 멀티파트 업로드 
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
-# @cross_origin(origin='*')
+@cross_origin(origin='*')
 def generate_terms_v2():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
@@ -353,9 +348,6 @@ def generate_terms_v2():
         effective_date = form.get('effectiveDate', '').strip()
         
         user_id = request.headers.get('x-authenticated-user-uid')
-
-        # user_id는 헤더에서 가져옴
-        # effective_date는 현재 테스트에서 사용되지 않으므로 생략
 
         # 통합 CSV 파싱 (회사명/상품명/위시리스트 텍스트/표 스펙)
         parsed = parse_unified_product_csv_upload(files['productMeta'])
@@ -390,9 +382,9 @@ def generate_terms_v2():
             logging.exception("Point 서비스 호출 실패")
             return jsonify({"error": "포인트 서비스에 연결할 수 없습니다."} ), 500
 
-        
         if not category:
             return jsonify({"error": "category가 필요합니다."}), 400
+        
         persist_dir = VECTOR_DB_MAP.get(category)
         if not persist_dir or not os.path.isdir(persist_dir):
             return jsonify({"error": f"'{category}' 벡터 저장소를 찾을 수 없습니다."}), 400
@@ -422,11 +414,8 @@ def generate_terms_v2():
             return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500
         
         
-        
         # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
-        context = "\n\n".join([d.page_content for d in docs])
-        context = "\n\n".join([d.page_content for d in law_docs])
-        
+        context = "\n\n".join([d.page_content for d in docs + law_docs])
 
         # 표 스펙 구성(통합 CSV에서)
         parsed = parse_unified_product_csv_upload(files['productMeta'])
@@ -457,8 +446,6 @@ def generate_terms_v2():
                 fallback_tables.append("지급기준표")
             policy["tables"] = fallback_tables
 
-        
-
         # JSON을 텍스트로 변환하여 반환
         policy_text = json_to_text(policy)
         return jsonify({
@@ -471,12 +458,9 @@ def generate_terms_v2():
             }
         })
 
-        
-
     except Exception:
         logging.exception("약관 생성 중 오류")
         return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."} ), 500
-
 
 # Health check
 @app.route('/api/health', methods=['GET'])

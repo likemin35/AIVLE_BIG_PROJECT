@@ -101,7 +101,7 @@ public class PointService {
                 .reduce(0, Integer::sum)
                 .flatMap(todayChargedAmount -> {
                     if (todayChargedAmount + amount > DAILY_CHARGE_LIMIT) {
-                        return Mono.error(new IllegalArgumentException("일일 충전 한도(" + DAILY_CHARGE_LIMIT + "원)를 초과했습니다. 오늘 이미 " + todayChargedAmount + "원을 충전했습니다."));
+                        return Mono.error(new IllegalArgumentException("일일 충전 한도(" + DAILY_CHARGE_LIMIT + "원)를 초과했습니다."));
                     }
                     return getOrCreatePoint(userId)
                             .flatMap(point -> {

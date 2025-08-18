@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadTermFile } from './api/term';
 import iconStandard from './assets/icon-standard.png';
+import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
 import iconRisk from './assets/icon-risk.png';
 import logo from './assets/logo.png';
@@ -16,6 +17,10 @@ function Home({ user }) {
   const navigate = useNavigate();
 
   const handleFileButtonClick = () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     fileInputRef.current.click();
   };
 
@@ -42,6 +47,10 @@ function Home({ user }) {
   };
 
   const handleUploadClick = async () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     if (!selectedFile) {
       alert('약관 파일을 선택해주세요.');
       return;
