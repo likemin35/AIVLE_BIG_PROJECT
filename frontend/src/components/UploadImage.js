@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import { reduceUserPoints } from '../api/point'; // 포인트 API import
-import '../App.css';
 import './UploadImage.css';
 
 // Cloud Run 서비스 URL (POST / 로 업로드)
@@ -129,107 +128,130 @@ function UploadImage() {
 
   if (!user) {
     return (
-      <main className="image-main">
+      <div className="upload-image-page">
         <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
           <h2>로그인 필요</h2>
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="image-main">
-      <div className="image-container">
-        {/* 왼쪽: 업로드 패널 + 변경 사항 */}
-        <div className="image-left">
-          <div className="panel-card">
-            <h2 className="panel-title">이미지 업로드</h2>
+    <div className="upload-image-page">
+      <div className="upload-image-grid">
+        {/* LEFT PANEL - Upload & Changes */}
+        <aside className="left-pane panel">
+          <h2 className="panel-title">이미지 약관 검수</h2>
 
-            <div className="file-picker">
+          <div className="form-group">
+            <label className="label">이미지 파일</label>
+            <div className="file-row">
               <input
                 id="upload-file-input"
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="file-input-hidden"
+                style={{ display: 'none' }}
               />
-              <label htmlFor="upload-file-input" className="file-select-btn">
+              <input
+                className="input"
+                type="text"
+                readOnly
+                placeholder="이미지 파일을 선택하세요"
+                value={selectedFile ? selectedFile.name : ''}
+                onClick={() => document.getElementById('upload-file-input').click()}
+              />
+              <button 
+                className="btn" 
+                onClick={() => document.getElementById('upload-file-input').click()}
+              >
                 파일 선택
-              </label>
-              <div className="file-selected-name">
-                {selectedFile ? selectedFile.name : '선택된 파일이 없습니다.'}
-              </div>
+              </button>
             </div>
-
-            <button
-              onClick={handleUploadClick}
-              className="action-btn"
-              disabled={isLoading || !selectedFile}
-              title={!selectedFile ? '이미지를 먼저 선택하세요' : undefined}
-            >
-              {isLoading ? '검수 중...' : `이미지 업로드 및 검수 (${POINT_COST.toLocaleString()}P)`}
-            </button>
-
-            {error && <div className="error-banner">{error}</div>}
+            <div className="hint">JPG, PNG, GIF 등 이미지 파일을 업로드해주세요.</div>
           </div>
 
-          {/* 변경 사항: 업로드 카드 아래에 출력 */}
-          <div className="changes-card">
-            <h3 className="result-title">변경 사항</h3>
-            {!spellCheckResult ? (
-              <div className="muted">업로드 후 변경 사항이 여기에 표시됩니다.</div>
-            ) : changes.length === 0 ? (
-              <div className="no-change muted">변경 사항이 없습니다.</div>
-            ) : (
-              <ul className="changes-list">
-                {changes.map((item, idx) => (
-                  <li key={`${item.before}-${idx}`} className="change-item">
-                    <span className="badge-before">{item.before}</span>
-                    <span className="arrow">→</span>
-                    <span className="badge-after">{item.after}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+          <button
+            onClick={handleUploadClick}
+            className="btn-primary"
+            disabled={isLoading || !selectedFile}
+          >
+            {isLoading ? '검수 중...' : `이미지 검수 시작 (${POINT_COST.toLocaleString()}P)`}
+          </button>
 
-        {/* 오른쪽: 수정 전/후 전문을 좌우로 + 다운로드 버튼 */}
-        <div className="image-right">
+          {error && <div className="alert error">{error}</div>}
+
+          {/* Changes Section */}
+          <div className="form-group" style={{ marginTop: '24px' }}>
+            <label className="label">변경 사항</label>
+            <div className="changes-container">
+              {!spellCheckResult ? (
+                <div className="empty-state-small">
+                  검수 후 변경 사항이 여기에 표시됩니다.
+                </div>
+              ) : changes.length === 0 ? (
+                <div className="empty-state-small">
+                  변경 사항이 없습니다.
+                </div>
+              ) : (
+                <div className="changes-list">
+                  {changes.map((item, idx) => (
+                    <div key={`${item.before}-${idx}`} className="change-item">
+                      <div className="badge-before">{item.before}</div>
+                      <div className="arrow">→</div>
+                      <div className="badge-after">{item.after}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Download Button */}
+          {afterText && (
+            <div className="form-group" style={{ marginTop: '16px' }}>
+              <div className="hint" style={{ marginBottom: '6px' }}>수정본을 로컬 파일로 저장</div>
+              <button
+                className="btn"
+                onClick={handleDownloadAfter}
+                disabled={!afterText}
+              >
+                수정본 TXT로 저장
+              </button>
+            </div>
+          )}
+        </aside>
+
+        {/* RIGHT PANEL - Results */}
+        <section className="right-pane panel">
           {!spellCheckResult ? (
-            <div className="preview-placeholder">
-              <p className="muted">검수 결과가 이 영역에 표시됩니다.</p>
+            <div className="empty-state">
+              AI 이미지 검수 결과가 여기에 표시됩니다.
+              <div className="sub">이미지 파일을 업로드해주세요.</div>
             </div>
           ) : (
-            <>
-              <div className="download-bar">
-                <button
-                  className="download-btn"
-                  onClick={handleDownloadAfter}
-                  disabled={!afterText}
-                  title={!afterText ? '수정 후 전문이 없습니다.' : undefined}
-                >
-                  수정본 txt로 다운로드
-                </button>
-              </div>
-
-              <div className="two-col-results">
-                <div className="result-card">
+            <div className="results-container">
+              <div className="results-grid">
+                <div className="result-section">
                   <h3 className="result-title">수정 전 전문</h3>
-                  <pre className="result-pre">{beforeText}</pre>
+                  <div className="result-content">
+                    <pre className="result-text">{beforeText}</pre>
+                  </div>
                 </div>
-                <div className="result-card">
+                <div className="result-section">
                   <h3 className="result-title">수정 후 전문</h3>
-                  <pre className="result-pre">{afterText}</pre>
+                  <div className="result-content">
+                    <pre className="result-text">{afterText}</pre>
+                  </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
-        </div>
+        </section>
       </div>
-    </main>
+    </div>
   );
 }
 
