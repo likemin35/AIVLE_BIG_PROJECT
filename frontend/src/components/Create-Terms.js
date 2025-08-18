@@ -280,9 +280,9 @@ function CreateTerms() {
                   onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
                   disabled={isLoading}
                 />
-                {/* <div className="file-hint">
+                <div className="file-hint">
                   상단에는 "항목,내용" 섹션(회사명/상품명 등), 중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
-                </div> */}
+                </div>
               </div>
 
               <button
