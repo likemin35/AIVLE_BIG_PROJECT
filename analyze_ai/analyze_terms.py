@@ -9,12 +9,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 # --- Chroma 버전 로깅(디버그용) ---
-try:
-    import chromadb  # noqa
-    logging.basicConfig(level=logging.INFO)
-    logging.info(f"[BOOT] chromadb version: {chromadb.__version__}")
-except Exception:
-    pass
+import chromadb  # noqa
+
+logging.basicConfig(level=logging.INFO)
+logging.info(f"[BOOT] chromadb version: {chromadb.__version__}")
 
 # Google / Vertex
 import vertexai
@@ -53,13 +51,13 @@ LOCATION   = os.environ.get("GCP_LOCATION", "us-central1")
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
 
-# Vector DB root (1.x 포맷 폴더)
-RAG_ROOT = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례_1x"))
+# Vector DB root 
+BASE_DIR = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례_1x"))
 
 LAW_VECTOR_DB_MAP = {
-    "insurance": os.path.join(RAG_ROOT, "chroma_db_insurance"),
-    "deposit":   os.path.join(RAG_ROOT, "chroma_db_deposit"),
-    "loan":      os.path.join(RAG_ROOT, "chroma_db_loan"),
+    "insurance": os.path.join(BASE_DIR, "chroma_db_insurance"),
+    "deposit":   os.path.join(BASE_DIR, "chroma_db_deposit"),
+    "loan":      os.path.join(BASE_DIR, "chroma_db_loan"),
 }
 
 # 카테고리 정규화
@@ -108,6 +106,7 @@ except Exception as e:
 
 llm = None
 embedding_model = None
+
 if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
