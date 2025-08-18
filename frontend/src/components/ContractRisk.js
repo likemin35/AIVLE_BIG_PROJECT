@@ -1,5 +1,6 @@
 // ContractRisk.js
 import React, { useState, useRef } from 'react';
+import { useOutletContext, Link } from 'react-router-dom'; // 추가
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
@@ -32,6 +33,7 @@ function isPlainTextFile(file) {
 }
 
 export default function ContractRisk() {
+  const { user, authLoading } = useOutletContext(); // 추가
   const [selectedFile, setSelectedFile] = useState(null);
   const [category, setCategory] = useState('insurance');
   const [loading, setLoading] = useState(false);
@@ -184,6 +186,23 @@ export default function ContractRisk() {
       setLoading(false);
     }
   };
+
+  // 추가: 인증 상태에 따른 렌더링
+  if (authLoading) {
+    return <div className="loading-spinner">Loading...</div>;
+  }
+
+  if (!user) {
+    return (
+      <main className="risk-page">
+        <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
+          <h2>로그인 필요</h2>
+          <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
+          <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <div className="risk-page">
