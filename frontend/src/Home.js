@@ -5,6 +5,7 @@ import { uploadTermFile } from './api/term';
 import iconStandard from './assets/icon-standard.png';
 import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
+import iconRisk from './assets/icon-risk.png';
 import logo from './assets/logo.png';
 import './App.css';
 

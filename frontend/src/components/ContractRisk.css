@@ -5,127 +5,193 @@
   min-height: 100vh;
 }
 
+/* 큰 카드: 좌/우 패널을 한 번 더 감싸는 컨테이너 */
+.main-card {
+  max-width: 1440px;
+  margin: 24px auto 56px;
+  padding: 20px 24px 24px;
+  background: var(--card);
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
+  border-radius: 20px;
+  box-shadow: 0 14px 34px rgba(var(--shadow-rgb), 0.08);
+}
+
+/* 큰 카드 내부 상단바 */
+.main-card-header {
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--text);
+  padding: 6px 4px 14px;
+  border-bottom: 2px solid var(--border);           /* ⬅ 윤곽선 진하게 */
+  margin-bottom: 16px;
+}
+
+/* 내부 2열 그리드 */
 .risk-grid {
-  max-width: 1440px;                
-  margin: 32px auto;                 
-  padding: 0 24px 56px;              
   display: grid;
-  grid-template-columns: 460px minmax(0, 1fr); 
-  gap: 32px;                         
+  grid-template-columns: 460px minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
 /* 패널 공통 */
 .panel {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;               
-  padding: 24px;                     
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
+  border-radius: 16px;
+  padding: 24px;
   box-shadow: 0 10px 28px rgba(var(--shadow-rgb), 0.09);
-  min-height: 72vh;                 
+  min-height: auto;                                  /* ⬅ 왼쪽 패널에 남는 여백 제거 */
+}
+/* 오른쪽 결과 패널만 높이 유지 */
+.right-pane { 
+  min-height: 72vh; 
+  display: flex; 
+  position: relative; 
 }
 
-.panel-title {
-  font-size: 20px;                   
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--text);
-}
-
-/* 폼 */
-.form-group { margin-bottom: 18px; }
-
-.label {
-  display: block;
-  font-size: 14px;                   
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-
-.input, .select, .textarea {
-  width: 100%;
-  border: 2px solid var(--border);
+/* 섹션 박스 */
+.group-box {
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
+  border-radius: 14px;
+  padding: 16px;
   background: var(--card);
-  color: var(--text);
+  box-shadow: 0 4px 16px rgba(var(--shadow-rgb), 0.04);
+}
+.group-box + .group-box { margin-top: 14px; }
+.left-pane .group-box:last-child { margin-bottom: 0; } /* ⬅ 마지막 박스 아래 여백 방지 */
+
+.group-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+/* 세그먼트 버튼 */
+.seg {
+  display: inline-flex;
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
   border-radius: 10px;
-  padding: 12px 14px;               
-  font-size: 15px;                
-  outline: none;
+  overflow: hidden;
+  background: var(--soft);
+}
+.seg-btn {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.seg-btn + .seg-btn { border-left: 2px solid var(--border); } /* ⬅ 윤곽선 진하게 */
+.seg-btn:hover { background: rgba(var(--shadow-rgb), 0.06); }
+.seg-btn.active { background: var(--primary); color: #fff; }
+
+/* 파일 업로드 박스 */
+.file-drop {
+  border: 2px dashed var(--border);                 /* ⬅ 윤곽선 진하게 */
+  border-radius: 12px;
+  background: var(--card);
+  padding: 18px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
   transition: border-color .15s ease, background .15s ease;
 }
-.input:focus, .select:focus, .textarea:focus { border-color: var(--primary); }
+.file-drop:hover { border-color: var(--primary); background: rgba(var(--shadow-rgb), 0.03); }
 
-.textarea { min-height: 140px; resize: vertical; }
-
-.file-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;              
+.file-placeholder {
+  width: 100%;
+  text-align: left;
+  color: var(--muted);
+  font-size: 14px;
 }
 
-/* 버튼 */
+.file-selected {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.file-name {
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-clear {
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--danger);
+  border: 2px solid var(--danger);                  /* ⬅ 윤곽선 진하게 */
+}
+.file-clear:hover { background: var(--danger-soft); }
+
+/* 버튼 공통 */
 .btn, .btn-primary, .btn-ghost {
   border-radius: 10px;
-  padding: 12px 16px;            
+  padding: 12px 16px;
   font-weight: 700;
-  font-size: 15px;                 
+  font-size: 15px;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 2px solid transparent;                    /* ⬅ 기본 두께 업 */
   transition: transform .1s ease, background .15s ease, border-color .15s ease;
 }
-
 .btn { background: var(--soft); color: var(--text); border-color: var(--border); }
 .btn:hover { transform: translateY(-1px); }
-
-.btn-ghost { background: transparent; color: var(--danger); border-color: var(--danger); }
-.btn-ghost:hover { background: var(--danger-soft); }
-
 .btn-primary {
   width: 100%;
   background: var(--primary);
   color: #fff;
   border-color: var(--primary-hover);
-  margin-top: 6px;
 }
 .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
 
-/* 우측 결과 */
-.right-pane { min-height: 72vh; display: flex; }
+/* 저장 버튼 */
+.save-btn { margin-top: 10px; width: 100%; }
 
+/* 분석 버튼 */
+.analyze-btn { margin-top: 12px; }
+
+/* 우측 결과 */
 .empty-state {
   margin: auto;
   text-align: center;
   color: var(--muted);
-  font-size: 16px;                 
+  font-size: 16px;
 }
 .empty-state .sub { margin-top: 10px; font-size: 14px; color: var(--subtext); }
 
-.results {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+.results { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.meta { font-size: 14px; color: var(--muted); margin-bottom: 6px; }
 
-.meta {
-  font-size: 14px;                   
-  color: var(--muted);
-  margin-bottom: 6px;
-}
-
-/* 하나의 큰 스크롤 영역 (더 크게) */
+/* 결과 스크롤 영역 */
 .results-body {
   flex: 1;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
   border-radius: 12px;
-  padding: 16px;                     
+  padding: 16px;
   background: var(--card);
   white-space: pre-wrap;
   color: var(--text);
-  font-size: 15.5px;                 
-  line-height: 1.6;                  
-  max-height: 78vh;                  
+  font-size: 15.5px;
+  line-height: 1.6;
+  max-height: 78vh;
   overflow-y: auto;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 /* 알림 */
@@ -140,19 +206,18 @@
 .alert.error {
   background: var(--error-bg);
   color: var(--error-text);
-  border: 1px solid var(--error-border);
+  border: 2px solid var(--error-border);            /* ⬅ 윤곽선 진하게 */
 }
 
 /* 반응형 */
 @media (max-width: 1200px) {
   .risk-grid { grid-template-columns: 1fr; }
-  .panel { min-height: auto; }
+  .panel { min-height: auto; }                      /* 모바일에서도 왼쪽 패널 여백 없음 */
+  .right-pane { min-height: 60vh; }
   .results-body { max-height: 70vh; }
 }
 
-/* ----- 로딩 오버레이 / 스피너 ----- */
-.right-pane { position: relative; } /* 오버레이 기준점 */
-
+/* 로딩 오버레이 / 스피너 */
 .loading-overlay {
   position: absolute;
   inset: 0;
@@ -164,7 +229,6 @@
   backdrop-filter: blur(1px);
   border-radius: 12px;
 }
-
 .loading-card {
   display: flex;
   flex-direction: column;
@@ -172,70 +236,18 @@
   gap: 10px;
   padding: 18px 22px;
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);                  /* ⬅ 윤곽선 진하게 */
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.08);
 }
+.loading-title { font-weight: 700; color: var(--text); }
+.loading-sub { font-size: 12px; color: var(--muted); }
 
-.loading-title {
-  font-weight: 700;
-  color: var(--text);
-}
-
-.loading-sub {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-/* 링 스피너 */
-.spinner {
-  width: 42px;
-  height: 42px;
-  position: relative;
-}
-.spinner::after {
-  content: "";
-  box-sizing: border-box;
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 4px solid var(--primary);
-  border-color: var(--primary) transparent var(--primary) transparent;
-  animation: spin 1.0s linear infinite;
-}
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 저장 힌트/보조 텍스트 */
-.hint {
-  font-size: 12.5px;
-  color: var(--muted);
-}
-
-/* 저장 버튼 비활성화 상태 가독성 */
+/* 비활성화 상태 */
 .btn:disabled,
 .btn-ghost:disabled,
 .btn-primary:disabled {
   opacity: .6;
   cursor: not-allowed;
   filter: grayscale(0.05);
-}
-
-/* 저장 버튼 묶음 레이아웃 (원하면 JS쪽 inline 대신 class로 교체 가능) */
-.save-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* 긴 분석 결과 줄바꿈 안정화 */
-.results-body {
-  word-break: break-word; /* 길게 이어지는 문장도 줄바꿈 */
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-}
-
-/* 좌측 폼 간격 조금 여유 */
-.form-group + .form-group {
-  margin-top: 12px;
 }

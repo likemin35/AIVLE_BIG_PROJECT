@@ -25,9 +25,9 @@ COPY 판례_1x ./판례_1x
 
 # ---- Runtime env ----
 ENV CHROMA_BASE=/app/판례_1x \
-    PY_PORT=8082
+    PY_PORT=8080
 
-EXPOSE 8082
+EXPOSE 8080
 
 # gunicorn으로 실행 (Flask의 app 객체 사용)
-CMD ["gunicorn", "-b", "0.0.0.0:8082", "analyze_terms:app", "--workers=1", "--threads=4", "--timeout=300"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "analyze_terms:app", "--workers=1", "--threads=4", "--timeout=300"]
