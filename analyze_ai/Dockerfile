@@ -1,3 +1,4 @@
+//도커
 # ---- Base ----
 FROM python:3.11-slim
 
@@ -19,15 +20,15 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 # 코드 & 벡터DB 복사
 COPY analyze_terms.py ./analyze_terms.py
-COPY 판례_1x ./판례_1x
+COPY 판례 ./판례
 # (※ 벡터 DB를 컨테이너 외부에서 마운트할 거면 위 COPY는 빼고
 #    docker run 할 때 -v로 /app/판례_1x를 마운트하세요)
 
 # ---- Runtime env ----
-ENV CHROMA_BASE=/app/판례_1x \
-    PY_PORT=8082
+ENV CHROMA_BASE=/app/판례 \
+    PY_PORT=8080
 
-EXPOSE 8082
+EXPOSE 8080
 
 # gunicorn으로 실행 (Flask의 app 객체 사용)
-CMD ["gunicorn", "-b", "0.0.0.0:8082", "analyze_terms:app", "--workers=1", "--threads=4", "--timeout=300"]
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "analyze_terms:app", "--workers=1", "--threads=4", "--timeout=300"]
