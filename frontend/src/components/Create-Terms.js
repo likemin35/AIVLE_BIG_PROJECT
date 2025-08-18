@@ -216,7 +216,7 @@ function CreateTerms() {
           <div className="form-section">
             <div className="form-container">
               <div className="form-group">
-                <label className="form-label">회사 이름 (CSV가 자동으로 채움)</label>
+                <label className="form-label">회사 이름</label>
                 <input
                   type="text"
                   value={companyName}
@@ -248,7 +248,7 @@ function CreateTerms() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">상품 이름 (CSV가 자동으로 채움)</label>
+                <label className="form-label">상품 이름</label>
                 <input
                   type="text"
                   value={productName}
@@ -272,7 +272,7 @@ function CreateTerms() {
 
               {/* CSV 업로드 (단일) */}
               <div className="form-group">
-                <label className="form-label">product_info.csv (필수)</label>
+                <label className="form-label">약관 csv파일 (필수)</label>
                 <input
                   type="file"
                   accept=".csv"
@@ -280,9 +280,9 @@ function CreateTerms() {
                   onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
                   disabled={isLoading}
                 />
-                <div className="file-hint">
+                {/* <div className="file-hint">
                   상단에는 "항목,내용" 섹션(회사명/상품명 등), 중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
-                </div>
+                </div> */}
               </div>
 
               <button

@@ -341,7 +341,6 @@ def debug_routes():
         })
     return {"routes": sorted(rows, key=lambda r: r["rule"])}
 
-@app.route("/api/debug/vector-db", methods=["GET"])
 @app.route("/api/debug/vector_db", methods=["GET"])
 def debug_vector_db():
     info = {}

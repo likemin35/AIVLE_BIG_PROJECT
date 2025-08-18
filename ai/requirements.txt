@@ -17,4 +17,3 @@ numpy==1.26.4
 -f https://download.pytorch.org/whl/cpu/torch_stable.html
 requests==2.32.3
 google-cloud-secret-manager==2.19.0
-transformers==4.42.3
