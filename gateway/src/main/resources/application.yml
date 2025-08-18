@@ -28,17 +28,13 @@ spring:
 #<<< API Gateway / Routes
       routes:
         - id: keywords-ner
-          uri: http://localhost:8081
-          predicates:
-            - Path=/ner/**
-          filters:
-            - StripPrefix=1
-        - id: keywords-ai
           uri: http://localhost:8080
           predicates:
-            - Path=/keywords/**
-          filters:
-            - StripPrefix=1
+            - Path=/api/visualize,/api/ner/**,/api/clauses/**,/api/ner/offsets
+        - id: keywords-graph
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/graph/**
         - id: ai
           uri: http://localhost:8080
           predicates:
