@@ -15,6 +15,10 @@ function Home({ user }) {
   const navigate = useNavigate();
 
   const handleFileButtonClick = () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     fileInputRef.current.click();
   };
 
@@ -41,6 +45,10 @@ function Home({ user }) {
   };
 
   const handleUploadClick = async () => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
     if (!selectedFile) {
       alert('약관 파일을 선택해주세요.');
       return;
