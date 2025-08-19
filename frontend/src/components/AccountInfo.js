@@ -100,6 +100,17 @@ const AccountInfo = () => {
                     {message && <p className="message">{message}</p>}
                 </form>
             )}
+
+            <div style={{ marginTop: "20px", textAlign: "left" }}>
+                <a
+                    href="https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%80%E1%85%A2%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%BC%E1%84%87%E1%85%A9%20%E1%84%87%E1%85%A9%E1%84%92%E1%85%A9%E1%84%87%E1%85%A5%E1%86%B8(%E1%84%87%E1%85%A5%E1%86%B8%E1%84%85%E1%85%B2%E1%86%AF)(%E1%84%8C%E1%85%A619234%E1%84%92%E1%85%A9)(20250313).pdf?alt=media&token=57b960cc-050b-45d5-9c98-4786d16ecac2"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "12px", color: "gray", textDecoration: "underline" }}
+                >
+                    개인정보처리방침
+                </a>
+            </div>
         </div>
     );
 };
