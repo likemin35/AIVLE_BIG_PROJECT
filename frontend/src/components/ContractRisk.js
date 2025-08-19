@@ -34,21 +34,28 @@ const TERMS_API_BASE_URL =
 
 // 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
 async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
-  let headers = { ...(init.headers || {}) };
+  const headers = { ...(init.headers || {}) };
+  if (requireAuth) {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return new Response(null, { status: 401 }); // 안전가드
 
-  let token = requireAuth ? await getToken(false) : null;
-  if (requireAuth && token) headers.Authorization = `Bearer ${token}`;
+    // 1차 토큰
+    let idToken = await fbGetIdToken(user, false).catch(() => null);
+    if (!idToken) idToken = await fbGetIdToken(user, true).catch(() => null);
+    if (idToken) headers.Authorization = `Bearer ${idToken}`;
 
-  let res = await fetch(url, { ...init, headers });
-
-  if (requireAuth && res.status === 401) {
-    token = await getToken(true);
-    headers = { ...(init.headers || {}) };
-    if (token) headers.Authorization = `Bearer ${token}`;
-    res = await fetch(url, { ...init, headers });
+    // Term/Point 등이 기대하는 UID 헤더도 같이
+    headers['x-authenticated-user-uid'] = user.uid;
   }
+
+  // JSON 응답 사용하는 엔드포인트에서 타입 명시
+  if (!('Accept' in headers)) headers['Accept'] = 'application/json';
+
+  const res = await fetch(url, { ...init, headers });
+  // (필요 시) 여기서도 401이면 호출부에서 에러 처리
   return res;
-}
+ }
 
 // 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
 function requireJson(res) {
