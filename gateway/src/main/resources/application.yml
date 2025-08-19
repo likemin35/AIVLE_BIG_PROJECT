@@ -5,7 +5,7 @@ server:
 firebase:
   secret-id: "firebase-adminsdk"
   database-url: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
-  project-id: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
+  project-id: "aivle-team0721"   # 실제 프로젝트 ID로 변경해주세요
 
 ---
 
@@ -17,52 +17,59 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins: "http://localhost:3000"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+            allowedMethods: [ GET, POST, PUT, DELETE, OPTIONS ]
             allowedHeaders: "*"
             allowCredentials: true
-#<<< API Gateway / Routes
+
+      # <<< API Gateway / Routes
       routes:
+        # ✅ analyze: /api/analyze-terms(업로드 포함) → localhost:8082
+        #    Flask가 /api 프리픽스를 포함해 듣고 있으므로 StripPrefix 사용하지 않음
+        - id: analyze
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/analyze-terms,/api/analyze-terms-upload
+
         - id: keywords-ner
           uri: http://localhost:8081
           predicates:
             - Path=/ner/**
           filters:
             - StripPrefix=1
+
         - id: keywords-ai
           uri: http://localhost:8080
           predicates:
             - Path=/keywords/**
           filters:
             - StripPrefix=1
+
         - id: ai
           uri: http://localhost:8080
           predicates:
-            # - Path=/ais/**, 
-            - Path=/api/generate/**, /ais/** 
+            - Path=/api/generate/**,/ais/**
+
         - id: term
           uri: http://localhost:8083
           predicates:
-            - Path=/terms/**, /getTerms/**
+            - Path=/terms/**,/getTerms/**
+
         - id: point
           uri: http://localhost:8085
           predicates:
-            - Path=/points/**, /getPoints/**, /api/points/**
+            - Path=/points/**,/getPoints/**,/api/points/**
+
         - id: qna
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
+
+        # ⛳️ 항상 맨 마지막: 프론트 SPA
         - id: frontend
           uri: http://localhost:3000
           predicates:
             - Path=/**
-#>>> API Gateway / Routes
-      
-
+      # >>> API Gateway / Routes
 
 ---
 
@@ -74,37 +81,47 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins: "${FRONTEND_URL:http://localhost:3000}" # GCP 배포시 환경변수로 주입, 없을 경우 로컬
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+            allowedMethods: [ GET, POST, PUT, DELETE, OPTIONS ]
             allowedHeaders: "*"
             allowCredentials: true
+
       routes:
+        # ✅ analyze: /api/analyze-terms(업로드 포함) → analyze:8082
+        #    StripPrefix 사용하지 않음
+        - id: analyze
+          uri: http://analyze:8082
+          predicates:
+            - Path=/api/analyze-terms,/api/analyze-terms-upload
+
         - id: ai
           uri: http://ai:8080
           predicates:
-            # - Path=/ais/**, 
-            - Path=/api/generate, /ais/**, 
+            - Path=/api/generate/**,/ais/**
+          filters:
+            - StripPrefix=1
+
         - id: term
           uri: http://term:8080
           predicates:
-            - Path=/terms/**, 
+            - Path=/terms/**
+          # 필요하면 filters에 StripPrefix=1 추가
+
         - id: point
           uri: http://point:8080
           predicates:
-            - Path=/points/**, 
+            - Path=/points/**
+          # 필요하면 filters에 StripPrefix=1 추가
+
         - id: qna
           uri: http://qna:8080
           predicates:
-            - Path=/qna/**, 
+            - Path=/qna/**
+          # 필요하면 filters에 StripPrefix=1 추가
+
         - id: frontend
           uri: http://frontend:8080
           predicates:
             - Path=/**
-      
 
 server:
   port: 8080
