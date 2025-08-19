@@ -4,8 +4,8 @@ server:
 # Firebase 설정
 firebase:
   secret-id: "firebase-adminsdk"
-  database-url: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
-  project-id: "aivle-team0721"   # 실제 프로젝트 ID로 변경해주세요
+  database-url: "aivle-team0721"
+  project-id: "aivle-team0721"
 
 ---
 
@@ -21,14 +21,17 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
 
+      # ⬇️ 중복 CORS 응답 헤더 제거 (게이트웨이 값을 마지막으로 유지)
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin,RETAIN_LAST
+
       # <<< API Gateway / Routes
       routes:
-        # ✅ analyze: /api/analyze-terms(업로드 포함) → localhost:8082
-        #    Flask가 /api 프리픽스를 포함해 듣고 있으므로 StripPrefix 사용하지 않음
+        # analyze → localhost:8082
         - id: analyze
           uri: http://localhost:8082
           predicates:
-            - Path=/api/analyze-terms,/api/analyze-terms-upload
+            - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
 
         - id: keywords-ner
           uri: http://localhost:8081
@@ -52,19 +55,21 @@ spring:
         - id: term
           uri: http://localhost:8083
           predicates:
-            - Path=/terms/**,/getTerms/**
+            # ⬇️ 정확 경로 + 와일드카드 모두
+            - Path=/terms,/terms/**,/getTerms,/getTerms/**
 
         - id: point
           uri: http://localhost:8085
           predicates:
-            - Path=/points/**,/getPoints/**,/api/points/**
+            # ⬇️ 기존 오타(/terms...) 교정
+            - Path=/points,/points/**,/getPoints,/getPoints/**,/api/points,/api/points/**
 
         - id: qna
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
 
-        # ⛳️ 항상 맨 마지막: 프론트 SPA
+        # ⛳️ 프론트 SPA
         - id: frontend
           uri: http://localhost:3000
           predicates:
@@ -80,43 +85,45 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}" # GCP 배포시 환경변수로 주입, 없을 경우 로컬
+            # 배포에선 환경변수로 프론트 도메인 주입 (예: https://app.example.com)
+            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}"
             allowedMethods: [ GET, POST, PUT, DELETE, OPTIONS ]
             allowedHeaders: "*"
             allowCredentials: true
 
+      # ⬇️ 배포도 동일하게 중복 제거
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin,RETAIN_LAST
+
       routes:
-        # ✅ analyze: /api/analyze-terms(업로드 포함) → analyze:8082
-        #    StripPrefix 사용하지 않음
+        # analyze → analyze:8082
         - id: analyze
           uri: http://analyze:8082
           predicates:
-            - Path=/api/analyze-terms,/api/analyze-terms-upload
+            - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
 
         - id: ai
           uri: http://ai:8080
           predicates:
             - Path=/api/generate/**,/ais/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=1  # ← 백엔드가 /api/generate를 그대로 받는다면 이 줄 제거가 필요할 수도 있음 (참고)
 
         - id: term
           uri: http://term:8080
           predicates:
-            - Path=/terms/**
-          # 필요하면 filters에 StripPrefix=1 추가
+            # ⬇️ 정확 경로까지 포함
+            - Path=/terms,/terms/**
 
         - id: point
           uri: http://point:8080
           predicates:
             - Path=/points/**
-          # 필요하면 filters에 StripPrefix=1 추가
 
         - id: qna
           uri: http://qna:8080
           predicates:
             - Path=/qna/**
-          # 필요하면 filters에 StripPrefix=1 추가
 
         - id: frontend
           uri: http://frontend:8080

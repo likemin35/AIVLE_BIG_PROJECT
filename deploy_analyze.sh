@@ -54,10 +54,24 @@ docker buildx inspect --bootstrap >/dev/null 2>&1 || true
 # 2) Artifact Registry 인증
 ##############################################
 echo "=== 2) Artifact Registry 인증 ==="
-gcloud auth configure-docker "${REGION}-docker.pkg.dev" -q
-# 혹시 이전 세션 꼬임 방지용
-docker logout "https://${REGION}-docker.pkg.dev" >/dev/null 2>&1 || true
-gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin "https://${REGION}-docker.pkg.dev" >/dev/null
+
+# 로컬 푸시일 때만 인증 (Cloud Build면 스킵)
+if [[ "${USE_CLOUD_BUILD:-0}" == "0" ]]; then
+  REG_HOST="${REGION}-docker.pkg.dev"
+  echo "[2.1] 기존 세션 정리"
+  docker logout "https://${REG_HOST}" >/dev/null 2>&1 || true
+
+  echo "[2.2] gcloud 액세스 토큰 획득"
+  TOKEN="$(gcloud auth print-access-token)"
+  if [[ -z "${TOKEN}" ]]; then
+    echo "❌ gcloud access token을 가져오지 못했습니다. gcloud auth login 먼저 해줘."
+    exit 1
+  fi
+
+  echo "[2.3] docker login (비대화식)"
+  # 주의: Windows Git Bash에선 따옴표 포함 그대로 유지
+  echo "${TOKEN}" | docker login -u oauth2accesstoken --password-stdin "https://${REG_HOST}"
+fi
 
 ##############################################
 # 3) 빌드 & 푸시
