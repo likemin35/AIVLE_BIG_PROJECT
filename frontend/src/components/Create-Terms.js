@@ -23,7 +23,6 @@ function CreateTerms() {
     process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
     'https://terms-api-service-eck6h26cxa-uc.a.run.app';
 
-
   const categories = [
     { value: 'deposit', label: '예금' },
     { value: 'savings', label: '적금' },
@@ -198,7 +197,7 @@ function CreateTerms() {
   if (!user) {
     return (
       <div className="terms-main">
-        <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
+        <div className="login-prompt">
           <h2>로그인 필요</h2>
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
@@ -211,8 +210,10 @@ function CreateTerms() {
     <div className="App">
       <main className="terms-main">
         <div className="terms-container">
-          {/* 오른쪽 입력 폼 영역 */}
-          <div className="form-section">
+          {/* 왼쪽 입력 폼 영역 */}
+          <aside className="form-section">
+            <h2 className="panel-title">AI 약관 초안 생성</h2>
+            
             <div className="form-container">
               <div className="form-group">
                 <label className="form-label">회사 이름</label>
@@ -224,6 +225,7 @@ function CreateTerms() {
                   placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
                   disabled={isLoading}
                 />
+                <div className="hint">CSV 파일에서 자동으로 추출됩니다.</div>
               </div>
 
               <div className="form-group">
@@ -235,7 +237,7 @@ function CreateTerms() {
                     className="form-select"
                     disabled={isLoading}
                   >
-                    <option value="선택">선택</option>
+                    <option value="선택">카테고리를 선택하세요</option>
                     {categories.map((cat) => (
                       <option key={cat.value} value={cat.value}>
                         {cat.label}
@@ -244,6 +246,7 @@ function CreateTerms() {
                   </select>
                   <div className="select-arrow">▼</div>
                 </div>
+                <div className="hint">생성할 약관의 카테고리를 선택해주세요.</div>
               </div>
 
               <div className="form-group">
@@ -256,6 +259,7 @@ function CreateTerms() {
                   placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
                   disabled={isLoading}
                 />
+                <div className="hint">CSV 파일에서 자동으로 추출됩니다.</div>
               </div>
 
               <div className="form-group">
@@ -267,12 +271,12 @@ function CreateTerms() {
                   className="form-input"
                   disabled={isLoading}
                 />
+                <div className="hint">약관이 시행되는 날짜를 선택해주세요.</div>
               </div>
 
-              {/* CSV 업로드 (단일) - 커스텀 툴팁 아이콘 추가 */}
               <div className="form-group">
                 <label className="form-label">
-                  약관 csv파일 (필수)
+                  약관 CSV 파일 (필수)
                   <div className="tooltip-container">
                     <span className="info-icon">ⓘ</span>
                     <div className="tooltip-content">
@@ -287,6 +291,7 @@ function CreateTerms() {
                   onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
                   disabled={isLoading}
                 />
+                <div className="hint">상품 정보와 표가 포함된 CSV 파일을 업로드해주세요.</div>
               </div>
 
               <button
@@ -294,19 +299,20 @@ function CreateTerms() {
                 className="ai-draft-btn"
                 disabled={isLoading}
               >
-                {isLoading ? '생성 중...' : 'AI 초안 딸각 (5,000P)'}
+                {isLoading ? '생성 중...' : 'AI 초안 생성 (5,000P)'}
               </button>
 
-              {error && <div style={{ color: 'crimson', marginTop: '0.75rem' }}>{error}</div>}
+              {error && <div className="error-message">{error}</div>}
             </div>
-          </div>
+          </aside>
 
-          {/* 왼쪽 안내 영역 */}
-          <div className="preview-section">
+          {/* 오른쪽 안내 영역 */}
+          <section className="preview-section">
             <div className="preview-placeholder">
-              <p>파일 업로드 후 AI 약관 초안을 생성하면 편집 화면으로 이동합니다.</p>
+              파일 업로드 후 AI 약관 초안을 생성하면 편집 화면으로 이동합니다.
+              <div className="sub">CSV 파일을 업로드하고 카테고리를 선택해주세요.</div>
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>
