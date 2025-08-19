@@ -39,10 +39,19 @@ except Exception:
 
 
 # =============================================================================
+# 공용 런타임 경로(Cloud Run은 /tmp만 쓰기 가능)
+# =============================================================================
+os.environ.setdefault("HF_HOME", "/tmp/hf")
+os.environ.setdefault("TRANSFORMERS_CACHE", "/tmp/hf")
+os.environ.setdefault("ALLOW_HNSW_INDEX", "1")  # index/ rename 시도 방지
+os.makedirs("/tmp/hf", exist_ok=True)
+
+# =============================================================================
 # Flask
 # =============================================================================
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# /api/* 경로는 전부 CORS 허용 (credentials 미사용)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=False)
 logging.getLogger("werkzeug").setLevel(logging.INFO)
 
 # =============================================================================
@@ -53,9 +62,9 @@ LOCATION   = os.environ.get("GCP_LOCATION", "us-central1")
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
 
-# 업로드/출력 폴더
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
+# 업로드/출력 폴더 (Cloud Run은 /tmp만 쓰기 가능)
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR", "/tmp/uploads")
+OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "/tmp/outputs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -548,8 +557,22 @@ def apply_pairs_to_text(text: str, pairs: List[Tuple[str, str]]) -> Tuple[str, i
     return out, applied
 
 # =============================================================================
-# API
+# API (CORS 헤더 강제 + OPTIONS 조기 응답)
 # =============================================================================
+@app.after_request
+def add_cors_headers(resp):
+    origin = request.headers.get("Origin")
+    if origin:
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Vary"] = "Origin"
+    else:
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+    resp.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+    resp.headers["Access-Control-Allow-Headers"] = \
+        "Content-Type, Authorization, x-authenticated-user-uid"
+    resp.headers["Access-Control-Max-Age"] = "86400"
+    return resp
+
 @app.route("/api/health", methods=["GET"])
 def health():
     return {"ok": True, "service": "analyze_terms", "time": datetime.now(timezone.utc).isoformat()}
@@ -593,10 +616,10 @@ def debug_vector_db():
     return info
 
 # JSON 본문 분석(파일 없이)
-@app.route("/api/analyze-terms", methods=["POST"])
+@app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
 def analyze_terms():
-    if not llm or not embedding_model:
-        return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
+    if request.method == "OPTIONS":
+        return ("", 204)
 
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
@@ -655,8 +678,11 @@ def analyze_terms():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
-@app.route("/api/analyze-terms-upload", methods=["POST"])
+@app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
 def analyze_terms_upload():
+    if request.method == "OPTIONS":
+        return ("", 204)
+
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
     if "file" not in request.files:
@@ -757,5 +783,5 @@ def analyze_terms_upload():
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
 if __name__ == "__main__":
-    port = int(os.environ.get("PY_PORT", 8082))
+    port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8082)))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
