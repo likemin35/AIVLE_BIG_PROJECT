@@ -1,194 +1,283 @@
-/* Create-Terms.css */
+/* Create-Terms.css - ContractRisk 스타일 적용 */
 
+/* 페이지 레이아웃 */
 .terms-main {
-min-height: calc(100vh - 80px);
-background-color: var(--card);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
 
+/* 큰 카드: 메인 컨테이너 - 그리드 순서 변경 */
 .terms-container {
-display: flex;
-height: calc(100vh - 80px);
+  max-width: 1440px;
+  margin: 24px auto 56px;
+  padding: 20px 24px 24px;
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 14px 34px rgba(var(--shadow-rgb), 0.08);
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr); /* 순서 변경: 폼(400px) 먼저, 미리보기(1fr) 나중 */
+  gap: 24px;
+  align-items: start;
+  min-height: calc(100vh - 120px);
 }
 
-/* 왼쪽 미리보기 영역 */
+/* 왼쪽 입력 폼 영역 (기존 우측) - 패널 스타일 */
+.form-section {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 28px rgba(var(--shadow-rgb), 0.09);
+  min-height: auto;
+}
+
+.form-container {
+  max-width: 100%;
+}
+
+/* 오른쪽 미리보기 영역 (기존 좌측) - 패널 스타일 */
 .preview-section {
-flex: 1;
-background-color: var(--soft);
-padding: 2rem;
-border-right: 1px solid var(--border);
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 4px; /* 8px에서 4px로 줄임 */
+  box-shadow: 0 10px 28px rgba(var(--shadow-rgb), 0.09);
+  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-placeholder {
-width: 100%;
-height: 100%;
-background-color: var(--soft-2);
-border-radius: 8px;
-display: flex;
-align-items: center;
-justify-content: center;
-color: #636e72;
-font-size: 1.1rem;
-padding: 1rem;
-box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--text);
+  font-size: 16px;
+  padding: 120px 24px 24px 24px;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .generated-terms-content {
   width: 100%;
   height: 100%;
-  overflow-y: auto; /* Allow scrolling for long content */
+  overflow-y: auto;
   text-align: left;
   color: var(--text);
   background: var(--card);
-  padding: 1.5rem;
-  border-radius: 6px;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
 }
 
 .generated-terms-content h3 {
   text-align: center;
   margin-bottom: 20px;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--text);
+  padding-bottom: 14px;
+  border-bottom: 2px solid var(--border);
 }
 
 .generated-terms-content pre {
-  white-space: pre-wrap; /* Wrap text */
-  word-break: break-all; /* Break long words */
-  font-family: inherit;
-  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--text);
+  flex: 1;
+  overflow-y: auto;
+  max-height: 60vh;
 }
 
-/* 오른쪽 입력 폼 영역 */
-.form-section {
-width: 400px;
-background-color: var(--card);
-padding: 2rem;
-overflow-y: auto;
-}
-
-.form-container {
-max-width: 100%;
-}
-
+/* 폼 그룹 - 섹션 박스 스타일 */
 .form-group {
-margin-bottom: 1.5rem;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--card);
+  box-shadow: 0 4px 16px rgba(var(--shadow-rgb), 0.04);
+  margin-bottom: 14px;
 }
 
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* 라벨 */
 .form-label {
-display: flex !important;
-align-items: center;
-font-size: 0.95rem;
-font-weight: 500;
-color: var(--text);
-margin-bottom: 0.5rem;
+  display: flex !important;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--muted);
+  margin-bottom: 10px;
 }
 
-.form-input {
-width: 100%;
-padding: 0.75rem 1rem;
-border: 1px solid var(--border);
-border-radius: 4px;
-font-size: 0.9rem;
-outline: none;
-transition: border-color 0.2s;
-box-sizing: border-box;
+/* 입력 필드 공통 */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--card);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
 }
 
-.form-input:focus {
-border-color: var(--primary);
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--primary);
+  background: rgba(var(--shadow-rgb), 0.03);
 }
 
-.form-input::placeholder {
-color: #adb5bd;
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.05);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--muted);
 }
 
 /* 드롭다운 스타일 */
 .select-container {
-position: relative;
-width: 100%;
+  position: relative;
+  width: 100%;
 }
 
 .form-select {
-width: 100%;
-padding: 0.75rem 2.5rem 0.75rem 1rem;
-border: 1px solid var(--border);
-border-radius: 4px;
-font-size: 0.9rem;
-outline: none;
-background-color: var(--card);
-cursor: pointer;
-appearance: none;
-box-sizing: border-box;
-}
-
-.form-select:focus {
-border-color: var(--primary);
+  padding-right: 2.5rem;
+  cursor: pointer;
+  appearance: none;
 }
 
 .select-arrow {
-position: absolute;
-right: 1rem;
-top: 50%;
-transform: translateY(-50%);
-pointer-events: none;
-color: #636e72;
-font-size: 0.8rem;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 /* 텍스트 영역 */
 .form-textarea {
-width: 100%;
-padding: 0.75rem 1rem;
-border: 1px solid var(--border);
-border-radius: 4px;
-font-size: 0.9rem;
-outline: none;
-transition: border-color 0.2s;
-resize: vertical;
-font-family: inherit;
-box-sizing: border-box;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
 }
 
-.form-textarea:focus {
-border-color: var(--primary);
+/* 파일 입력 스타일 */
+.file-input {
+  position: relative;
+  cursor: pointer;
 }
 
-.form-textarea::placeholder {
-color: #adb5bd;
+.file-input::-webkit-file-upload-button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background 0.15s ease;
+}
+
+.file-input::-webkit-file-upload-button:hover {
+  background: var(--primary-hover);
+}
+
+.file-input::file-selector-button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background 0.15s ease;
+}
+
+.file-input::file-selector-button:hover {
+  background: var(--primary-hover);
 }
 
 /* AI 초안 생성 버튼 */
 .ai-draft-btn {
-width: 100%;
-padding: 1rem 2rem;
-background-color: var(--primary);
-color: var(--card);
-border: none;
-border-radius: 8px;
-font-size: 1rem;
-font-weight: 600;
-cursor: pointer;
-transition: background-color 0.2s;
-margin-top: 1rem;
+  width: 100%;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .1s ease, background .15s ease, border-color .15s ease;
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary-hover);
+  margin-top: 16px;
 }
 
 .ai-draft-btn:hover {
-background-color: var(--primary-hover);
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.ai-draft-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.05);
+  transform: none;
 }
 
 .translate-redirect-btn {
-    width: 100%;
-    padding: 1rem 2rem;
-    background-color: #6c5ce7;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 1rem;
+  width: 100%;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .1s ease, background .15s ease, border-color .15s ease;
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary-hover);
+  margin-top: 12px;
 }
 
 .translate-redirect-btn:hover {
-    background-color: #5f4fcf;
+  background: var(--primary-hover);
+  transform: translateY(-1px);
 }
 
 /* 커스텀 툴팁 컨테이너 */
@@ -198,25 +287,25 @@ background-color: var(--primary-hover);
   margin-left: 8px;
 }
 
-/* 정보 아이콘 스타일 - 보라색 테마에 맞춤 */
+/* 정보 아이콘 스타일 */
 .info-icon {
   display: inline-block;
   width: 18px;
   height: 18px;
-  background-color: var(--primary);
-  color: white;
+  background: var(--primary);
+  color: #fff;
   border-radius: 50%;
   text-align: center;
   font-size: 12px;
   line-height: 18px;
   cursor: help;
   user-select: none;
-  font-weight: bold;
-  transition: background-color 0.2s ease;
+  font-weight: 700;
+  transition: background 0.15s ease;
 }
 
 .info-icon:hover {
-  background-color: var(--primary-hover);
+  background: var(--primary-hover);
 }
 
 /* 커스텀 툴팁 스타일 */
@@ -227,17 +316,17 @@ background-color: var(--primary-hover);
   bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--text);
+  background: var(--text);
   color: var(--card);
   text-align: center;
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 12px;
-  font-weight: normal;
+  font-weight: 400;
   white-space: nowrap;
   z-index: 1000;
   transition: opacity 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(var(--shadow-rgb), 0.15);
   line-height: 1.4;
 }
 
@@ -259,87 +348,7 @@ background-color: var(--primary-hover);
   opacity: 1;
 }
 
-/* 파일 입력 스타일 개선 - 보라색 테마에 맞춤 */
-.file-input {
-  position: relative;
-  cursor: pointer;
-}
-
-.file-input::-webkit-file-upload-button {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 12px;
-  transition: background-color 0.2s ease;
-}
-
-.file-input::-webkit-file-upload-button:hover {
-  background-color: var(--primary-hover);
-}
-
-/* Firefox 지원 */
-.file-input::file-selector-button {
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-right: 12px;
-  transition: background-color 0.2s ease;
-}
-
-.file-input::file-selector-button:hover {
-  background-color: var(--primary-hover);
-}
-
-/* 반응형 디자인 */
-@media (max-width: 1024px) {
-.form-section {
-width: 350px;
-}
-}
-
-@media (max-width: 768px) {
-.terms-container {
-flex-direction: column;
-height: auto;
-}
-
-.preview-section {
-height: 300px;
-border-right: none;
-border-bottom: 1px solid var(--border);
-}
-
-.form-section {
-width: 100%;
-padding: 1.5rem;
-}
-
-.form-group {
-margin-bottom: 1.2rem;
-}
-}
-
-@media (max-width: 480px) {
-.form-section {
-padding: 1rem;
-}
-
-.preview-section {
-height: 200px;
-padding: 1rem;
-}
-}
-
+/* 로딩 텍스트 애니메이션 */
 @keyframes blink {
   0% { opacity: 1; }
   50% { opacity: 0.3; }
@@ -350,34 +359,108 @@ padding: 1rem;
   animation: blink 1.2s infinite;
 }
 
-/* --- Theme-aware form elements --- */
-input, select, textarea {
+/* 에러 메시지 */
+.error-message {
+  color: var(--error-text);
+  background: var(--error-bg);
+  border: 2px solid var(--error-border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 로그인 프롬프트 */
+.login-prompt {
+  text-align: center;
+  padding: 50px 24px;
   background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  margin: 24px auto;
+  max-width: 600px;
+}
+
+.login-prompt h2 {
   color: var(--text);
-  border: 1px solid var(--border);
-}
-input::placeholder, textarea::placeholder { color: var(--muted); }
-select { background: var(--card); color: var(--text); }
-button { color: var(--text); }
-
-/* Card-like containers */
-.preview-section, .login-container, .signup-container, .qna-detail-container, .mypage-view {
-  background: var(--card) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
+  margin-bottom: 16px;
 }
 
-/* Page backgrounds */
-.terms-main, .login-page, .signup-page, .qna-detail-page, .mypage-layout-container {
-  background: var(--bg) !important;
-  color: var(--text);
+.login-prompt p {
+  color: var(--muted);
+  margin-bottom: 24px;
 }
 
-.preview-section { background: var(--soft); border-right: 1px solid var(--border); }
-.preview-placeholder { background: var(--soft-2); color: var(--muted); }
-.generated-terms-content { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-.form-section { background: var(--card); }
-.form-input, .form-select, .form-textarea { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-.form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
-.ai-draft-btn { background: var(--primary); }
-.ai-draft-btn:hover { background: var(--primary-hover); }
+.login-btn-link {
+  display: inline-block;
+  padding: 12px 24px;
+  background: var(--primary);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 700;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.login-btn-link:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* 반응형 */
+@media (max-width: 1200px) {
+  .terms-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .form-section {
+    min-height: auto;
+  }
+  
+  .preview-section {
+    min-height: 60vh;
+  }
+  
+  .generated-terms-content pre {
+    max-height: 50vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .terms-container {
+    margin: 16px auto 32px;
+    padding: 16px 20px 20px;
+  }
+  
+  .form-section,
+  .preview-section {
+    padding: 20px;
+  }
+  
+  .preview-section {
+    min-height: 40vh;
+  }
+  
+  .form-group {
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .terms-container {
+    margin: 12px;
+    padding: 12px 16px 16px;
+  }
+  
+  .form-section,
+  .preview-section {
+    padding: 16px;
+  }
+  
+  .preview-section {
+    min-height: 30vh;
+  }
+}
