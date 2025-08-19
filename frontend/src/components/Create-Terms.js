@@ -23,7 +23,6 @@ function CreateTerms() {
     process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
     'https://terms-api-service-eck6h26cxa-uc.a.run.app';
 
-
   const categories = [
     { value: 'deposit', label: '예금' },
     { value: 'savings', label: '적금' },
@@ -198,7 +197,7 @@ function CreateTerms() {
   if (!user) {
     return (
       <div className="terms-main">
-        <div className="login-prompt" style={{ textAlign: 'center', paddingTop: '50px' }}>
+        <div className="login-prompt">
           <h2>로그인 필요</h2>
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
@@ -208,107 +207,109 @@ function CreateTerms() {
   }
 
   return (
-    <div className="App">
-      <main className="terms-main">
-        <div className="terms-container">
-          {/* 오른쪽 입력 폼 영역 */}
-          <div className="form-section">
-            <div className="form-container">
-              <div className="form-group">
-                <label className="form-label">회사 이름</label>
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="form-input"
-                  placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">초안 카테고리 (필수)</label>
-                <div className="select-container">
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="form-select"
-                    disabled={isLoading}
-                  >
-                    <option value="선택">선택</option>
-                    {categories.map((cat) => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="select-arrow">▼</div>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">상품 이름</label>
-                <input
-                  type="text"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  className="form-input"
-                  placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">시행 날짜 (선택)</label>
-                <input
-                  type="date"
-                  value={effectiveDate}
-                  onChange={(e) => setEffectiveDate(e.target.value)}
-                  className="form-input"
-                  disabled={isLoading}
-                />
-              </div>
-
-              {/* CSV 업로드 (단일) - 커스텀 툴팁 아이콘 추가 */}
-              <div className="form-group">
-                <label className="form-label">
-                  약관 csv파일 (필수)
-                  <div className="tooltip-container">
-                    <span className="info-icon">ⓘ</span>
-                    <div className="tooltip-content">
-                      상단에는 '항목,내용' 섹션(회사명/상품명 등), <br />중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
-                    </div>
-                  </div>
-                </label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  className="form-input file-input"
-                  onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
-                  disabled={isLoading}
-                />
-              </div>
-
-              <button
-                onClick={handleSubmit}
-                className="ai-draft-btn"
+    <div className="terms-main">
+      <div className="terms-container">
+        {/* 왼쪽 입력 폼 영역 (기존 우측) */}
+        <div className="form-section">
+          <div className="form-container">
+            <div className="form-group">
+              <label className="form-label">회사 이름</label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="form-input"
+                placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
                 disabled={isLoading}
-              >
-                {isLoading ? '생성 중...' : 'AI 초안 딸각 (5,000P)'}
-              </button>
-
-              {error && <div style={{ color: 'crimson', marginTop: '0.75rem' }}>{error}</div>}
+              />
             </div>
-          </div>
 
-          {/* 왼쪽 안내 영역 */}
-          <div className="preview-section">
-            <div className="preview-placeholder">
-              <p>파일 업로드 후 AI 약관 초안을 생성하면 편집 화면으로 이동합니다.</p>
+            <div className="form-group">
+              <label className="form-label">초안 카테고리 (필수)</label>
+              <div className="select-container">
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="form-select"
+                  disabled={isLoading}
+                >
+                  <option value="선택">선택</option>
+                  {categories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="select-arrow">▼</div>
+              </div>
             </div>
+
+            <div className="form-group">
+              <label className="form-label">상품 이름</label>
+              <input
+                type="text"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="form-input"
+                placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">시행 날짜 (선택)</label>
+              <input
+                type="date"
+                value={effectiveDate}
+                onChange={(e) => setEffectiveDate(e.target.value)}
+                className="form-input"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* CSV 업로드 (단일) - 커스텀 툴팁 아이콘 추가 */}
+            <div className="form-group">
+              <label className="form-label">
+                약관 csv파일 (필수)
+                <div className="tooltip-container">
+                  <span className="info-icon">ⓘ</span>
+                  <div className="tooltip-content">
+                    상단에는 '항목,내용' 섹션(회사명/상품명 등), <br />중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
+                  </div>
+                </div>
+              </label>
+              <input
+                type="file"
+                accept=".csv"
+                className="form-input file-input"
+                onChange={(e) => onChangeProductCsv(e.target.files?.[0] || null)}
+                disabled={isLoading}
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              className="ai-draft-btn"
+              disabled={isLoading}
+            >
+              {isLoading ? '생성 중...' : 'AI 초안 딸각 (5,000P)'}
+            </button>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
           </div>
         </div>
-      </main>
+
+        {/* 오른쪽 미리보기 영역 (기존 좌측) */}
+        <div className="preview-section">
+          <div className="preview-placeholder">
+            <p>파일 업로드 후 AI 약관 초안을 생성하면 편집 화면으로 이동합니다.</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

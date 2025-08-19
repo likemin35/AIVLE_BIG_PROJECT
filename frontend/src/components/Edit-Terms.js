@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useOutletContext, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { updateContract } from '../api/term';
+import './Edit-Terms.css';
 import LoadingSpinner from './LoadingSpinner';
 
 const TERM_SERVICE_BASE_URL =
@@ -150,56 +151,109 @@ function EditTerms() {
   }
 
   return (
-    <div className="App">
-      <main className="terms-main">
-        <div className="terms-container">
-          <div className="form-section">
-            <div className="form-container">
-              <div className="form-group">
-                <label className="form-label">계약서 이름</label>
-                <input type="text" className="form-input" value={title} onChange={(e) => setTitle(e.target.value)} disabled={saving} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{isEditMode ? '최초 생성일' : '생성일'}</label>
-                <input type="date" className="form-input" value={createdAt} readOnly disabled />
-              </div>
-              <div className="form-group">
-                <label className="form-label">수정 메모</label>
-                <textarea
-                  className="form-textarea"
-                  rows={6}
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                  placeholder="예: 5장 면책조항 문구 완화 필요 / 금액 기준 최신화 등"
-                  disabled={saving}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">메타 정보</label>
-                <div style={{ fontSize: '0.9rem', color: '#555' }}>
-                  <div>회사명: {metaInfo.companyName || '-'}</div>
-                  <div>카테고리: {metaInfo.category || '-'}</div>
-                  <div>상품명: {metaInfo.productName || '-'}</div>
+    <div className="terms-main">
+      <div className="terms-container">
+        {/* 왼쪽 입력 폼 영역 */}
+        <div className="form-section">
+          <div className="form-container">
+            <div className="form-group">
+              <label className="form-label">계약서 이름</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                disabled={saving} 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">{isEditMode ? '최초 생성일' : '생성일'}</label>
+              <input 
+                type="date" 
+                className="form-input" 
+                value={createdAt} 
+                readOnly 
+                disabled 
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">수정 메모</label>
+              <textarea
+                className="form-textarea"
+                rows={6}
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="예: 5장 면책조항 문구 완화 필요 / 금액 기준 최신화 등"
+                disabled={saving}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="form-label">메타 정보</label>
+              <div style={{ fontSize: '14px', color: 'var(--subtext)' }}>
+                <div style={{ padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+                  회사명: {metaInfo.companyName || '-'}
+                </div>
+                <div style={{ padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+                  카테고리: {metaInfo.category || '-'}
+                </div>
+                <div style={{ padding: '4px 0' }}>
+                  상품명: {metaInfo.productName || '-'}
                 </div>
               </div>
+            </div>
+            
+            <div className="form-group">
               <div className="form-buttons">
-                <button onClick={onClickSave} className="ai-draft-btn" disabled={saving}>
+                <button 
+                  onClick={onClickSave} 
+                  className="ai-draft-btn" 
+                  disabled={saving}
+                >
                   {saving ? '저장 중...' : (isEditMode ? '수정 완료' : '계약서 저장')}
                 </button>
-                <button onClick={handleCancel} className="ai-draft-btn cancel-btn" disabled={saving}>
+                <button 
+                  onClick={handleCancel} 
+                  className="ai-draft-btn cancel-btn" 
+                  disabled={saving}
+                >
                   뒤로가기
                 </button>
               </div>
             </div>
           </div>
-          <div className="preview-section">
-            <div className="generated-terms-content">
-              <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>{title}</h3>
-              <div ref={editorRef} onInput={handleEditorInput} contentEditable suppressContentEditableWarning style={{ whiteSpace: 'pre-wrap', border: '1px solid #e0e0e0', padding: '1rem' }} />
-            </div>
+        </div>
+        
+        {/* 오른쪽 미리보기/편집 영역 */}
+        <div className="preview-section">
+          <div className="generated-terms-content">
+            <h3>{title}</h3>
+            <div 
+              ref={editorRef} 
+              onInput={handleEditorInput} 
+              contentEditable 
+              suppressContentEditableWarning 
+              style={{ 
+                whiteSpace: 'pre-wrap', 
+                flex: 1,
+                border: '2px solid var(--border)', 
+                borderRadius: '12px',
+                padding: '16px',
+                background: 'var(--card)',
+                color: 'var(--text)',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
+                fontSize: '15.5px',
+                lineHeight: '1.6',
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                outline: 'none'
+              }} 
+            />
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
