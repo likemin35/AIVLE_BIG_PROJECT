@@ -5,6 +5,7 @@ import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
+
 // term.js의 API 함수들 import
 import { getContracts, getContractById, analyzeTermsWithText, analyzeTermsWithFile } from '../api/term';
 

@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // useNavigate import
 import { auth } from '../firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, signOut } from 'firebase/auth'; // signOut import
-import './AccountInfo.css';
-import PolicyLinks from './PolicyLink.js'; // 경로는 현재 파일 기준으로 맞춰주세요.
+import './AccountInfo.css';// 경로는 현재 파일 기준으로 맞춰주세요.
 
 
 // --- 아이콘 컴포넌트 ---
@@ -113,7 +112,6 @@ const AccountInfo = () => {
                     개인정보처리방침
                 </a>
             </div>
-            <PolicyLinks />
         </div>
     );
 };

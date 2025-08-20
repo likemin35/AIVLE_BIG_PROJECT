@@ -3,6 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { getUserPoints, chargeUserPoints, getPointHistory } from '../api/point';
 import './PointPage.css';
 
+import PolicyLinks from './PolicyLink.js'; 
+
 const PointPage = () => {
     const { user, refreshPoints } = useOutletContext(); // refreshPoints 함수를 context에서 가져옴
     const [points, setPoints] = useState(0);
@@ -144,6 +146,8 @@ const PointPage = () => {
                     </tbody>
                 </table>
             </div>
+
+                        <PolicyLinks />
         </div>
     );
 };

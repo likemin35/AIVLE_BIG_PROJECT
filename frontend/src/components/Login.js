@@ -5,6 +5,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import './Login.css';
 
+import PolicyLinks from './PolicyLink.js'; 
+
 function Login({ user, authLoading }) { // user와 authLoading props를 받음
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -129,6 +131,8 @@ function Login({ user, authLoading }) { // user와 authLoading props를 받음
               </div>
             </div>
           </div>
+
+            <PolicyLinks />
         </main>
       </div>
   );
