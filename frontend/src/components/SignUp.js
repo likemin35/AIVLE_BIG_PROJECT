@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PolicyFooter from './PolicyFooter';
 import './SignUp.css';
 import logo from '../assets/logo.png';
 import {
@@ -46,6 +45,24 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleAgreementChange = (field, checked) => {
+    if (field === 'all') {
+      setAgreements({
+        terms: checked,
+        privacy: checked,
+        marketing: checked,
+        all: checked
+      });
+    } else {
+      const newAgreements = {
+        ...agreements,
+        [field]: checked
+      };
+      newAgreements.all = newAgreements.terms && newAgreements.privacy && newAgreements.marketing;
+      setAgreements(newAgreements);
+    }
   };
 
   const handleSubmit = async () => {
