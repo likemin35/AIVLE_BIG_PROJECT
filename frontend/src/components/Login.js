@@ -3,10 +3,8 @@ import { signInWithEmailAndPassword, signOut, signInWithPopup } from 'firebase/a
 import { auth, googleProvider } from '../firebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import PolicyFooter from './PolicyFooter';
 import './Login.css';
-
-import PolicyLinks from './PolicyLink.js'; 
-import PolicyLinks from './PolicyLink';
 
 function Login({ user, authLoading }) { // user와 authLoading props를 받음
   const [email, setEmail] = useState('');
@@ -132,9 +130,6 @@ function Login({ user, authLoading }) { // user와 authLoading props를 받음
               </div>
             </div>
           </div>
-<div className="policy-links">
-  <PolicyLinks />
-</div>
         </main>
       </div>
   );

@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { getUserPoints, chargeUserPoints, getPointHistory } from '../api/point';
 import './PointPage.css';
-
-import PolicyLinks from './PolicyLink.js'; 
 import PolicyLinks from './PolicyLink';
 
 const PointPage = () => {
@@ -147,10 +145,7 @@ const PointPage = () => {
                     </tbody>
                 </table>
             </div>
-<div className="policy-links">
-  <PolicyLinks />
 </div>
-        </div>
     );
 };
 

@@ -7,8 +7,6 @@ import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
 import './App.css';
-import PolicyLink from './components/PolicyLink';
-import PDFModal from './components/PDFModal'; // ★ 경로 수정: ./PDFModal -> ./components/PDFModal
 
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
@@ -16,24 +14,6 @@ function Home({ user }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
-  // ===== PDF Modal 상태 =====
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalUrl, setModalUrl] = useState('');
-  const [modalTitle, setModalTitle] = useState('');
-
-  const openModal = (title, url) => {
-    setModalTitle(title);
-    setModalUrl(url);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalUrl('');
-    setModalTitle('');
-  };
-  // ==========================
 
   const handleFileButtonClick = () => {
     if (!user) {
@@ -108,13 +88,6 @@ function Home({ user }) {
       alert('해당 서비스는 준비중입니다.');
     }
   };
-
-  // SignUp.js에서 쓰던 PDF 주소 그대로 사용
-  const TERMS_URL =
-    'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8%20%E1%84%89%E1%85%A5%E1%84%87%E1%85%B5%E1%84%89%E1%85%B3%20%E1%84%8B%E1%85%B5%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%80%E1%85%AA%E1%86%AB.pdf?alt=media&token=0c1285a4-9d0d-4e3d-8027-fad7384ea164';
-
-  const PRIVACY_URL =
-  'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8_%E1%84%80%E1%85%A2%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%BC%E1%84%87%E1%85%A9%E1%84%8E%E1%85%A5%E1%84%85%E1%85%B5%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8E%E1%85%B5%E1%86%B7.pdf?alt=media&token=c0fe6d4c-f754-429d-ba6a-ebfa693430dd'
                           
   return (
     <div className="HomeContainer">
@@ -204,37 +177,6 @@ function Home({ user }) {
       >
         보라계약 알아보기 <span className="arrow">→</span>
       </button>
-
-      {/* ===== Footer 시작 ===== */}
-      <footer className="site-footer" role="contentinfo">
-        <div className="footer-inner" aria-label="회사 및 법적 고지">
-          <div className="footer-left">
-            <p className="footer-brand">
-              <strong>보라파트너스</strong> <span className="divider" aria-hidden="true">|</span> 대표자: 이원준
-            </p>
-            <address className="footer-address">
-              대전광역시 서구 문정로 48번길 30, 13층
-            </address>
-            <p className="footer-contact">
-              대표번호: 112-114-119
-              이메일: <a href="mailto:aivle0721@gmail.com">aivle0721@gmail.com</a>
-            </p>
-          </div>
-
-          {/* 클릭 시 PDFModal 오픈 */}
-          <nav className="footer-nav" aria-label="정책 링크">
-          <PolicyLink layout="stack" />
-        </nav>
-        </div>
-
-        <div className="footer-bottom">
-          <small>© 2025 보라파트너스 All rights reserved.</small>
-        </div>
-      </footer>
-      {/* ===== Footer 끝 ===== */}
-
-      {/* PDF 모달 */}
-      <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />
     </div>
   );
 }
