@@ -6,6 +6,9 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import { getAuth, getIdToken as fbGetIdToken } from 'firebase/auth';
 
+// term.js의 API 함수들 import
+import { getContracts, getContractById } from '../api/term';
+
 // Firebase 토큰
 const getToken = async (force = false) => {
   const auth = getAuth();
@@ -14,23 +17,9 @@ const getToken = async (force = false) => {
   return await fbGetIdToken(user, force);
 };
 
-// // API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
-// const resolveApiBase = () => {
-//   const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
-//   if (envBase) return envBase;
-//   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-//     if (window.location.port === '3000') return 'http://localhost:8088';
-//   }
-//   return '';
-// }; 
-
-// const API_BASE = resolveApiBase();
-
-// 서비스 마운트 경로 포함된 베이스
+// 분석 서비스용 베이스 URL
 const ANALYZE_API_BASE_URL =
   process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
-const TERMS_API_BASE_URL =
-  process.env.REACT_APP_TERMS_API_BASE_URL || 'https://term-service-eck6h26cxa-uc.a.run.app';
 
 // 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
 async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
@@ -55,7 +44,7 @@ async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
   const res = await fetch(url, { ...init, headers });
   // (필요 시) 여기서도 401이면 호출부에서 에러 처리
   return res;
- }
+}
 
 // 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
 function requireJson(res) {
@@ -181,14 +170,11 @@ export default function ContractRisk() {
     }
   };
 
-  // My약관 불러오기
+  // My약관 불러오기 - term.js의 getContracts 함수 사용
   async function refreshMyTerms() {
     setError('');
     try {
-      const res = await fetchWithAuth(`${TERMS_API_BASE_URL}`, {}, { requireAuth: true });
-      if (!res.ok) throw new Error(await readError(res));
-      requireJson(res);
-      const list = await res.json();
+      const list = await getContracts(); // term.js 함수 사용
       const sorted = (list || []).sort(
         (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
       );
@@ -217,19 +203,19 @@ export default function ContractRisk() {
       setLoading(true);
 
       if (mode === 'library') {
-        // 내 약관 content로 분석
+        // 내 약관 content로 분석 - term.js의 getContractById 함수 사용
         if (!selectedTermId) {
           setError('불러올 약관을 선택하세요.');
           return;
         }
 
-        const termRes = await fetchWithAuth(`${TERMS_API_BASE_URL}/${selectedTermId}`, {}, { requireAuth: true });
-        if (!termRes.ok) throw new Error(await readError(termRes));
-        requireJson(termRes);
-        const term = await termRes.json();
+        const term = await getContractById(selectedTermId); // term.js 함수 사용
         const text = (term?.content || '').trim();
         setSelectedTermTitle(term?.title || selectedTermTitle || '');
-        if (!text) { setError('선택한 약관에 본문(content)이 없습니다.'); return; }
+        if (!text) { 
+          setError('선택한 약관에 본문(content)이 없습니다.'); 
+          return; 
+        }
 
         const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
           method: 'POST',
@@ -483,7 +469,7 @@ export default function ContractRisk() {
               <div className="empty-state">
                 AI 약관 리스크 분석 결과가 여기에 표시됩니다.
                 <div className="sub">
-                  좌측에서 파일을 업로드하거나 My약관을 선택한 뒤 ‘약관 분석’을 눌러주세요.
+                  좌측에서 파일을 업로드하거나 My약관을 선택한 뒤 '약관 분석'을 눌러주세요.
                 </div>
               </div>
             ) : (
