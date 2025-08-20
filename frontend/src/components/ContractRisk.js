@@ -14,23 +14,23 @@ const getToken = async (force = false) => {
   return await fbGetIdToken(user, force);
 };
 
-// API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
-const resolveApiBase = () => {
-  const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
-  if (envBase) return envBase;
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-    if (window.location.port === '3000') return 'http://localhost:8088';
-  }
-  return '';
-}; 
+// // API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
+// const resolveApiBase = () => {
+//   const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
+//   if (envBase) return envBase;
+//   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+//     if (window.location.port === '3000') return 'http://localhost:8088';
+//   }
+//   return '';
+// }; 
 
-const API_BASE = resolveApiBase();
+// const API_BASE = resolveApiBase();
 
 // 서비스 마운트 경로 포함된 베이스
 const ANALYZE_API_BASE_URL =
-  (process.env.REACT_APP_ANALYZE_API_BASE_URL || `${API_BASE}/api`).replace(/\/+$/, '');
+  process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
 const TERMS_API_BASE_URL =
-  (process.env.REACT_APP_TERMS_API_BASE_URL || `${API_BASE}/terms`).replace(/\/+$/, '');
+  process.env.REACT_APP_TERMS_API_BASE_URL || 'https://term-service-eck6h26cxa-uc.a.run.app';
 
 // 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
 async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
