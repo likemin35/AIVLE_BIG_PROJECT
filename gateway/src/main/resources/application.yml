@@ -98,7 +98,7 @@ spring:
       routes:
         # analyze → analyze:8082
         - id: analyze
-          uri: http://analyze:8082
+          uri: http://analyze:8080
           predicates:
             - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
 
