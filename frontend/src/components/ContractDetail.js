@@ -180,12 +180,6 @@ const ContractDetail = () => {
           <button className="action-btn" onClick={handleVisualizeClick} disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
             조항별 연관도 시각화
           </button>
-          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
-            해외 법률에 부합하는 초안 생성
-          </button>
-          <button className="action-btn" disabled={!isLatest} title={!isLatest ? "최신 버전에서만 사용할 수 있습니다." : ""}>
-            AI 딸깍 버튼
-          </button>
           <hr className="divider" />
           <div className="download-actions">
             <button className="action-btn download-btn pdf" onClick={handleDownloadPDF} disabled={isDownloading}>
