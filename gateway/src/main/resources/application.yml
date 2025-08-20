@@ -101,6 +101,8 @@ spring:
           uri: http://analyze:8080
           predicates:
             - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
+          filters:
+            - StripPrefix=1
 
         - id: ai
           uri: http://ai:8080
