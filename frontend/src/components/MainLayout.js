@@ -62,6 +62,7 @@ const MainLayout = ({ user, authLoading }) => {
       <main>
         <Outlet context={{ user, authLoading, refreshPoints: refreshPointsAndNotify }} />
       </main>
+      <PolicyFooter />
     </div>
   );
 };
