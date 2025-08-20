@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple
 
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 
 # --- Chroma 버전 로깅(디버그용) ---
@@ -44,6 +44,12 @@ except Exception:
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 logging.getLogger("werkzeug").setLevel(logging.INFO)
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # =============================================================================
 # Config / Env
@@ -593,8 +599,11 @@ def debug_vector_db():
     return info
 
 # JSON 본문 분석(파일 없이)
-@app.route("/api/analyze-terms", methods=["POST"])
+@app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
+@cross_origin(origin='*')
 def analyze_terms():
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
 
@@ -655,8 +664,11 @@ def analyze_terms():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
-@app.route("/api/analyze-terms-upload", methods=["POST"])
+@app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
+@cross_origin(origin='*')
 def analyze_terms_upload():
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
     if "file" not in request.files:
