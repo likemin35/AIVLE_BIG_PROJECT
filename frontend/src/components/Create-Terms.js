@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import './Create-Terms.css';
 import PolicyLinks from './PolicyLink';
-
 function CreateTerms() {
   const { user, authLoading } = useOutletContext();
   const navigate = useNavigate();

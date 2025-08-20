@@ -4,7 +4,6 @@ import { updateContract } from '../api/term';
 import './Edit-Terms.css';
 import LoadingSpinner from './LoadingSpinner';
 import PolicyLinks from './PolicyLink';
-
 const TERM_SERVICE_BASE_URL =
   window.location.hostname === 'localhost'
     ? 'http://localhost:8088'

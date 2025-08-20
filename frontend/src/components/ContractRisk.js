@@ -4,11 +4,11 @@ import { Link, useOutletContext } from 'react-router-dom';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
+import PolicyLinks from './PolicyLink';
 
 // term.js의 API 함수들 import
-import { 
-import PolicyLinks from './PolicyLink';
-  getContracts, 
+import {
+getContracts, 
   getContractById, 
   analyzeTermsWithText, 
   analyzeTermsWithFile 

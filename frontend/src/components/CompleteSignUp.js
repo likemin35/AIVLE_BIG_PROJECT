@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import PolicyLinks from './PolicyLink';
-
 function CompleteSignUp() {
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');

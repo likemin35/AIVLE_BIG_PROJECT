@@ -3,7 +3,6 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import { createQuestion, uploadImage } from '../api/qna';
 import './QnaWrite.css'; // QnaEdit와 동일한 CSS 사용
 import PolicyLinks from './PolicyLink';
-
 const QnaWrite = () => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');

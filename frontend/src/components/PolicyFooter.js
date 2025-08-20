@@ -1,7 +1,6 @@
 // src/components/PolicyFooter.jsx
 import React from 'react';
 import PolicyLinks from './PolicyLink';
-
 /**
  * 회사 정보가 포함된 간단한 푸터.
  * 필요에 따라 텍스트만 바꿔서 사용하세요.

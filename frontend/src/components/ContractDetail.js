@@ -7,7 +7,6 @@ import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 import PolicyLinks from './PolicyLink';
-
 const ContractDetail = () => {
   const { id } = useParams();
   const { user, authLoading } = useOutletContext();

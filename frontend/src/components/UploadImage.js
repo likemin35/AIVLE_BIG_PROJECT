@@ -6,6 +6,7 @@ import './UploadImage.css';
 import '../App.css';
 
 import PolicyLinks from './PolicyLink.js'; 
+import PolicyLinks from './PolicyLink';
 
 // Cloud Run 서비스 URL (POST / 로 업로드)
 const API_URL = 'https://image-ai-service-eck6h26cxa-uc.a.run.app';

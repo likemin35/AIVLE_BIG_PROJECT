@@ -3,7 +3,6 @@ import { useParams, Link, useNavigate, useOutletContext, useLocation } from 'rea
 import { getQuestionById, deleteQuestion, createAnswer, deleteAnswer, updateAnswer } from '../api/qna';
 import './QnaDetail.css';
 import PolicyLinks from './PolicyLink';
-
 // 날짜 포맷팅 헬퍼 함수
 const formatDateTime = (dateString) => {
     const options = {

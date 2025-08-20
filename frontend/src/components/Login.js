@@ -6,6 +6,7 @@ import logo from '../assets/logo.png';
 import './Login.css';
 
 import PolicyLinks from './PolicyLink.js'; 
+import PolicyLinks from './PolicyLink';
 
 function Login({ user, authLoading }) { // user와 authLoading props를 받음
   const [email, setEmail] = useState('');

@@ -6,7 +6,6 @@ import PointHistory from './PointHistory';
 import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './PointLayout.css';
 import PolicyLinks from './PolicyLink';
-
 const PointLayout = () => {
     const { user, authLoading } = useOutletContext();
 

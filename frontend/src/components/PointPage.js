@@ -4,6 +4,7 @@ import { getUserPoints, chargeUserPoints, getPointHistory } from '../api/point';
 import './PointPage.css';
 
 import PolicyLinks from './PolicyLink.js'; 
+import PolicyLinks from './PolicyLink';
 
 const PointPage = () => {
     const { user, refreshPoints } = useOutletContext(); // refreshPoints 함수를 context에서 가져옴

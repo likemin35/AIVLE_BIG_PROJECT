@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getSavedPreference, applyTheme, subscribeSystemThemeChange } from '../utils/theme';
 import PolicyLinks from './PolicyLink';
-
 const preferenceToLabel = {
   light: '끄기(라이트)',
   dark: '켜기(다크)',
