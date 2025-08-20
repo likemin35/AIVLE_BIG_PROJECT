@@ -5,7 +5,6 @@ import { reduceUserPoints } from '../api/point'; // 포인트 API import
 import './UploadImage.css';
 import '../App.css';
 
-import PolicyLinks from './PolicyLink.js'; 
 import PolicyLinks from './PolicyLink';
 
 // Cloud Run 서비스 URL (POST / 로 업로드)
