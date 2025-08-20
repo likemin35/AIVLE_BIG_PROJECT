@@ -7,7 +7,7 @@ import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
 import './App.css';
-import PDFModal from './PDFModal'; // ← SignUp.js와 동일하게 PDFModal 사용
+import PDFModal from './components/PDFModal'; // ★ 경로 수정: ./PDFModal -> ./components/PDFModal
 
 function Home({ user }) {
   const [contractText, setContractText] = useState('');
@@ -16,7 +16,7 @@ function Home({ user }) {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  // ===== PDF Modal 상태 및 핸들러 (SignUp.js와 동일 동작) =====
+  // ===== PDF Modal 상태 =====
   const [modalOpen, setModalOpen] = useState(false);
   const [modalUrl, setModalUrl] = useState('');
   const [modalTitle, setModalTitle] = useState('');
@@ -32,7 +32,7 @@ function Home({ user }) {
     setModalUrl('');
     setModalTitle('');
   };
-  // ========================================================
+  // ==========================
 
   const handleFileButtonClick = () => {
     if (!user) {
@@ -102,13 +102,13 @@ function Home({ user }) {
     } else if (type === 'labor') {
       navigate('/upload-image');
     } else if (type === 'risk') {
-      navigate('/analyze-terms'); 
+      navigate('/analyze-terms');
     } else {
       alert('해당 서비스는 준비중입니다.');
     }
   };
 
-  // SignUp.js에서 쓰던 PDF 주소 그대로 사용 (이용약관/개인정보처리방침)
+  // SignUp.js에서 쓰던 PDF 주소 그대로 사용
   const TERMS_URL =
     'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8%20%E1%84%89%E1%85%A5%E1%84%87%E1%85%B5%E1%84%89%E1%85%B3%20%E1%84%8B%E1%85%B5%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%80%E1%85%AA%E1%86%AB.pdf?alt=media&token=0c1285a4-9d0d-4e3d-8027-fad7384ea164';
 
@@ -219,7 +219,7 @@ function Home({ user }) {
             </p>
           </div>
 
-          {/* 여기서 링크를 눌러도 PDFModal이 열리게 처리 */}
+          {/* 클릭 시 PDFModal 오픈 */}
           <nav className="footer-nav" aria-label="정책 링크">
             <a
               href="#"
