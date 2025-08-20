@@ -13,9 +13,6 @@ import { auth, db, googleProvider } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import googleLogo from '../assets/google-logo.png';
 import PDFModal from './PDFModal';
-
-import PolicyLinks from './PolicyLink.js'; 
-
 function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading props를 받음
   const navigate = useNavigate();
 
@@ -294,8 +291,7 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
             </div>
           </div>
 
-                      <PolicyLinks />
-        </main>
+                      </main>
 
         {/* PDF 모달 */}
         <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />

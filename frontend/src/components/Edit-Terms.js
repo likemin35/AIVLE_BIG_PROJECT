@@ -3,6 +3,7 @@ import { useOutletContext, useLocation, useNavigate, useParams } from 'react-rou
 import { updateContract } from '../api/term';
 import './Edit-Terms.css';
 import LoadingSpinner from './LoadingSpinner';
+import PolicyLinks from './PolicyLink';
 
 const TERM_SERVICE_BASE_URL =
   window.location.hostname === 'localhost'
@@ -254,8 +255,11 @@ function EditTerms() {
           </div>
         </div>
       </div>
-    </div>
-  );
+  <div className="policy-links">
+    <PolicyLinks />
+  </div>
+</div>
+);
 }
 
 export default EditTerms;

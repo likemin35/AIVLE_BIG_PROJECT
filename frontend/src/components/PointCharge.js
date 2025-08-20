@@ -3,6 +3,7 @@ import { chargeUserPoints } from '../api/point';
 import './PointCharge.css';
 import kakaopayLogo from '../assets/kakaopay-logo.png'; // 카카오페이 로고 import
 import tossLogo from '../assets/toss-logo.png';       // 토스 로고 import
+import PolicyLinks from './PolicyLink';
 
 // --- 아이콘 컴포넌트 정의 ---
 const CreditCardIcon = () => <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zM20 18H4v-6h16v6zm0-10H4V6h16v2z"/></svg>;

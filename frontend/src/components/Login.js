@@ -131,8 +131,9 @@ function Login({ user, authLoading }) { // user와 authLoading props를 받음
               </div>
             </div>
           </div>
-
-            <PolicyLinks />
+<div className="policy-links">
+  <PolicyLinks />
+</div>
         </main>
       </div>
   );

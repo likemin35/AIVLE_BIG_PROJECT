@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, useOutletContext } from 'react-router-d
 import { getAllQuestions } from '../api/qna';
 import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './QnaList.css';
+import PolicyLinks from './PolicyLink';
 
 
 // SVG 아이콘 컴포넌트
@@ -160,8 +161,11 @@ const QnaList = () => {
                     다음
                 </button>
             </div>
-        </div>
-    );
+  <div className="policy-links">
+    <PolicyLinks />
+  </div>
+</div>
+);
 };
 
 export default QnaList;

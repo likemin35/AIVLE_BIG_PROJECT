@@ -7,6 +7,7 @@ import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
 import logo from './assets/logo.png';
 import './App.css';
+import PolicyLink from './components/PolicyLink';
 import PDFModal from './components/PDFModal'; // ★ 경로 수정: ./PDFModal -> ./components/PDFModal
 
 function Home({ user }) {
@@ -222,25 +223,8 @@ function Home({ user }) {
 
           {/* 클릭 시 PDFModal 오픈 */}
           <nav className="footer-nav" aria-label="정책 링크">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal('이용약관', TERMS_URL);
-              }}
-            >
-              이용약관
-            </a>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                openModal('개인정보 처리방침', PRIVACY_URL);
-              }}
-            >
-              개인정보처리방침
-            </a>
-          </nav>
+          <PolicyLink layout="stack" />
+        </nav>
         </div>
 
         <div className="footer-bottom">

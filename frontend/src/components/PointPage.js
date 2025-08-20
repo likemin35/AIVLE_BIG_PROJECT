@@ -146,8 +146,9 @@ const PointPage = () => {
                     </tbody>
                 </table>
             </div>
-
-                        <PolicyLinks />
+<div className="policy-links">
+  <PolicyLinks />
+</div>
         </div>
     );
 };

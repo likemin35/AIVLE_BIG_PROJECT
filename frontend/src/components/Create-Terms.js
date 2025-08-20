@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
 import './Create-Terms.css';
+import PolicyLinks from './PolicyLink';
 
 function CreateTerms() {
   const { user, authLoading } = useOutletContext();
@@ -202,8 +203,11 @@ function CreateTerms() {
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-      </div>
-    );
+  <div className="policy-links">
+    <PolicyLinks />
+  </div>
+</div>
+);
   }
 
   return (

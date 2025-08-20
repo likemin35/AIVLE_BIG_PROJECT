@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 
 // term.js의 API 함수들 import
 import { 
+import PolicyLinks from './PolicyLink';
   getContracts, 
   getContractById, 
   analyzeTermsWithText, 
@@ -239,7 +240,11 @@ export default function ContractRisk() {
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-      </main>
+        <div className="policy-links">
+    <PolicyLinks />
+  </div>
+
+</main>
     );
   }
 

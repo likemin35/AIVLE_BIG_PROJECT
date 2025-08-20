@@ -334,3 +334,18 @@ html, body, #root {
   /* Footer */
   .footer-bottom{ font-size: .85rem; }
 }
+
+
+/* Policy links positioning */
+.policy-links{
+  max-width: 700px;
+  margin: 1rem auto 2rem;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.policy-links a{
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
