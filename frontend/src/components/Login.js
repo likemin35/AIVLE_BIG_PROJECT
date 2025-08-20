@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import PolicyFooter from './PolicyFooter';
 import './Login.css';
-import PolicyLinks from './PolicyLink';
 
 function Login({ user, authLoading }) { // user와 authLoading props를 받음
   const [email, setEmail] = useState('');
@@ -131,7 +130,6 @@ function Login({ user, authLoading }) { // user와 authLoading props를 받음
               </div>
             </div>
           </div>
-  <PolicyFooter />
         </main>
       </div>
   );

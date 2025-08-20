@@ -13,7 +13,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import googleLogo from '../assets/google-logo.png';
-import PDFModal from './PDFModal';
+
 function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading props를 받음
   const navigate = useNavigate();
 
@@ -41,45 +41,11 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
     all: false
   });
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalUrl, setModalUrl] = useState('');
-  const [modalTitle, setModalTitle] = useState('');
-
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleAgreementChange = (field, checked) => {
-    if (field === 'all') {
-      setAgreements({
-        terms: checked,
-        privacy: checked,
-        marketing: checked,
-        all: checked
-      });
-    } else {
-      const newAgreements = {
-        ...agreements,
-        [field]: checked
-      };
-      newAgreements.all = newAgreements.terms && newAgreements.privacy && newAgreements.marketing;
-      setAgreements(newAgreements);
-    }
-  };
-
-  const openModal = (title, url) => {
-    setModalTitle(title);
-    setModalUrl(url);
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalUrl('');
-    setModalTitle('');
   };
 
   const handleSubmit = async () => {
@@ -292,11 +258,7 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
             </div>
           </div>
 
-                        <PolicyFooter />
-        </main>
-
-        {/* PDF 모달 */}
-        <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />
+                        </main>
       </div>
   );
 }
