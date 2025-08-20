@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PolicyFooter from './PolicyFooter';
 import './SignUp.css';
 import logo from '../assets/logo.png';
 import {
@@ -291,7 +292,8 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
             </div>
           </div>
 
-                      </main>
+                        <PolicyFooter />
+        </main>
 
         {/* PDF 모달 */}
         <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />

@@ -1,5 +1,7 @@
 // src/components/MainLayout.js
 import React, { useState, useEffect, useCallback } from 'react';
+import PolicyFooter from './PolicyFooter';
+
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import { getUserPoints } from '../api/point'; // getUserPoints로 복원

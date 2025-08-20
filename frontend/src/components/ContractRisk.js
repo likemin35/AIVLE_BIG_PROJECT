@@ -4,8 +4,6 @@ import { Link, useOutletContext } from 'react-router-dom';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import PolicyLinks from './PolicyLink';
-
 // term.js의 API 함수들 import
 import {
 getContracts, 
@@ -240,10 +238,6 @@ export default function ContractRisk() {
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-        <div className="policy-links">
-    <PolicyLinks />
-  </div>
-
 </main>
     );
   }
