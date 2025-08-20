@@ -113,8 +113,8 @@ function Home({ user }) {
     'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8%20%E1%84%89%E1%85%A5%E1%84%87%E1%85%B5%E1%84%89%E1%85%B3%20%E1%84%8B%E1%85%B5%E1%84%8B%E1%85%AD%E1%86%BC%E1%84%8B%E1%85%A3%E1%86%A8%E1%84%80%E1%85%AA%E1%86%AB.pdf?alt=media&token=0c1285a4-9d0d-4e3d-8027-fad7384ea164';
 
   const PRIVACY_URL =
-    'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8_%E1%84%80%E1%85%A2%E1%84%8B%E1%85%B5%E1%84%8B%E1%85%AB%E1%86%BC%E1%84%87%E1%85%A9%E1%84%8E%E1%85%A5%E1%84%85%E1%85%B5%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8E%E1%85%B5%E1%86%B7.pdf?alt=media&token=c0fe6d4c-f754-429d-ba6a-ebfa693430dd';
-
+  'https://firebasestorage.googleapis.com/v0/b/aivle-team0721.firebasestorage.app/o/%E1%84%87%E1%85%A9%E1%84%85%E1%85%A1%E1%84%80%E1%85%A8%E1%84%8B%E1%85%A3%E1%86%A8_%E1%84%80%E1%85%A2%E1%84%8B%E1%85%B5%E1%86%AB%E1%84%8C%E1%85%A5%E1%86%BC%E1%84%87%E1%85%A9%E1%84%8E%E1%85%A5%E1%84%85%E1%85%B5%E1%84%87%E1%85%A1%E1%86%BC%E1%84%8E%E1%85%B5%E1%86%B7.pdf?alt=media&token=c0fe6d4c-f754-429d-ba6a-ebfa693430dd'
+                          
   return (
     <div className="HomeContainer">
       <main className="main-content">
@@ -209,12 +209,13 @@ function Home({ user }) {
         <div className="footer-inner" aria-label="회사 및 법적 고지">
           <div className="footer-left">
             <p className="footer-brand">
-              <strong>보라파트너스</strong> <span className="divider" aria-hidden="true">|</span> 대표: 이원준
+              <strong>보라파트너스</strong> <span className="divider" aria-hidden="true">|</span> 대표자: 이원준
             </p>
             <address className="footer-address">
               대전광역시 서구 문정로 48번길 30, 13층
             </address>
             <p className="footer-contact">
+              대표번호: 112-114-119
               이메일: <a href="mailto:aivle0721@gmail.com">aivle0721@gmail.com</a>
             </p>
           </div>
