@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify 
 from flask_cors import CORS, cross_origin
 import vertexai
 import os, _csv, _io
@@ -80,7 +80,7 @@ VECTOR_DB_MAP = {
 PROMPT_TEMPLATE_JSON = r"""
 너는 보험 약관 작성 전문가다. 아래 정보를 참고하여 오직 JSON만 출력하라.
 텍스트 목차/서문/설명/마크다운/코드블럭/주석/별표(*)는 절대 출력하지 말 것.
-만약 출력된다면, 잘못된 결과
+만약 출력된다면, 잘못된 결과이다.
 
 입력:
 - 기업 이름: {company_name}
@@ -88,7 +88,7 @@ PROMPT_TEMPLATE_JSON = r"""
 - 기업 제공 상품 정보(원문):
 {wishlist}
 
-- 참고 약관 문서 및 법령자료):
+참고 약관 문서 및 법령자료):
 {context}
 
 요구사항:
@@ -410,8 +410,7 @@ def generate_terms_v2():
             law_docs = retriever.invoke(product_name)
         except Exception as e:
             logging.error(f"법령DB 검색 실패: {e}")
-            return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500
-        
+            return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500  
         
         # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
         context = "\n\n".join([d.page_content for d in docs + law_docs])

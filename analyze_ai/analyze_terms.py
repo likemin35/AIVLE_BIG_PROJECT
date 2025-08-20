@@ -10,12 +10,10 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 # --- Chroma 버전 로깅(디버그용) ---
-try:
-    import chromadb  # noqa
-    logging.basicConfig(level=logging.INFO)
-    logging.info(f"[BOOT] chromadb version: {chromadb.__version__}")
-except Exception:
-    pass
+import chromadb  # noqa
+
+logging.basicConfig(level=logging.INFO)
+logging.info(f"[BOOT] chromadb version: {chromadb.__version__}")
 
 # Google / Vertex
 import vertexai
@@ -58,6 +56,9 @@ UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# Vector DB root 
+BASE_DIR = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례_1x"))
 
 # Vector DB root (1.x 포맷 폴더)
 RAG_ROOT = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례"))
@@ -113,6 +114,7 @@ except Exception as e:
 
 llm = None
 embedding_model = None
+
 if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)

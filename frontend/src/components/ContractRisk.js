@@ -1,72 +1,29 @@
 // src/components/ContractRisk.js
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useOutletContext } from 'react-router-dom';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { getAuth, getIdToken as fbGetIdToken } from 'firebase/auth';
+import { getIdToken } from '../firebase'; 
 
-// Firebase 토큰
-const getToken = async (force = false) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) return null;
-  return await fbGetIdToken(user, force);
-};
-
-// API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
-const resolveApiBase = () => {
-  const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
-  if (envBase) return envBase;
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-    if (window.location.port === '3000') return 'http://localhost:8088';
-  }
-  return '';
-};
-
-const API_BASE = resolveApiBase();
-
-// 서비스 마운트 경로 포함된 베이스
+// 분석 API(Flask)
 const ANALYZE_API_BASE_URL =
   (process.env.REACT_APP_ANALYZE_API_BASE_URL || `${API_BASE}/api`).replace(/\/+$/, '');
 const TERMS_API_BASE_URL =
   (process.env.REACT_APP_TERMS_API_BASE_URL || `${API_BASE}/terms`).replace(/\/+$/, '');
 
-// 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
-async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
-  const headers = { ...(init.headers || {}) };
-  if (requireAuth) {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return new Response(null, { status: 401 }); // 안전가드
+// ★ terms API는 로컬 개발에서 8083로 ‘고정’ ★
+const TERMS_API_BASE_URL = 'http://localhost:8083';
 
-    // 1차 토큰
-    let idToken = await fbGetIdToken(user, false).catch(() => null);
-    if (!idToken) idToken = await fbGetIdToken(user, true).catch(() => null);
-    if (idToken) headers.Authorization = `Bearer ${idToken}`;
+// 카테고리
+const CATEGORY_OPTIONS = [
+  { label: '보험(암 포함)', value: 'insurance' },
+  { label: '예금',         value: 'deposit'   },
+  { label: '대출',         value: 'loan'      },
+];
 
-    // Term/Point 등이 기대하는 UID 헤더도 같이
-    headers['x-authenticated-user-uid'] = user.uid;
-  }
+const FILE_ACCEPT = '.txt,.pdf,.doc,.docx';
 
-  // JSON 응답 사용하는 엔드포인트에서 타입 명시
-  if (!('Accept' in headers)) headers['Accept'] = 'application/json';
-
-  const res = await fetch(url, { ...init, headers });
-  // (필요 시) 여기서도 401이면 호출부에서 에러 처리
-  return res;
- }
-
-// 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
-function requireJson(res) {
-  const ct = (res.headers.get('content-type') || '').toLowerCase();
-  if (!ct.includes('application/json')) {
-    throw new Error(`Unexpected content-type from ${res.url}: ${ct || 'unknown'}`);
-  }
-  return res;
-}
-
-// 에러 메시지 추출
+// 공통 에러 추출
 async function readError(res) {
   try { const d = await res.json(); return d.error || d.message || `HTTP ${res.status}`; }
   catch { try { return await res.text(); } catch { return `HTTP ${res.status}`; } }
@@ -88,22 +45,11 @@ function suggestBaseName(file, pickedTitle) {
   return `${base}_리스크분석_${date}`;
 }
 
-// 카테고리
-const CATEGORY_OPTIONS = [
-  { label: '보험(암 포함)', value: 'insurance' },
-  { label: '예금',         value: 'deposit'   },
-  { label: '대출',         value: 'loan'      },
-];
-
-const FILE_ACCEPT = '.txt,.pdf,.doc,.docx';
-
 export default function ContractRisk() {
   // 입력 방식: 로컬 업로드 / My약관
   const [mode, setMode] = useState('local'); // 'local' | 'library'
 
   // 공통 상태
-  const { user, authLoading } = useOutletContext();
-  const [selectedFile, setSelectedFile] = useState(null);
   const [category, setCategory] = useState('insurance');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -113,6 +59,9 @@ export default function ContractRisk() {
   // 저장
   const [isSaving, setIsSaving] = useState(false);
   const [saveName, setSaveName] = useState(suggestBaseName(null));
+
+  // 로컬 파일
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileRef = useRef(null);
 
   // My약관(라이브러리)
@@ -181,13 +130,19 @@ export default function ContractRisk() {
     }
   };
 
-  // My약관 불러오기
+  // My약관 불러오기 (8083로 고정 호출)
   async function refreshMyTerms() {
     setError('');
     try {
-      const res = await fetchWithAuth(`${TERMS_API_BASE_URL}`, {}, { requireAuth: true });
+      const token = await getIdToken();
+      if (!token) {
+        setError('로그인이 필요합니다. (Firebase ID 토큰 없음)');
+        return;
+      }
+      const res = await fetch(`${TERMS_API_BASE_URL}/terms`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error(await readError(res));
-      requireJson(res);
       const list = await res.json();
       const sorted = (list || []).sort(
         (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
@@ -222,22 +177,24 @@ export default function ContractRisk() {
           setError('불러올 약관을 선택하세요.');
           return;
         }
+        const token = await getIdToken();
+        if (!token) { setError('로그인이 필요합니다.'); return; }
 
-        const termRes = await fetchWithAuth(`${TERMS_API_BASE_URL}/${selectedTermId}`, {}, { requireAuth: true });
+        const termRes = await fetch(`${TERMS_API_BASE_URL}/terms/${selectedTermId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!termRes.ok) throw new Error(await readError(termRes));
-        requireJson(termRes);
         const term = await termRes.json();
         const text = (term?.content || '').trim();
         setSelectedTermTitle(term?.title || selectedTermTitle || '');
         if (!text) { setError('선택한 약관에 본문(content)이 없습니다.'); return; }
 
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
+        const res = await fetch(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, category }),
-        }, { requireAuth: true });
+        });
         if (!res.ok) throw new Error(await readError(res));
-        requireJson(res);
         const data = await res.json();
 
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
@@ -258,11 +215,11 @@ export default function ContractRisk() {
 
       if (isPlainTextFile(selectedFile)) {
         const fileText = await selectedFile.text();
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
+        const res = await fetch(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: fileText, category }),
-        }, { requireAuth: true });
+        });
         if (!res.ok) throw new Error(await readError(res));
         requireJson(res);
         const data = await res.json();
@@ -277,10 +234,7 @@ export default function ContractRisk() {
         const fd = new FormData();
         fd.append('file', selectedFile);
         fd.append('category', category);
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms-upload`, {
-          method: 'POST',
-          body: fd
-        }, { requireAuth: true });
+        const res = await fetch(`${ANALYZE_API_BASE_URL}/api/analyze-terms-upload`, { method: 'POST', body: fd });
         if (!res.ok) throw new Error(await readError(res));
         requireJson(res);
         const data = await res.json();
@@ -460,7 +414,7 @@ export default function ContractRisk() {
                 title={!resultText ? '먼저 약관 분석을 실행하세요.' : 'DOCX로 저장'}
                 style={{ marginTop: 10 }}
               >
-                {isSaving ? '저장 중...' : 'DOCX로 저장'}
+                {isSaving ? '저장 중...' : '📄 DOCX로 저장'}
               </button>
 
               {error && <div className="alert error" style={{ marginTop: 10 }}>{error}</div>}
