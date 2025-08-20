@@ -4,63 +4,11 @@ import { Link, useOutletContext } from 'react-router-dom';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import { getAuth, getIdToken as fbGetIdToken } from 'firebase/auth';
 
 // term.js의 API 함수들 import
-import { getContracts, getContractById } from '../api/term';
+import { getContracts, getContractById, analyzeTermsWithText, analyzeTermsWithFile } from '../api/term';
 
-// Firebase 토큰
-const getToken = async (force = false) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if (!user) return null;
-  return await fbGetIdToken(user, force);
-};
-
-// 분석 서비스용 베이스 URL
-const ANALYZE_API_BASE_URL =
-  process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
-
-// 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
-async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
-  const headers = { ...(init.headers || {}) };
-  if (requireAuth) {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (!user) return new Response(null, { status: 401 }); // 안전가드
-
-    // 1차 토큰
-    let idToken = await fbGetIdToken(user, false).catch(() => null);
-    if (!idToken) idToken = await fbGetIdToken(user, true).catch(() => null);
-    if (idToken) headers.Authorization = `Bearer ${idToken}`;
-
-    // Term/Point 등이 기대하는 UID 헤더도 같이
-    headers['x-authenticated-user-uid'] = user.uid;
-  }
-
-  // JSON 응답 사용하는 엔드포인트에서 타입 명시
-  if (!('Accept' in headers)) headers['Accept'] = 'application/json';
-
-  const res = await fetch(url, { ...init, headers });
-  // (필요 시) 여기서도 401이면 호출부에서 에러 처리
-  return res;
-}
-
-// 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
-function requireJson(res) {
-  const ct = (res.headers.get('content-type') || '').toLowerCase();
-  if (!ct.includes('application/json')) {
-    throw new Error(`Unexpected content-type from ${res.url}: ${ct || 'unknown'}`);
-  }
-  return res;
-}
-
-// 에러 메시지 추출
-async function readError(res) {
-  try { const d = await res.json(); return d.error || d.message || `HTTP ${res.status}`; }
-  catch { try { return await res.text(); } catch { return `HTTP ${res.status}`; } }
-}
-
+// 유틸리티 함수들
 function isPlainTextFile(file) {
   const type = (file.type || '').toLowerCase();
   if (type === 'text/plain') return true;
@@ -203,7 +151,7 @@ export default function ContractRisk() {
       setLoading(true);
 
       if (mode === 'library') {
-        // 내 약관 content로 분석 - term.js의 getContractById 함수 사용
+        // 내 약관 content로 분석 - term.js의 분석 함수 사용
         if (!selectedTermId) {
           setError('불러올 약관을 선택하세요.');
           return;
@@ -217,14 +165,11 @@ export default function ContractRisk() {
           return; 
         }
 
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, category }),
-        }, { requireAuth: true });
-        if (!res.ok) throw new Error(await readError(res));
-        requireJson(res);
-        const data = await res.json();
+        // term.js의 analyzeTermsWithText 함수 사용
+        const data = await analyzeTermsWithText({
+          text,
+          category
+        });
 
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
@@ -244,14 +189,12 @@ export default function ContractRisk() {
 
       if (isPlainTextFile(selectedFile)) {
         const fileText = await selectedFile.text();
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: fileText, category }),
-        }, { requireAuth: true });
-        if (!res.ok) throw new Error(await readError(res));
-        requireJson(res);
-        const data = await res.json();
+        // term.js의 analyzeTermsWithText 함수 사용
+        const data = await analyzeTermsWithText({
+          text: fileText,
+          category
+        });
+        
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
           .sort((a, b) => (a.index || 0) - (b.index || 0))
@@ -260,16 +203,9 @@ export default function ContractRisk() {
           .join('\n\n');
         setResultText(big);
       } else {
-        const fd = new FormData();
-        fd.append('file', selectedFile);
-        fd.append('category', category);
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms-upload`, {
-          method: 'POST',
-          body: fd
-        }, { requireAuth: true });
-        if (!res.ok) throw new Error(await readError(res));
-        requireJson(res);
-        const data = await res.json();
+        // term.js의 analyzeTermsWithFile 함수 사용
+        const data = await analyzeTermsWithFile(selectedFile, { category });
+        
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
           .sort((a, b) => (a.index || 0) - (b.index || 0))
