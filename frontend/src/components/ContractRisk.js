@@ -277,7 +277,7 @@ export default function ContractRisk() {
         const fd = new FormData();
         fd.append('file', selectedFile);
         fd.append('category', category);
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms-upload`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms-upload`, {
           method: 'POST',
           body: fd
         }, { requireAuth: true });
