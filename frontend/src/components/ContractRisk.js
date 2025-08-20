@@ -22,7 +22,7 @@ const resolveApiBase = () => {
     if (window.location.port === '3000') return 'http://localhost:8088';
   }
   return '';
-};
+}; 
 
 const API_BASE = resolveApiBase();
 
@@ -231,7 +231,7 @@ export default function ContractRisk() {
         setSelectedTermTitle(term?.title || selectedTermTitle || '');
         if (!text) { setError('선택한 약관에 본문(content)이 없습니다.'); return; }
 
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, category }),
@@ -258,7 +258,7 @@ export default function ContractRisk() {
 
       if (isPlainTextFile(selectedFile)) {
         const fileText = await selectedFile.text();
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: fileText, category }),
@@ -277,7 +277,7 @@ export default function ContractRisk() {
         const fd = new FormData();
         fd.append('file', selectedFile);
         fd.append('category', category);
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms-upload`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms-upload`, {
           method: 'POST',
           body: fd
         }, { requireAuth: true });
