@@ -1,6 +1,6 @@
 // src/components/PolicyFooter.jsx
 import React from 'react';
-import PolicyLinks from './PolicyLinks';
+import PolicyLinks from './PolicyLink.js';
 
 /**
  * 회사 정보가 포함된 간단한 푸터.
