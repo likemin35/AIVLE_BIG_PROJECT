@@ -231,7 +231,7 @@ export default function ContractRisk() {
         setSelectedTermTitle(term?.title || selectedTermTitle || '');
         if (!text) { setError('선택한 약관에 본문(content)이 없습니다.'); return; }
 
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text, category }),
@@ -258,7 +258,7 @@ export default function ContractRisk() {
 
       if (isPlainTextFile(selectedFile)) {
         const fileText = await selectedFile.text();
-        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/analyze-terms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: fileText, category }),
