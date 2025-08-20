@@ -601,8 +601,8 @@ def debug_vector_db():
 @app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
 @cross_origin(origin='*')
 def analyze_terms():
-    if request.method == "OPTIONS":
-        return jsonify({"status": "ok"}), 200
+    # if request.method == "OPTIONS":
+    #     return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
 
@@ -666,8 +666,8 @@ def analyze_terms():
 @app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
 @cross_origin(origin='*')
 def analyze_terms_upload():
-    if request.method == "OPTIONS":
-        return jsonify({"status": "ok"}), 200
+    # if request.method == "OPTIONS":
+    #     return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
     if "file" not in request.files:
