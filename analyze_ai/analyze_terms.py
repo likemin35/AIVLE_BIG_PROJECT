@@ -57,9 +57,6 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Vector DB root 
-BASE_DIR = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례_1x"))
-
 # Vector DB root (1.x 포맷 폴더)
 RAG_ROOT = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례"))
 LAW_VECTOR_DB_MAP = {
