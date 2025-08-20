@@ -1,3 +1,4 @@
+# c:\Users\User\Desktop\BIGProject\AIVLE_BIG_PROJECT\analyze_ai\analyze_terms.py
 # analyze_terms.py
 from __future__ import annotations
 
@@ -42,14 +43,14 @@ except Exception:
 # Flask
 # =============================================================================
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS 설정을 한 곳에서 통합 관리합니다.
+# - resources: /api/ 경로에 대해 적용
+# - origins: 모든 출처(*) 허용
+# - allow_headers: 클라이언트에서 보낼 수 있도록 허용할 헤더 목록
+# - supports_credentials: 인증 정보(쿠키 등) 허용
+# resources 키를 사용하는 대신, 앱 전체에 CORS 정책을 전역으로 적용하여 경로 매칭 문제를 방지합니다.
+CORS(app, origins="*", allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"], supports_credentials=True)
 logging.getLogger("werkzeug").setLevel(logging.INFO)
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
 
 # =============================================================================
 # Config / Env
@@ -560,6 +561,12 @@ def apply_pairs_to_text(text: str, pairs: List[Tuple[str, str]]) -> Tuple[str, i
 def health():
     return {"ok": True, "service": "analyze_terms", "time": datetime.now(timezone.utc).isoformat()}
 
+
+# Flask-CORS가 OPTIONS 요청(pre-flight)을 자동으로 처리하므로 수동 핸들러는 제거합니다.
+# @app.route("/api/<path:_any>", methods=["OPTIONS"])
+# def any_options(_any):
+#     return ("", 204)
+
 @app.route("/api/download/<path:filename>", methods=["GET"])
 def download_file(filename):
     safe = os.path.basename(filename)
@@ -599,11 +606,8 @@ def debug_vector_db():
     return info
 
 # JSON 본문 분석(파일 없이)
-@app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
-@cross_origin(origin='*')
+@app.route("/api/analyze-terms", methods=["POST"])
 def analyze_terms():
-    if request.method == "OPTIONS":
-        return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
 
@@ -664,11 +668,8 @@ def analyze_terms():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
-@app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
-@cross_origin(origin='*')
+@app.route("/api/analyze-terms-upload", methods=["POST"])
 def analyze_terms_upload():
-    if request.method == "OPTIONS":
-        return jsonify({"status": "ok"}), 200
     if not llm or not embedding_model:
         return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
     if "file" not in request.files:
@@ -682,14 +683,14 @@ def analyze_terms_upload():
     category = normalize_category(category_raw)
     limit = int(request.form.get("limit", 0))
 
-    # 확장자 판정(원본 → 헤더 스니핑)
     ext = _sniff_ext(f)
     safe_name = secure_filename(f.filename or f"upload{ext or ''}")
     src_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4().hex}{ext or ''}")
-    f.save(src_path)
-    logging.info(f"[UPLOAD] {safe_name} → {src_path}")
 
     try:
+        f.save(src_path)
+        logging.info(f"[UPLOAD] {safe_name} → {src_path}")
+
         # 텍스트 추출
         if ext == ".pdf":
             full_text = load_user_text_from_pdf(pdf_file=src_path)
@@ -705,17 +706,14 @@ def analyze_terms_upload():
 
         vector_db_path = LAW_VECTOR_DB_MAP[category]
 
-        # 조항 분할(목차 제거 + 얇은 본문 제외)
         clauses = split_into_clauses(full_text)
         if limit > 0:
             clauses = clauses[:limit]
 
-        # 검색기
         vectorstore = build_vectorstore(vector_db_path)
 
-        # 분석 실행
         results, flagged = [], 0
-        for c in clauses:  # 문서 등장 순서 유지
+        for c in clauses:
             body = (c.get("body") or "").strip()
             if not _is_real_body(body):
                 continue
@@ -727,11 +725,9 @@ def analyze_terms_upload():
                 flagged += 1
                 results.append({"index": c["index"], "title": c["title"], "analysis": analysis})
 
-        # 결과 합치기 + 페어 파싱
         joined = "\n\n".join([r["analysis"] for r in results])
         pairs = parse_replacement_pairs(joined)
 
-        # 적용: DOCX는 원문에 직접 치환 저장 / PDF·TXT는 텍스트 치환 후 DOCX 생성
         output_filename, applied_count = None, 0
         try:
             if ext == ".docx":
@@ -763,11 +759,19 @@ def analyze_terms_upload():
     except Exception as e:
         logging.exception("[API] /api/analyze-terms-upload 오류")
         return jsonify({"ok": False, "error": str(e)}), 500
+    finally:
+        # 처리가 끝나면(성공/실패 무관) 임시 업로드 파일을 삭제합니다.
+        if os.path.exists(src_path):
+            try:
+                os.remove(src_path)
+                logging.info(f"[CLEANUP] 임시 파일 삭제: {src_path}")
+            except Exception as e_clean:
+                logging.warning(f"[CLEANUP] 임시 파일 삭제 실패: {src_path}, error: {e_clean}")
 
 
 # =============================================================================
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8082)))
+    port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
