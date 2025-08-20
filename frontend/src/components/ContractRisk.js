@@ -5,9 +5,13 @@ import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
 
-
 // term.js의 API 함수들 import
-import { getContracts, getContractById, analyzeTermsWithText, analyzeTermsWithFile } from '../api/term';
+import { 
+  getContracts, 
+  getContractById, 
+  analyzeTermsWithText, 
+  analyzeTermsWithFile 
+} from '../api/term';
 
 // 유틸리티 함수들
 function isPlainTextFile(file) {
@@ -152,7 +156,7 @@ export default function ContractRisk() {
       setLoading(true);
 
       if (mode === 'library') {
-        // 내 약관 content로 분석 - term.js의 분석 함수 사용
+        // 내 약관 content로 분석 - term.js 함수들 사용
         if (!selectedTermId) {
           setError('불러올 약관을 선택하세요.');
           return;
