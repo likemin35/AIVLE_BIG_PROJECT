@@ -43,13 +43,7 @@ except Exception:
 # Flask
 # =============================================================================
 app = Flask(__name__)
-# CORS 설정을 한 곳에서 통합 관리합니다.
-# - resources: /api/ 경로에 대해 적용
-# - origins: 모든 출처(*) 허용
-# - allow_headers: 클라이언트에서 보낼 수 있도록 허용할 헤더 목록
-# - supports_credentials: 인증 정보(쿠키 등) 허용
-CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"], supports_credentials=True)
-logging.getLogger("werkzeug").setLevel(logging.INFO)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # =============================================================================
 # Config / Env
@@ -604,11 +598,19 @@ def debug_vector_db():
         }
     return info
 
+@app.after_request
+def _after(resp):
+    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
+    resp.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return resp
+    
+
 # JSON 본문 분석(파일 없이)
-@app.route("/api/analyze-terms", methods=["POST"])
+@app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
+@cross_origin(origin="*")
 def analyze_terms():
-    if not llm or not embedding_model:
-        return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True}), 200
 
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
@@ -667,10 +669,11 @@ def analyze_terms():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
-@app.route("/api/analyze-terms-upload", methods=["POST"])
+@app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
+@cross_origin(origin="*")
 def analyze_terms_upload():
-    if not llm or not embedding_model:
-        return jsonify({"ok": False, "error": "LLM 또는 Embedding 초기화 실패"}), 500
+    if request.method == "OPTIONS":
+        return jsonify({"ok": True}), 200
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "file 필드가 없습니다."}), 400
 
