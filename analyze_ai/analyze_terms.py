@@ -48,8 +48,7 @@ app = Flask(__name__)
 # - origins: 모든 출처(*) 허용
 # - allow_headers: 클라이언트에서 보낼 수 있도록 허용할 헤더 목록
 # - supports_credentials: 인증 정보(쿠키 등) 허용
-# resources 키를 사용하는 대신, 앱 전체에 CORS 정책을 전역으로 적용하여 경로 매칭 문제를 방지합니다.
-CORS(app, origins="*", allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"], supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"], supports_credentials=True)
 logging.getLogger("werkzeug").setLevel(logging.INFO)
 
 # =============================================================================
@@ -773,5 +772,5 @@ def analyze_terms_upload():
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8082)))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

@@ -4,17 +4,74 @@ import { Link, useOutletContext } from 'react-router-dom';
 import './ContractRisk.css';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { saveAs } from 'file-saver';
-import PolicyLinks from './PolicyLink';
+import { getAuth, getIdToken as fbGetIdToken } from 'firebase/auth';
 
-// term.js의 API 함수들 import
-import {
-getContracts, 
-  getContractById, 
-  analyzeTermsWithText, 
-  analyzeTermsWithFile 
-} from '../api/term';
+// Firebase 토큰
+const getToken = async (force = false) => {
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if (!user) return null;
+  return await fbGetIdToken(user, force);
+};
 
-// 유틸리티 함수들
+// // API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
+// const resolveApiBase = () => {
+//   const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
+//   if (envBase) return envBase;
+//   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+//     if (window.location.port === '3000') return 'http://localhost:8088';
+//   }
+//   return '';
+// }; 
+
+// const API_BASE = resolveApiBase();
+
+// 서비스 마운트 경로 포함된 베이스
+const ANALYZE_API_BASE_URL =
+  process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
+const TERMS_API_BASE_URL =
+  process.env.REACT_APP_TERMS_API_BASE_URL || 'https://term-service-eck6h26cxa-uc.a.run.app';
+
+// 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
+async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
+  const headers = { ...(init.headers || {}) };
+  if (requireAuth) {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return new Response(null, { status: 401 }); // 안전가드
+
+    // 1차 토큰
+    let idToken = await fbGetIdToken(user, false).catch(() => null);
+    if (!idToken) idToken = await fbGetIdToken(user, true).catch(() => null);
+    if (idToken) headers.Authorization = `Bearer ${idToken}`;
+
+    // Term/Point 등이 기대하는 UID 헤더도 같이
+    headers['x-authenticated-user-uid'] = user.uid;
+  }
+
+  // JSON 응답 사용하는 엔드포인트에서 타입 명시
+  if (!('Accept' in headers)) headers['Accept'] = 'application/json';
+
+  const res = await fetch(url, { ...init, headers });
+  // (필요 시) 여기서도 401이면 호출부에서 에러 처리
+  return res;
+ }
+
+// 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
+function requireJson(res) {
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  if (!ct.includes('application/json')) {
+    throw new Error(`Unexpected content-type from ${res.url}: ${ct || 'unknown'}`);
+  }
+  return res;
+}
+
+// 에러 메시지 추출
+async function readError(res) {
+  try { const d = await res.json(); return d.error || d.message || `HTTP ${res.status}`; }
+  catch { try { return await res.text(); } catch { return `HTTP ${res.status}`; } }
+}
+
 function isPlainTextFile(file) {
   const type = (file.type || '').toLowerCase();
   if (type === 'text/plain') return true;
@@ -124,11 +181,14 @@ export default function ContractRisk() {
     }
   };
 
-  // My약관 불러오기 - term.js의 getContracts 함수 사용
+  // My약관 불러오기
   async function refreshMyTerms() {
     setError('');
     try {
-      const list = await getContracts(); // term.js 함수 사용
+      const res = await fetchWithAuth(`${TERMS_API_BASE_URL}`, {}, { requireAuth: true });
+      if (!res.ok) throw new Error(await readError(res));
+      requireJson(res);
+      const list = await res.json();
       const sorted = (list || []).sort(
         (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
       );
@@ -157,25 +217,28 @@ export default function ContractRisk() {
       setLoading(true);
 
       if (mode === 'library') {
-        // 내 약관 content로 분석 - term.js 함수들 사용
+        // 내 약관 content로 분석
         if (!selectedTermId) {
           setError('불러올 약관을 선택하세요.');
           return;
         }
 
-        const term = await getContractById(selectedTermId); // term.js 함수 사용
+        const termRes = await fetchWithAuth(`${TERMS_API_BASE_URL}/${selectedTermId}`, {}, { requireAuth: true });
+        if (!termRes.ok) throw new Error(await readError(termRes));
+        requireJson(termRes);
+        const term = await termRes.json();
         const text = (term?.content || '').trim();
         setSelectedTermTitle(term?.title || selectedTermTitle || '');
-        if (!text) { 
-          setError('선택한 약관에 본문(content)이 없습니다.'); 
-          return; 
-        }
+        if (!text) { setError('선택한 약관에 본문(content)이 없습니다.'); return; }
 
-        // term.js의 analyzeTermsWithText 함수 사용
-        const data = await analyzeTermsWithText({
-          text,
-          category
-        });
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, category }),
+        }, { requireAuth: true });
+        if (!res.ok) throw new Error(await readError(res));
+        requireJson(res);
+        const data = await res.json();
 
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
@@ -195,12 +258,14 @@ export default function ContractRisk() {
 
       if (isPlainTextFile(selectedFile)) {
         const fileText = await selectedFile.text();
-        // term.js의 analyzeTermsWithText 함수 사용
-        const data = await analyzeTermsWithText({
-          text: fileText,
-          category
-        });
-        
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: fileText, category }),
+        }, { requireAuth: true });
+        if (!res.ok) throw new Error(await readError(res));
+        requireJson(res);
+        const data = await res.json();
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
           .sort((a, b) => (a.index || 0) - (b.index || 0))
@@ -209,9 +274,16 @@ export default function ContractRisk() {
           .join('\n\n');
         setResultText(big);
       } else {
-        // term.js의 analyzeTermsWithFile 함수 사용
-        const data = await analyzeTermsWithFile(selectedFile, { category });
-        
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        fd.append('category', category);
+        const res = await fetchWithAuth(`${ANALYZE_API_BASE_URL}/api/analyze-terms-upload`, {
+          method: 'POST',
+          body: fd
+        }, { requireAuth: true });
+        if (!res.ok) throw new Error(await readError(res));
+        requireJson(res);
+        const data = await res.json();
         setMeta({ count_clauses: data.count_clauses || 0, count_flagged: data.count_flagged || 0 });
         const big = (data.results || [])
           .sort((a, b) => (a.index || 0) - (b.index || 0))
@@ -240,11 +312,7 @@ export default function ContractRisk() {
           <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-        <div className="policy-links">
-    <PolicyLinks />
-  </div>
-
-</main>
+      </main>
     );
   }
 
@@ -415,7 +483,7 @@ export default function ContractRisk() {
               <div className="empty-state">
                 AI 약관 리스크 분석 결과가 여기에 표시됩니다.
                 <div className="sub">
-                  좌측에서 파일을 업로드하거나 My약관을 선택한 뒤 '약관 분석'을 눌러주세요.
+                  좌측에서 파일을 업로드하거나 My약관을 선택한 뒤 ‘약관 분석’을 눌러주세요.
                 </div>
               </div>
             ) : (
