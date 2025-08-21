@@ -22,7 +22,7 @@ const getToken = async (force = false) => {
 //     if (window.location.port === '3000') return 'http://localhost:8088';
 //   }
 //   return '';
-// }; 
+// };
 
 // const API_BASE = resolveApiBase();
 

@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-
 function CompleteSignUp() {
   const [name, setName] = useState('');
   const [company, setCompany] = useState('');
@@ -58,8 +57,8 @@ function CompleteSignUp() {
         마케팅 수신 동의
       </label>
       <button onClick={handleSubmit}>완료</button>
-    </div>
-  );
+</div>
+);
 }
 
 export default CompleteSignUp;

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { getQuestionById, updateQuestion, uploadImage } from '../api/qna';
 import './QnaWrite.css'; // 작성과 동일한 스타일 사용
-
 const QnaEdit = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -139,8 +138,8 @@ const QnaEdit = () => {
                     </button>
                 </div>
             </form>
-        </div>
-    );
+</div>
+);
 };
 
 export default QnaEdit;

@@ -219,6 +219,84 @@ html, body, #root {
 .remove-icon{ font-size:16px; color:#999; transition:color 0.2s ease;}
 .remove-file-btn:hover .remove-icon{ color:#ff4d4d; }
 
+/* ===== Footer ===== */
+.site-footer{
+  margin-top: 4rem;
+  background: var(--soft);
+  border-top: 1px solid var(--border);
+  color: var(--subtext);
+}
+[data-theme="dark"] .site-footer{
+  background: var(--soft-2);
+}
+
+.footer-inner{
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.footer-left{
+  min-width: 220px;
+}
+
+.footer-brand{
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: .35rem;
+}
+
+.footer-address{
+  font-style: normal;
+  color: var(--subtext);
+  line-height: 1.5;
+  margin-bottom: .35rem;
+}
+
+.footer-contact{
+  color: var(--subtext);
+}
+
+.footer-contact a{
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer-nav{
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.footer-nav a{
+  color: var(--text);
+  text-decoration: none;
+  padding: .25rem 0;
+  border-bottom: 1px dashed transparent;
+  transition: border-color .15s ease;
+}
+.footer-nav a:hover{
+  border-color: var(--primary);
+}
+
+.footer-bottom{
+  border-top: 1px solid var(--border);
+  padding: .9rem 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+.divider{
+  margin: 0 .5rem;
+  color: var(--muted);
+}
+
 /* Responsive */
 @media (max-width: 768px){
   .main-content{ padding:3rem 1rem; }
@@ -231,6 +309,13 @@ html, body, #root {
   .option-icon{ width:60px; height:60px; }
   .option-text{ font-size:1.1rem; }
   .section-title::after{ width:150px; }
+
+  /* Footer */
+  .footer-inner{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
 }
 
 @media (max-width: 480px){
@@ -245,4 +330,22 @@ html, body, #root {
   .section-title::after{ width:120px; }
   .floating-about-btn{ right:16px; bottom:16px; padding:12px 16px; font-size:14px; }
   .floating-theme-toggle{ left:12px; bottom:12px; width:40px; height:40px; }
+
+  /* Footer */
+  .footer-bottom{ font-size: .85rem; }
+}
+
+
+/* Policy links positioning */
+.policy-links{
+  max-width: 700px;
+  margin: 1rem auto 2rem;
+  text-align: left;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.policy-links a{
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }

@@ -5,7 +5,6 @@ import PointCharge from './PointCharge';
 import PointHistory from './PointHistory';
 import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './PointLayout.css';
-
 const PointLayout = () => {
     const { user, authLoading } = useOutletContext();
 
@@ -74,7 +73,7 @@ const PointLayout = () => {
                 <main className="point-view">
                     {activeView === 'charge' && <PointCharge user={user} onChargeSuccess={fetchPoints} />}
                     {activeView === 'history' && <PointHistory user={user} />}
-                </main>
+</main>
             </div>
         </div>
     );

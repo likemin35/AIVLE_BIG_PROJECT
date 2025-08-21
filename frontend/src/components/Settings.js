@@ -1,7 +1,6 @@
 // /src/components/Settings.js
 import React, { useEffect, useState, useRef } from 'react';
 import { getSavedPreference, applyTheme, subscribeSystemThemeChange } from '../utils/theme';
-
 const preferenceToLabel = {
   light: '끄기(라이트)',
   dark: '켜기(다크)',
@@ -111,6 +110,6 @@ export default function Settings() {
         </div>
 
       </section>
-    </div>
-  );
+</div>
+);
 }

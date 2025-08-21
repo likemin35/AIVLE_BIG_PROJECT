@@ -5,7 +5,7 @@ requests==2.32.3
 gunicorn==22.0.0
 
 # Google / Vertex AI
-google-cloud-aiplatform==1.63.0
+google-cloud-aiplatform>=1.71.0,<2
 google-cloud-secret-manager==2.20.2
 google-auth==2.32.0
 
@@ -14,8 +14,10 @@ langchain>=0.3,<0.4
 langchain-core>=0.3,<0.4
 langchain-community>=0.3,<0.4
 langchain-text-splitters>=0.3,<0.4
-langchain-google-vertexai>=2,<3
+langchain-google-vertexai==2.0.3
 langchain-huggingface>=0.1,<0.2
+pydantic>=2.6,<3
+protobuf<6
 
 # Embeddings (HF)
 fastembed==0.3.3

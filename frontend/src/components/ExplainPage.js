@@ -4,6 +4,7 @@ import CreateTermsImg from '../assets/CreateTerms.png';
 import ImageCheckImg from '../assets/ImageCheck.png';
 import VersionManageImg from '../assets/VersionManage.png';
 import TermsNodeImg from '../assets/TermsNode.png';
+import RiskInsightImg from '../assets/RiskInsightImg.png';
 
 export default function ExplainPage() {
   // 공용 섹션 컴포넌트 (문자/JSX 모두 지원하는 imgLabel)
@@ -221,12 +222,18 @@ export default function ExplainPage() {
         title="AI가 약관 속 리스크를 찾아 개선 방안 제시"
         desc={
           <>
-            AI가 약관을 검토하여 ‘모호한 표현’, ‘설명의무 위반’, ‘오탈자’ 등 문서상의 오류를 탐지하고, 
-            실제 판례에 기반한 개선 사항을 제시합니다. 개선 사항은 사용자의 문서에 바로 적용하여 
+            AI가 약관을 검토하여 ‘모호한 표현’, ‘설명의무 위반’, ‘오탈자’ 등 문서상의 오류를 탐지하고,
+            실제 판례에 기반한 개선 사항을 제시합니다. 개선 사항은 사용자의 문서에 바로 적용하여
             팀이 신속하게 논의하고 반영할 수 있도록 돕습니다.
           </>
         }
-        imgLabel="리스크 목록/심각도 예시"
+        imgLabel={
+          <img
+            src={RiskInsightImg}
+            alt="리스크 목록/심각도"
+            style={{ maxWidth: '100%', height: 'auto', borderRadius: 12 }}
+          />
+        }
       />
 
       {/* 조항 연관도 시각화 */}
@@ -238,7 +245,7 @@ export default function ExplainPage() {
             노드의 크기로 각 조항이 약관에 기여하는 영향력을 확인할 수 있습니다.
             조항과 연관된 내용들이 시각적으로 표시되어서 복잡한 조항을 한번에 찾을 수 있습니다.
             조항과 연관된 내용들을 확인할 수 있어서 조항 수정시에 각 조항끼리 모순되지 않도록 도와줍니다.
- 
+
           </>
         }
         imgLabel={

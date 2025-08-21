@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate, useOutletContext, useLocation } from 'react-router-dom';
 import { getQuestionById, deleteQuestion, createAnswer, deleteAnswer, updateAnswer } from '../api/qna';
 import './QnaDetail.css';
-
 // 날짜 포맷팅 헬퍼 함수
 const formatDateTime = (dateString) => {
     const options = {
@@ -205,8 +204,8 @@ const QnaDetail = () => {
                                         <p>{answer.content}</p>
                                     </>
                                 )}
-                            </div>
-                        );
+</div>
+);
                     })}
                 </div>
             </div>

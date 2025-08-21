@@ -84,12 +84,12 @@ function Home({ user }) {
     } else if (type === 'labor') {
       navigate('/upload-image');
     } else if (type === 'risk') {
-      navigate('/analyze-terms'); 
+      navigate('/analyze-terms');
     } else {
       alert('해당 서비스는 준비중입니다.');
     }
   };
-
+                          
   return (
     <div className="HomeContainer">
       <main className="main-content">

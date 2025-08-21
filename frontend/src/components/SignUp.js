@@ -291,7 +291,8 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
               </button>
             </div>
           </div>
-        </main>
+
+                        </main>
 
         {/* PDF 모달 */}
         <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />

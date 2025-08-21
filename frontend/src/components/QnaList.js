@@ -3,7 +3,6 @@ import { Link, useNavigate, useLocation, useOutletContext } from 'react-router-d
 import { getAllQuestions } from '../api/qna';
 import LoadingSpinner from './LoadingSpinner'; // 스피너 컴포넌트 import
 import './QnaList.css';
-
 // SVG 아이콘 컴포넌트
 const ImageIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-card-image" viewBox="0 0 16 16">
@@ -159,8 +158,8 @@ const QnaList = () => {
                     다음
                 </button>
             </div>
-        </div>
-    );
+</div>
+);
 };
 
 export default QnaList;

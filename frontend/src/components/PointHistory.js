@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getPointHistory } from '../api/point';
 import './PointHistory.css';
-
 // 날짜 포맷팅 함수
 const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -89,8 +88,8 @@ const PointHistory = ({ user }) => {
                     )}
                 </tbody>
             </table>
-        </div>
-    );
+</div>
+);
 };
 
 export default PointHistory;
