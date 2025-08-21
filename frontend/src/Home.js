@@ -3,14 +3,13 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { uploadTermFile } from './api/term';
 import iconStandard from './assets/icon-standard.png';
-import iconRisk from './assets/icon-risk.png';
 import iconTerms from './assets/icon-terms.png';
 import iconRisk from './assets/icon-risk.png';
 import logo from './assets/logo.png';
 import './App.css';
 
 function Home({ user }) {
-  const [contractText, setContractText] = useState('');
+  // const [contractText, setContractText] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -38,12 +37,12 @@ function Home({ user }) {
       alert('PDF 또는 Word 파일만 업로드 가능합니다.');
       e.target.value = null;
       setSelectedFile(null);
-      setContractText('');
+      // setContractText('');
       return;
     }
 
     setSelectedFile(file);
-    setContractText(file.name);
+    // setContractText(file.name);
   };
 
   const handleUploadClick = async () => {
@@ -73,7 +72,7 @@ function Home({ user }) {
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
-    setContractText('');
+    // setContractText('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 

@@ -1,4 +1,3 @@
-# c:\Users\User\Desktop\BIGProject\AIVLE_BIG_PROJECT\analyze_ai\analyze_terms.py
 # analyze_terms.py
 from __future__ import annotations
 

@@ -6,8 +6,6 @@ firebase:
   secret-id: "firebase-adminsdk"
   database-url: "aivle-team0721"
   project-id: "aivle-team0721"
-  database-url: "aivle-team0721"
-  project-id: "aivle-team0721"
 
 ---
 spring:
