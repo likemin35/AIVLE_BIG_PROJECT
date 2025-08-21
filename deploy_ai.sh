@@ -64,8 +64,15 @@ gcloud run deploy "${AI_SERVICE_NAME}" \
 AI_URL=$(gcloud run services describe "${AI_SERVICE_NAME}" --region "${REGION}" --format 'value(status.url)')
 echo "✅ AI Service URL: ${AI_URL}"
 
-##############################################
-# 5) 로그 안내
+#############################################력
+# 5) 배포 성공 로그 출력
 ##############################################
 echo "=== ✅ AI Service 배포 완료 ==="
 echo "👉 AI Service Logs: gcloud run services logs read ${AI_SERVICE_NAME} --region=${REGION} --project=${PROJECT} --limit=100"
+
+##############################################
+# 6) 로컬 Docker 시스템 정리 (용량 확보)
+##############################################
+echo "=== 6) 로컬 Docker 시스템 정리 ==="
+docker system prune -f
+echo "✅ 불필요한 Docker 이미지와 캐시가 정리되었습니다."
