@@ -25,7 +25,6 @@ COPY 판례 ./판례
 ENV CHROMA_BASE=/app/판례
 
 EXPOSE 8080
-EXPOSE 8080
 
 # gunicorn으로 실행 (Flask의 app 객체 사용)
 CMD ["gunicorn", "-b", "0.0.0.0:8080", "analyze_terms:app", "--workers=1", "--threads=4", "--timeout=300"]
