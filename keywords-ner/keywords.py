@@ -108,80 +108,40 @@ def extract_text_field(data):
 def nfc(s): return unicodedata.normalize("NFC", s or "")
 
 # -------------------------
-# 조항 분리 (개선된 버전)
+# 조항 분리
 # -------------------------
+HEADER_RE = re.compile(
+    r'(?<=\n)\s*(?:\*\*\s*)?(?P<header>제\s*\d+\s*조(?:\s*[（(][^)\n）]*[）)])?)\s*(?:\*\*)?\s*(?=\n)'
+)
+
 def split_clauses(raw: str):
-    """
-    개선된 로직으로 텍스트를 조항별로 분리합니다.
-    한 줄, 여러 줄 헤더, 제목 없는 조항을 모두 지원합니다.
-    """
-    if not raw or not raw.strip():
+    if not raw:
         return []
+    t = raw.replace("\r\n", "\n").replace("\r", "\n")
+    if not t.startswith("\n"): t = "\n" + t
+    if not t.endswith("\n"):  t = t + "\n"
 
-    # 1. 줄바꿈 정규화 및 줄 단위 분리
-    text = re.sub(r'\r\n|\r', '\n', raw)
-    lines = text.strip().split('\n')
-    
-    # 2. 모든 헤더의 텍스트와 시작 줄 인덱스를 찾음
-    header_infos = []
-    article_only_pattern = re.compile(r'^\s*제\s*\d+\s*조\s*$')
-    article_with_title_pattern = re.compile(r'^\s*제\s*\d+\s*조\s*.*')
-    is_title_pattern = re.compile(r'^\s*(\(|[가-힣])')
-
-    i = 0
-    while i < len(lines):
-        line_stripped = lines[i].strip()
-        
-        if article_with_title_pattern.match(line_stripped):
-            header_infos.append({'text': line_stripped, 'start_line': i})
-            i += 1
-        elif article_only_pattern.match(line_stripped):
-            next_i = i + 1
-            if (next_i < len(lines) and
-                is_title_pattern.match(lines[next_i].strip()) and
-                not article_only_pattern.match(lines[next_i].strip())):
-                
-                header_text = f"{line_stripped} {lines[next_i].strip()}"
-                header_infos.append({'text': header_text, 'start_line': i})
-                i += 2 # 조항, 제목 두 줄을 소비
-            else:
-                header_infos.append({'text': line_stripped, 'start_line': i})
-                i += 1
-        else:
-            i += 1
-    
-    # 3. 헤더 정보를 바탕으로 조항 분리
+    m = list(HEADER_RE.finditer(t))
     out = []
-    if not header_infos:
-        if text.strip():
-            out.append({"clause_id": "전체", "korean": text.strip()})
+    if not m:
+        if raw.strip():
+            out.append({"clause_id": "전체", "korean": raw.strip()})
         return out
 
-    # 머리말 처리
-    first_header_start_line = header_infos[0]['start_line']
-    if first_header_start_line > 0:
-        preamble = "\n".join(lines[:first_header_start_line]).strip()
-        if preamble:
-            out.append({"clause_id": "머리말", "korean": preamble})
+    if m[0].start() > 0:
+        pre = t[:m[0].start()].strip()
+        if pre:
+            out.append({"clause_id": "머리말", "korean": pre})
 
-    # 각 조항의 본문 처리
-    for i, header_info in enumerate(header_infos):
-        cid = header_info['text']
-        start_line = header_info['start_line']
-        end_line = header_infos[i + 1]['start_line'] if i + 1 < len(header_infos) else len(lines)
-        
-        body_raw = "\n".join(lines[start_line:end_line]).strip()
-        # 기존 코드의 의도를 살려 '**' 제거
-        body = re.sub(r'\*\*', '', body_raw)
-        
+    for i, mm in enumerate(m):
+        cid = mm.group("header").strip()
+        start = mm.start()
+        end = m[i + 1].start() if i + 1 < len(m) else len(t)
+        body = re.sub(r"\*+", "", t[start:end].strip())
         out.append({"clause_id": cid, "korean": body})
-        
     return out
 
 def canon_clause_id(s: str):
-    """조항 ID에서 '제O조' 부분만 표준화하여 추출"""
-    if not s:
-        return None
     m = re.search(r'제\s*(\d+)\s*조', s or "")
     return f"제{int(m.group(1))}조" if m else None
 

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify 
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS, cross_origin
 import vertexai
 import os, _csv, _io
@@ -26,10 +26,11 @@ POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")
 PROJECT_ID = "aivle-team0721"
 LOCATION = "us-central1"
 
-# 크로마 DB 저장소 경로4
+# 크로마 DB 저장소 경로
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
-VECTOR_DIR = os.path.join(BASE_DIR, "벡터DB")
+
 try:
     secret_client = secretmanager.SecretManagerServiceClient()
     secret_name = f"projects/{PROJECT_ID}/secrets/firebase-adminsdk/versions/latest"
@@ -68,17 +69,18 @@ else:
     embedding = None
 
 VECTOR_DB_MAP = {
-    'loan': os.path.join(VECTOR_DIR, '대출'),
-    'cancer_insurance': os.path.join(VECTOR_DIR, '암보험'),
-    'deposit': os.path.join(VECTOR_DIR, '예금'),
-    'car_insurance': os.path.join(VECTOR_DIR, '자동차보험'),
-    'savings': os.path.join(VECTOR_DIR, '적금'),
-    'laws': os.path.join(VECTOR_DIR, '법령')
+    'loan': os.path.join(BASE_DIR, '대출'),
+    'cancer_insurance': os.path.join(BASE_DIR, '암보험'),
+    'deposit': os.path.join(BASE_DIR, '예금'),
+    'car_insurance': os.path.join(BASE_DIR, '자동차보험'),
+    'savings': os.path.join(BASE_DIR, '적금'),
+    'laws': os.path.join(BASE_DIR, '법령')
 }
 
 PROMPT_TEMPLATE_JSON = r"""
 너는 보험 약관 작성 전문가다. 아래 정보를 참고하여 오직 JSON만 출력하라.
-서문/설명/마크다운/코드블럭/주석/별표(*, **)는 절대 출력하지 말 것. 만약 출력된다면, 잘못된 결과이다.
+텍스트 목차/서문/설명/마크다운/코드블럭/주석/별표(*)는 절대 출력하지 말 것.
+만약 출력된다면, 잘못된 결과
 
 입력:
 - 기업 이름: {company_name}
@@ -86,7 +88,7 @@ PROMPT_TEMPLATE_JSON = r"""
 - 기업 제공 상품 정보(원문):
 {wishlist}
 
-참고 약관 문서 및 법령자료):
+- 참고 약관 문서 및 법령자료):
 {context}
 
 요구사항:
@@ -95,7 +97,9 @@ PROMPT_TEMPLATE_JSON = r"""
 3) 반복 용어는 '용어의 정의'에 1회 정의 후 본문에서는 용어만 사용.
 4) 각 절차는 주 경로와 예비 경로 2가지 제시.
 5) 최소 6개 관 이상, 총 50개 조 이상. 각 조는 다수의 하위항 포함.
-6) 아래 JSON 스키마 그대로 출력. 키 누락 금지. 값은 문자열 또는 문자열 리스트만.
+6) '목차'라는 단어 자체를 출력하지 말 것.
+7) 아래 JSON 스키마 그대로 출력. 키 누락 금지. 값은 문자열 또는 문자열 리스트만.
+8) 자체 점검: 출력 직전에 전체 조(articles) 개수가 50개 이상인지 확인하고, 부족하면 추가 작성하여 50개 이상이 되도록 할 것.
 
 JSON 스키마:
 {{
@@ -318,29 +322,10 @@ def json_to_text(policy: dict) -> str:
     # Join all articles with two newlines to create a space between them
     return "\n\n".join(full_text)
 
-# 신규: JSON에서 목차 생성
-def create_table_of_contents(policy: dict) -> str:
-    toc_parts = []
-    if not isinstance(policy, dict):
-        return ""
-    sections = policy.get("sections", [])
-    if not sections:
-        return "(생성된 목차 없음)"
-    for section in sections:
-        section_name = section.get("name")
-        if section_name:
-            toc_parts.append(section_name)
-        articles = section.get("articles", [])
-        for article in articles:
-            article_title = article.get("title")
-            if article_title:
-                toc_parts.append(f"  {article_title}")
-    return "\n".join(toc_parts)
-
 # 신규: 멀티파트 업로드 
 @app.route('/api/generate', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='*')
-def generate_terms():
+def generate_terms_v2():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
@@ -399,41 +384,41 @@ def generate_terms():
         if not category:
             return jsonify({"error": "category가 필요합니다."}), 400
         
-        # 상품벡터DB 로드 및 리트리버 초기화
-        category_persist_dir = VECTOR_DB_MAP.get(category)
-        if not category_persist_dir or not os.path.isdir(category_persist_dir):
-            return jsonify({"error": f"'{category}'DB를 찾을 수 없습니다."}), 400
-        category_vectorstore = Chroma(persist_directory=category_persist_dir, embedding_function=embedding)
-        category_retriever = category_vectorstore.as_retriever(search_kwargs={'k': 5})
+        persist_dir = VECTOR_DB_MAP.get(category)
+        if not persist_dir or not os.path.isdir(persist_dir):
+            return jsonify({"error": f"'{category}' 벡터 저장소를 찾을 수 없습니다."}), 400
+        vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embedding)
+        retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
+
+        # docs = retriever.invoke(wishlist)
+        # context = "\n\n".join([d.page_content for d in docs])[:12000]
         
-        # 법령벡터DB 로드 및 리트리버 초기화
-        law_persist_dir = VECTOR_DB_MAP.get('laws')
-        if not law_persist_dir or not os.path.isdir(law_persist_dir):
-            return jsonify({"error": f"'laws'DB를 찾을 수 없습니다."}), 400
-        law_vectorstore = Chroma(persist_directory=law_persist_dir, embedding_function=embedding)
-        law_retriever = law_vectorstore.as_retriever(search_kwargs={'k': 5})
-        
-        # 카테고리DB 검색
-        category_query = f"상품명: {product_name}\n주요 상품 정보:\n{wishlist}"
-        logging.info(category_query)
+        # logging.info(f"DB 검색어: '{retrieval_query}'")
+        # docs = retriever.invoke(retrieval_query)
+        # retrieval_query = product_name
+
+        # 두  벡터db 임시 쿼리로 상품명
+        logging.info(f"초안카테고리DB 검색어: '{product_name}'")
         try:
-            category_docs = category_retriever.invoke(category_query)
+            docs = retriever.invoke(product_name)
         except Exception as e:
-            logging.error(f"'{category}'DB 검색 실패: {e}")
-            return jsonify({"error": "'{category}'DB 검색 중 오류가 발생했습니다."}), 500
+            logging.error(f"초안카테고리DB 검색 실패: {e}")
+            return jsonify({"error": "초안카테고리DB 검색 중 오류가 발생했습니다."}), 500
         
-        law_query = f"{category} 관련 필수 법률 및 규제 조항"
-        logging.info(law_query)
+        logging.info(f"법령DB 검색어: '{product_name}'")
         try:
-            law_docs = law_retriever.invoke(law_query)
+            law_docs = retriever.invoke(product_name)
         except Exception as e:
-            logging.error(f"'law'DB 검색 실패: {e}")
-            return jsonify({"error": "'law'DB 검색 중 오류가 발생했습니다."}), 500  
+            logging.error(f"법령DB 검색 실패: {e}")
+            return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500
         
-        # 검색된 결과 합치기
-        context = "\n\n".join([d.page_content for d in category_docs + law_docs])
+        
+        # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
+        context = "\n\n".join([d.page_content for d in docs + law_docs])
 
         # 표 스펙 구성(통합 CSV에서)
+        parsed = parse_unified_product_csv_upload(files['productMeta'])
+
         user_tables = {}
         if parsed["refund_spec"]:
             user_tables["해약환급금"] = parsed["refund_spec"]
@@ -460,13 +445,10 @@ def generate_terms():
                 fallback_tables.append("지급기준표")
             policy["tables"] = fallback_tables
 
-        # JSON을 텍스트로 변환하고 목차를 생성하여 반환
+        # JSON을 텍스트로 변환하여 반환
         policy_text = json_to_text(policy)
-        toc_text = create_table_of_contents(policy)
-
         return jsonify({
             "policy": policy_text,
-            "table_of_contents": toc_text,
             "meta": {
                 "companyName": company_name,
                 "productName": product_name,
