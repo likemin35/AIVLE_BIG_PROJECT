@@ -489,7 +489,7 @@ export default function ContractRisk() {
             ) : (
               <div className="results">
                 <div className="meta">
-                  총 조항 {meta.count_clauses}개 / 리스크 감지 {meta.count_flagged}개
+                  총 리스크 감지 {meta.count_flagged}개
                 </div>
                 <pre className="results-body">{resultText}</pre>
               </div>
