@@ -10,12 +10,6 @@ WORKDIR /app
 COPY ai/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ai/src/main/Python/ .
-
-# ✅ ChromaDB 벡터 저장소 폴더 복사
-COPY ai/src/main/Python/ /app/
-
-
 EXPOSE 8080
 
 CMD ["gunicorn", "-b", "0.0.0.0:8080", "Create_Terms:app", "--workers=1", "--threads=4"]
