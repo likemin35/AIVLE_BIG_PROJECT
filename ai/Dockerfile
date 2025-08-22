@@ -7,8 +7,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY ai/ .
+COPY ai/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ai/src/main/Python/ .
+
+# ✅ ChromaDB 벡터 저장소 폴더 복사
+COPY ai/src/main/Python/ /app/
 
 
 EXPOSE 8080

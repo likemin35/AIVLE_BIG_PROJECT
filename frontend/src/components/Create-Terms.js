@@ -167,7 +167,6 @@ function CreateTerms() {
       const draftPayload = {
         // terms: policy ? JSON.stringify(policy, null, 2) : (data.terms || ''),
         terms: policy,
-        table_of_contents: data.table_of_contents || '', // 목차 데이터 추가
         policy,
         meta,
       };

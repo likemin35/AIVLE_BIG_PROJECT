@@ -35,23 +35,7 @@ function EditTerms() {
     return `${initialData.meta?.productName || ''} 이용 약관`;
   });
   const [memo, setMemo] = useState(initialData?.memo || '');
-  const [termsContent, setTermsContent] = useState(() => {
-    const toc = initialData?.table_of_contents || '';
-    const content = initialData?.content || initialData?.terms || '';
-
-    // TOC가 없으면 기존 내용 그대로 반환
-    if (!toc) {
-      return content;
-    }
-
-    // 내용에서 제목과 본문을 분리 (제목이 첫 줄, 그 다음은 빈 줄이라고 가정)
-    const lines = content.split('\n');
-    const docTitle = lines[0] || '';
-    const docBody = lines.slice(2).join('\n');
-
-    // 올바른 순서: 제목 -> 목차 -> 본문
-    return `${docTitle}\n\n${toc}\n${docBody}`;
-  });
+  const [termsContent, setTermsContent] = useState(initialData?.content || initialData?.terms || '');
   const [createdAt, setCreatedAt] = useState(() => {
     if (!initialData) return '';
     const dateToSet = initialData.createdAt ? new Date(initialData.createdAt) : new Date();
@@ -89,16 +73,15 @@ function EditTerms() {
   }, [authLoading, initialData, submissionSuccess, navigate, isEditMode, termId]);
 
   // contentEditable의 초기 내용을 설정하는 useEffect
-  // termsContent state가 초기화된 값을 editor에 한 번 설정합니다.
+  // 이제 initialData가 재생성되지 않으므로, 이 effect는 최초 한 번만 실행됩니다.
   useEffect(() => {
     if (editorRef.current) {
-      // `termsContent`는 목차와 본문을 포함한 전체 내용입니다.
-      if (editorRef.current.innerText !== termsContent) {
-        editorRef.current.innerText = termsContent;
+      const initialContent = initialData?.content || initialData?.terms || '';
+      if (editorRef.current.innerText !== initialContent) {
+        editorRef.current.innerText = initialContent;
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialData]); // initialData가 변경될 때만 실행되어야 합니다.
+  }, [initialData]);
 
   const handleEditorInput = useCallback(() => {
     if (editorRef.current) {
