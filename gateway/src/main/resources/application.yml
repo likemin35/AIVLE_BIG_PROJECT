@@ -1,31 +1,42 @@
 server:
   port: 8088
 
-# Firebase 설정
+# Firebase 설정 (원래 값 유지)
 firebase:
   secret-id: "firebase-adminsdk"
   database-url: "aivle-team0721"
   project-id: "aivle-team0721"
 
 ---
-
 spring:
   profiles: default
   cloud:
     gateway:
+      # [추가] 중복 CORS 헤더 제거
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_LAST
+
+      # [수정] global CORS (키명/옵션 교정)
       globalcors:
-        cors-configurations:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:3000"
-            allowedMethods: [ GET, POST, PUT, DELETE, OPTIONS ]
-            allowedHeaders: "*"
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://127.0.0.1:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders:
+              - "*"
             allowCredentials: true
 
-      # ⬇️ 중복 CORS 응답 헤더 제거 (게이트웨이 값을 마지막으로 유지)
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin,RETAIN_LAST
-
-      # <<< API Gateway / Routes
+      # [기존 라우트 유지]
       routes:
         # analyze → localhost:8082
         - id: analyze
@@ -50,50 +61,55 @@ spring:
         - id: ai
           uri: http://localhost:8080
           predicates:
-            - Path=/api/generate/**,/ais/**
+            - Path=/api/generate/**, /ais/**
 
         - id: term
           uri: http://localhost:8083
           predicates:
-            # ⬇️ 정확 경로 + 와일드카드 모두
-            - Path=/terms,/terms/**,/getTerms,/getTerms/**
+            - Path=/terms/**, /getTerms/**
 
         - id: point
           uri: http://localhost:8085
           predicates:
-            # ⬇️ 기존 오타(/terms...) 교정
-            - Path=/points,/points/**,/getPoints,/getPoints/**,/api/points,/api/points/**
+            - Path=/points/**, /getPoints/**, /api/points/**
 
         - id: qna
           uri: http://localhost:8086
           predicates:
             - Path=/qna/**
 
-        # ⛳️ 프론트 SPA
         - id: frontend
           uri: http://localhost:3000
           predicates:
             - Path=/**
-      # >>> API Gateway / Routes
 
 ---
-
 spring:
   profiles: docker
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            # 배포에선 환경변수로 프론트 도메인 주입 (예: https://app.example.com)
-            allowedOrigins: "${FRONTEND_URL:http://localhost:3000}"
-            allowedMethods: [ GET, POST, PUT, DELETE, OPTIONS ]
-            allowedHeaders: "*"
-            allowCredentials: true
-
-      # ⬇️ 배포도 동일하게 중복 제거
+      # [추가] Docker에서도 중복 헤더 제거
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin,RETAIN_LAST
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_LAST
+
+      # [수정] global CORS
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "${FRONTEND_URL:http://localhost:3000}"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
 
       routes:
         # analyze → analyze:8082
@@ -105,15 +121,12 @@ spring:
         - id: ai
           uri: http://ai:8080
           predicates:
-            - Path=/api/generate/**,/ais/**
-          filters:
-            - StripPrefix=1  # ← 백엔드가 /api/generate를 그대로 받는다면 이 줄 제거가 필요할 수도 있음 (참고)
+            - Path=/api/generate/**, /ais/**
 
         - id: term
           uri: http://term:8080
           predicates:
-            # ⬇️ 정확 경로까지 포함
-            - Path=/terms,/terms/**
+            - Path=/terms/**
 
         - id: point
           uri: http://point:8080
@@ -131,4 +144,4 @@ spring:
             - Path=/**
 
 server:
-  port: 8080
+  port: 8088
