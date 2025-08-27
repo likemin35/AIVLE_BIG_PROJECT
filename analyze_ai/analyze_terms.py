@@ -842,5 +842,5 @@ def analyze_terms_upload():
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8082)))
+    port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8080)))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

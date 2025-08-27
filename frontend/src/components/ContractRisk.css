@@ -256,3 +256,4 @@
 
 .problem { color: #d32f2f; font-weight: 600; }   /* 빨강 */
 .suggest { color: #2e7d32; font-weight: 600; }   /* 초록 */
+.results-body .clause-title { font-weight: 800; font-size: 1.12em; }

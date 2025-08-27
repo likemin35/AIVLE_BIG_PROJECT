@@ -75,7 +75,7 @@ function suggestBaseName(file, pickedTitle) {
   return `${base}_리스크분석_${date}`;
 }
 
-// 🔴🟢 줄 색칠용 유틸 ----------------------------------------------------
+// 줄 색칠용 유틸 ----------------------------------------------------
 
 // 안전 이스케이프
 function esc(s) {
@@ -90,17 +90,16 @@ function colorize(raw) {
     .split(/\r?\n/)
     .map((line) => {
       const safe = esc(line);
+      const isTitle = /^\s*제\s*\d+\s*조\b/.test(line);                // 제47조, 제 1 조 등
       const isSuggest = /^\s*수정\s*제안\s*:/.test(line);
       const isProblemTag = /^\s*(\d+[\.\)]\s*)?\[문제가 되는 조항\]/.test(line);
-      const startsNumber = /^\s*\d+[\.\)]\s*/.test(line);
-      const isReason = /^\s*(설명|문제\s*이유|이유)\s*:/.test(line);
-      const isTitle = /^\s*제\d+\s*조/.test(line); // "제47조" 같은 제목은 제외
+      const startsNumber = /^\s*\d+[\.\)]\s*/.test(line);              // 1. / 2)
+      const isReason = /^\s*(설명|문제\s*이유|이유)\s*:\s*/.test(line);
 
-      if (isSuggest) {
-        return `<span style="color:#2e7d32;font-weight:600">${safe}</span>`;
-      }
-      if (isProblemTag || (startsNumber && !isReason && !isTitle)) {
-        return `<span style="color:#d32f2f;font-weight:600">${safe}</span>`;
+      if (isTitle) return `<span class="clause-title">${safe}</span>`;
+      if (isSuggest) return `<span class="suggest">${safe}</span>`;
+      if (isProblemTag || (startsNumber && !isReason)) {
+        return `<span class="problem">${safe}</span>`;
       }
       return safe;
     })
@@ -110,7 +109,7 @@ function colorize(raw) {
 // ----------------------------------------------------------------------
 
 const CATEGORY_OPTIONS = [
-  { label: '보험(암 포함)', value: 'insurance' },
+  { label: '보험', value: 'insurance' },
   { label: '예금',         value: 'deposit'   },
   { label: '대출',         value: 'loan'      },
 ];
