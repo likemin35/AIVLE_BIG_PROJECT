@@ -258,7 +258,7 @@
 .suggest { color: #2e7d32; font-weight: 600; }   /* 초록 */
 .results-body .clause-title {
   font-weight: 800;
-  font-size: 1.12em;
+  font-size: 1.28em;
   display: block;      /* 제목을 줄 전체로 보이게 */
   margin: 6px 0 2px;   /* 살짝 여백 */
 }
