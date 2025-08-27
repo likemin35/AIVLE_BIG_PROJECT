@@ -14,18 +14,6 @@ const getToken = async (force = false) => {
   return await fbGetIdToken(user, force);
 };
 
-// // API 베이스 결정: 배포는 동일 출처, 로컬 CRA(3000)는 게이트웨이 8088로 보정
-// const resolveApiBase = () => {
-//   const envBase = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
-//   if (envBase) return envBase;
-//   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-//     if (window.location.port === '3000') return 'http://localhost:8088';
-//   }
-//   return '';
-// };
-
-// const API_BASE = resolveApiBase();
-
 // 서비스 마운트 경로 포함된 베이스
 const ANALYZE_API_BASE_URL =
   process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
@@ -53,9 +41,8 @@ async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {
   if (!('Accept' in headers)) headers['Accept'] = 'application/json';
 
   const res = await fetch(url, { ...init, headers });
-  // (필요 시) 여기서도 401이면 호출부에서 에러 처리
   return res;
- }
+}
 
 // 응답이 JSON인지 확인(HTML 등 들어오면 즉시 에러)
 function requireJson(res) {
@@ -88,7 +75,40 @@ function suggestBaseName(file, pickedTitle) {
   return `${base}_리스크분석_${date}`;
 }
 
-// 카테고리
+// 🔴🟢 줄 색칠용 유틸 ----------------------------------------------------
+
+// 안전 이스케이프
+function esc(s) {
+  return (s || '').replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[m]));
+}
+
+// 줄 단위 색칠: [문제가 되는 조항] → 빨강, 수정 제안: → 초록
+function colorize(raw) {
+  return (raw || '')
+    .split(/\r?\n/)
+    .map((line) => {
+      const safe = esc(line);
+      const isSuggest = /^\s*수정\s*제안\s*:/.test(line);
+      const isProblemTag = /^\s*(\d+[\.\)]\s*)?\[문제가 되는 조항\]/.test(line);
+      const startsNumber = /^\s*\d+[\.\)]\s*/.test(line);
+      const isReason = /^\s*(설명|문제\s*이유|이유)\s*:/.test(line);
+      const isTitle = /^\s*제\d+\s*조/.test(line); // "제47조" 같은 제목은 제외
+
+      if (isSuggest) {
+        return `<span style="color:#2e7d32;font-weight:600">${safe}</span>`;
+      }
+      if (isProblemTag || (startsNumber && !isReason && !isTitle)) {
+        return `<span style="color:#d32f2f;font-weight:600">${safe}</span>`;
+      }
+      return safe;
+    })
+    .join('\n');
+}
+
+// ----------------------------------------------------------------------
+
 const CATEGORY_OPTIONS = [
   { label: '보험(암 포함)', value: 'insurance' },
   { label: '예금',         value: 'deposit'   },
@@ -489,9 +509,14 @@ export default function ContractRisk() {
             ) : (
               <div className="results">
                 <div className="meta">
-                  총 리스크 감지 12개
+                  총 리스크 감지 {meta.count_flagged}개
                 </div>
-                <pre className="results-body">{resultText}</pre>
+                {/* 색칠된 결과 */}
+                <pre
+                  className="results-body"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  dangerouslySetInnerHTML={{ __html: colorize(resultText) }}
+                />
               </div>
             )}
           </section>

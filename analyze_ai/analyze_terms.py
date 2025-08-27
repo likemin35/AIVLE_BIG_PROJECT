@@ -59,7 +59,7 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Vector DB root (1.x 포맷 폴더)
+# Vector DB root (Chroma 1.x 포맷)
 RAG_ROOT = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례"))
 LAW_VECTOR_DB_MAP = {
     "insurance": os.path.join(RAG_ROOT, "보험"),
@@ -81,14 +81,19 @@ def normalize_category(cat: str|None) -> str|None:
         return None
     return _ALIAS_FLAT.get(cat.strip().lower().replace(" ", ""))
 
-# 검색 파라미터(서버 고정)
-TOP_K_DEFAULT = int(os.environ.get("ANALYZE_TOP_K", "6"))
-THRESHOLD_DEFAULT = float(os.environ.get("ANALYZE_THRESHOLD", "0.35"))
-MAX_QUERY_CHARS = int(os.environ.get("MAX_QUERY_CHARS", "1500"))
+# 검색/게이트 파라미터
+TOP_K_DEFAULT      = int(os.environ.get("ANALYZE_TOP_K", "6"))
+MAX_QUERY_CHARS    = int(os.environ.get("MAX_QUERY_CHARS", "1500"))
+GATE_MIN_SCORE     = int(os.environ.get("GATE_MIN_SCORE", "70"))      # 게이트 통과 점수
+MAX_FLAGGED_ABS    = int(os.environ.get("MAX_FLAGGED_ABS", "15"))     # 최대 표출 절대 개수
+MAX_FLAGGED_RATIO  = float(os.environ.get("MAX_FLAGGED_RATIO", "0.3"))# 전체 대비 비율
 
 # 조항 필터 문턱값(목차/가짜 조항 제거용)
 CLAUSE_MIN_BODY_CHARS   = int(os.environ.get("CLAUSE_MIN_BODY_CHARS", "80"))
 CLAUSE_MIN_HANGUL_CHARS = int(os.environ.get("CLAUSE_MIN_HANGUL_CHARS", "30"))
+
+# 설명성 타이틀 힌트
+SAFE_TITLE_HINTS = ("목적", "정의", "용어의 정의", "용어의정의", "약관의 명칭", "약관의명칭")
 
 # =============================================================================
 # Vertex / LLM / Embeddings
@@ -132,52 +137,69 @@ else:
     logging.error("[BOOT] 자격증명 없음 → LLM/임베딩 사용 불가")
 
 # =============================================================================
-# Prompt / Chain
+# Prompts / Chains
 # =============================================================================
+# 게이트 프롬프트(중괄호 이스케이프)
+gate_prompt = ChatPromptTemplate.from_template(r"""
+너는 기업 약관의 '리스크 여부'를 **매우 보수적으로** 판정하는 심사관이다.
+기본 원칙:
+- 디폴트는 NO(리스크 아님)이다.
+- 아래 '중대 신호' 중 **두 가지 이상이 조항의 원문에서 직접 확인될 때만** YES.
+- '정의/목적/명칭' 등 설명성 조항은 기본 NO. 다만 정의 자체가 모호해 분쟁 위험이 높은 경우에만 YES.
+- 판정은 JSON만 출력한다.
+
+중대 신호(예시):
+- 모호/가변 표현: "적절한", "상당한", "필요시", "기타 사유", "합리적인 판단", "등"으로 끝나는 포괄 규정
+- 책임/주체 불명확: 누구의 의무인지 불분명, 주체가 바뀌거나 혼재
+- 일방적 변경/해지/면책: 사업자에게 일방 재량 부여, 소비자에게 불리
+- 핵심 요소 누락: 기한/금액/절차 미기재, 통지 방식 불명확
+- 법령/고시/설명의무 위반 소지: 법정고지/철회권/분쟁처리 절차 누락 또는 축소
+
+출력(JSON만):
+{{"is_risky": true|false, "score": 0..100, "reasons": ["간결 사유1","간결 사유2"], "evidence": ["원문 발췌1","원문 발췌2"]}}
+
+판정 대상 조항(제목 포함):
+{title}
+
+본문:
+{clause}
+""")
+gate_chain = (gate_prompt | llm | StrOutputParser()) if llm else None
+
+# 본 분석 프롬프트
 judgment_prompt = ChatPromptTemplate.from_template("""
 당신은 기업에서 약관 리스크를 전문적으로 점검하는 법률 전문가입니다.
 
 입력:
 - 검토 대상 약관 조항({clause})
-- 실제 판례 발췌 모음({similar_cases})
-- 관련 판례 후보 목록({citations_catalog})  # 비어 있을 수 있음
+- 참고 컨텍스트({similar_cases})  # 내부 판단 참고용
 
 필수 규칙:
 1) 약관 조항 중 리스크(모호함, 명확성 부족, 설명의무 위반, 오탈자, 주체 혼동 등)가 있는 부분만 결과를 내세요.
-2) 문서에 나온 순서(제1조→제2조→…)로 처리하고, 문제가 발견된 조항만 그 순서대로 출력하세요.
-3) 한 조항당 하나의 결과 블록만 작성하세요.
-4) 관련 판례는 반드시 '관련 판례 후보 목록'에 있는 항목에서만 선택하세요. 목록이 비어 있으면 관련 판례 줄을 쓰지 마세요(가공 금지).
-5) 아무런 리스크가 없으면 그 조항은 출력하지 마세요.
-6) 첫 줄은 반드시 ‘조항 본문에서 발췌한 핵심 문장’만(제목 금지).
-7) 결과는 순수 텍스트. 불릿/머리말/요약 금지.
-8) 각 결과 블록 내부에서는 섹션 사이에 빈 줄 1개로 구분하세요:
+2) 문서에 나온 순서(제1조→제2조→…)로 처리하세요.
+3) 한 조항 안에 여러 문제가 있으면 각 문제를 별도 항목으로 나누고, 앞에 1., 2., 3.처럼 번호를 붙여 출력하세요.
+4) 아무런 리스크가 없으면 그 조항은 출력하지 마세요.
+5) 각 항목의 첫 줄은 반드시 ‘조항 본문에서 발췌한 핵심 문장’만(제목 금지).
+6) 결과는 순수 텍스트. 불릿/머리말/요약 금지.
+7) 각 항목 내부는 빈 줄 1개로 구분:
    - [문제가 되는 조항]
-   (빈 줄 1개)
-   - 설명:
-   (빈 줄 1개)
+   - 이유:
    - 수정 제안:
-   (선택) (빈 줄 1개)
-   - 관련 판례:  # 후보가 있을 때만 한 줄
 
-관련 판례 줄 형식(있을 때만):
-관련 판례: 법원 선고일 (사건번호) 사건명 — 적용 이유: 한 줄 요약
+출력 형식(한 항목당 2~3줄), 여러 문제가 있으면 1., 2.로 번호를 붙여 반복:
+1. [문제가 되는 조항] 원문 일부/핵심 문장
 
-출력 형식(조항 하나당 2~3줄 + (선택) 관련 판례 1줄):
-[문제가 되는 조항] 원문 일부/핵심 문장
-
-설명: 무엇이 왜 문제인지(모호·불명확·설명의무 위반 등). 필요한 경우 구체 수치/기한/기준 포함
+이유: 무엇이 왜 문제인지(모호·불명확·설명의무 위반 등). 필요한 경우 구체 수치/기한/기준 포함
 
 수정 제안: 소비자가 즉시 이해할 수 있도록 구체 문구로 재작성(수치·기한·정의 포함)
 
-관련 판례: 법원 선고일 (사건번호) 사건명 — 적용 이유: 한 줄 요약   # 후보가 있을 때만
-
 아래 입력을 검토해 위 형식으로만 출력하세요.
 {clause}
-{similar_cases}
 
-[관련 판례 후보 목록]
-{citations_catalog}
+[참고용 컨텍스트(출력 금지)]
+{similar_cases}
 """)
+
 judgment_chain = (judgment_prompt | llm | StrOutputParser()) if llm else None
 
 # =============================================================================
@@ -250,12 +272,9 @@ def split_into_clauses(text: str) -> List[dict]:
                 "body": (b or c).strip(),
             })
 
-    # 1) 같은 제목은 본문 가장 긴 것만 유지 → 목차 제거 효과
     clauses = _collapse_by_title_keep_longest(clauses)
-    # 2) 본문이 너무 짧거나 한글이 거의 없는 조항은 제외
     clauses = [c for c in clauses if _is_real_body(c.get("body", ""))]
 
-    # 3) 중복 제거(타이틀+본문 앞부분 기준)
     seen, uniq = set(), []
     for c in clauses:
         key = re.sub(r"\s+", "", (c["title"] + "|" + (c["body"][:160] or "")))
@@ -341,128 +360,185 @@ def _clean_query(q: str) -> str:
     q = re.sub(r"\s+", " ", q or "").strip()
     return q[:MAX_QUERY_CHARS]
 
-def _search_docs(vectorstore: Chroma, query: str, k: int, threshold: float):
+def _search_docs(vectorstore: Chroma, query: str, k: int):
     q = _clean_query(query)
     try:
-        pairs = vectorstore.similarity_search_with_relevance_scores(q, k=k)
-        docs = [doc for doc, score in pairs if (score is None or score >= threshold)]
-        if docs:
-            return docs
+        return list(vectorstore.similarity_search(q, k=k))
     except Exception as e:
-        logging.warning(f"[VECTOR] relevance 검색 실패: {e}")
-    try:
-        return vectorstore.similarity_search(q, k=k)
-    except Exception as e3:
-        logging.error(f"[VECTOR] 상위 k 백업도 실패: {e3}")
+        logging.error(f"[VECTOR] similarity_search 실패: {e}")
         return []
 
 # =============================================================================
-# 판례 정보 추출(정규식) 유틸
+# 판례 추출 보강 유틸
 # =============================================================================
-CASE_NO_RE = re.compile(r"\b(\d{4}\s*[가-힣]{1,3}\s*\d{1,6})\b")  # 예: 2017다12345, 2020두4567
-COURT_RE   = re.compile(r"(대법원|고등법원|지방법원|[가-힣]{2,10}법원)")
-DATE_RE    = re.compile(r"(\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.)")
+def _strip_html(s: str) -> str:
+    s = s or ""
+    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
+    s = re.sub(r"<[^>]+>", " ", s)
+    return re.sub(r"\s+\n", "\n", s).strip()
 
-def _g(md: dict, *keys, default=None):
-    for k in keys:
-        if k in md and md[k]:
-            return str(md[k])
-    return default
+def _norm_key(k: str) -> str:
+    return re.sub(r"[\s_\.]", "", str(k or "")).lower()
 
-def _extract_citations_from_doc(doc) -> List[dict]:
-    txt = (getattr(doc, "page_content", None) or "")
-    md  = getattr(doc, "metadata", {}) or {}
-    court = _g(md, "court", "법원")
-    date  = _g(md, "decision_date", "date", "선고일", "사건일자")
-    cno   = _g(md, "case_number", "case_no", "사건번호")
-    title = _g(md, "title", "사건명")
-    # 본문에서 보강
+def _lookup_meta(md: dict, candidates) -> str|None:
+    if not md:
+        return None
+    wanted = {_norm_key(x) for x in candidates}
+    stack = [md]
+    while stack:
+        cur = stack.pop()
+        if isinstance(cur, dict):
+            for k, v in cur.items():
+                nk = _norm_key(k)
+                if nk in wanted and v not in (None, "", "미상"):
+                    return str(v)
+                if isinstance(v, (dict, list)):
+                    stack.append(v)
+        elif isinstance(cur, list):
+            stack.extend(cur)
+    return None
+
+CASE_NO_RE = re.compile(r"\b(\d{4}\s*[가-힣]{1,3}\s*\d{1,6})\b")
+COURT_RE   = re.compile(r"(대법원|고등법원|고법|지방법원|지법|[가-힣]{2,10}(?:법원|고법|지법))")
+DATE_RE    = re.compile(r"(\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.?)")
+
+def _extract_citation_fields(doc):
+    md_raw = getattr(doc, "metadata", {}) or {}
+    text_raw = (getattr(doc, "page_content", None) or "")
+    text = _strip_html(text_raw)
+
+    src = None
+    for k in ("source","path","file","filepath","filename","doc_path"):
+        if md_raw.get(k):
+            src = os.path.basename(str(md_raw[k]))
+            break
+
+    court = _lookup_meta(md_raw, ["court","법원","법원명","court_name"])
+    date  = _lookup_meta(md_raw, ["decision_date","date","선고일","선고일자","판결선고일","date_str"])
+    cno   = _lookup_meta(md_raw, ["case_number","case_no","caseno","사건번호"])
+    title = _lookup_meta(md_raw, ["title","사건명","판결명","판례명","name","case_name","document_title","doc_title"])
+
+    if src and not cno:
+        m = CASE_NO_RE.search(src)
+        if m: cno = m.group(1)
+    if src and not title:
+        base = os.path.splitext(src)[0]
+        cand = re.sub(r"[_\-\[\]\(\)]", " ", base).strip()
+        if len(cand) >= 2:
+            title = cand
+
     if not court:
-        m = COURT_RE.search(txt); court = m.group(1) if m else None
+        m = COURT_RE.search(text); court = m.group(1) if m else None
     if not date:
-        m = DATE_RE.search(txt);  date  = m.group(1) if m else None
+        m = DATE_RE.search(text);  date  = m.group(1) if m else None
     if not cno:
-        m = CASE_NO_RE.search(txt); cno = m.group(1) if m else None
+        m = CASE_NO_RE.search(text); cno = m.group(1) if m else None
+
     if not title:
-        for line in txt.splitlines():
-            line = line.strip()
-            if 3 <= len(line) <= 80 and ("사건" in line or "판결" in line or "취소" in line):
-                title = line; break
-    # 최소 요건: 사건번호 또는 (법원+선고일) 중 하나는 있어야 인정
-    if cno or (court and date):
-        return [{"court": court, "date": date, "case_no": cno, "title": title}]
-    return []
+        for line in text.splitlines():
+            t = line.strip().strip("【】[]")
+            if 2 <= len(t) <= 60 and any(k in t for k in ("사건","판결","취소","보험","대출")):
+                title = t; break
+
+    return {
+        "court": court or "미상",
+        "date":  date  or "미상",
+        "case_no": cno or "미상",
+        "title": title or "미상",
+    }
+
+def _doc_to_citation_snippet(doc) -> str:
+    info = _extract_citation_fields(doc)
+    header_parts = []
+    if info["court"]  != "미상": header_parts.append(f"법원: {info['court']}")
+    if info["date"]   != "미상": header_parts.append(f"선고일: {info['date']}")
+    if info["case_no"]!= "미상": header_parts.append(f"사건번호: {info['case_no']}")
+    if info["title"]  != "미상": header_parts.append(f"사건명: {info['title']}")
+    header = " | ".join(header_parts)
+    page = _strip_html(getattr(doc, "page_content", "") or "")
+    return (header + "\n" if header else "") + page
 
 def _citations_catalog_from_docs(docs: List) -> str:
-    seen = set(); rows = []
+    seen, rows = set(), []
     for d in docs:
-        for ci in _extract_citations_from_doc(d):
-            key = (ci.get("court"), ci.get("date"), ci.get("case_no"), ci.get("title"))
-            if key in seen: continue
-            seen.add(key)
-            c  = ci.get("court") or "미상"
-            dt = ci.get("date") or "미상"
-            no = ci.get("case_no") or "미상"
-            ti = ci.get("title") or "미상"
-            rows.append(f"- 법원: {c} | 선고일: {dt} | 사건번호: {no} | 사건명: {ti}")
+        info = _extract_citation_fields(d)
+        key = (info["court"], info["date"], info["case_no"], info["title"])
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append(f"- 법원: {info['court']} | 선고일: {info['date']} | 사건번호: {info['case_no']} | 사건명: {info['title']}")
     return "\n".join(rows)
 
 # =============================================================================
-# 분석 및 치환 로직
+# 게이트(사전 판정)
 # =============================================================================
-def _doc_to_citation_snippet(doc) -> str:
-    md = getattr(doc, "metadata", {}) or {}
-    fields = []
-    for k in ("court", "법원"):
-        if md.get(k): fields.append(f"법원: {md[k]}")
-    for k in ("decision_date", "date", "선고일", "사건일자"):
-        if md.get(k): fields.append(f"선고일: {md[k]}")
-    for k in ("case_number", "case_no", "사건번호"):
-        if md.get(k): fields.append(f"사건번호: {md[k]}")
-    if md.get("title"):
-        fields.append(f"사건명: {md['title']}")
-    head = " | ".join(fields)
-    page = (getattr(doc, "page_content", None) or "")
-    return (head + "\n" if head else "") + page
+def _extract_json_block(s: str) -> dict:
+    try:
+        m = re.search(r"\{[\s\S]*\}", s or "")
+        if m:
+            s = m.group(0)
+        return json.loads(s)
+    except Exception:
+        return {}
 
+def is_descriptive_title(title: str|None) -> bool:
+    t = (title or "").replace(" ", "")
+    return any(h in t for h in SAFE_TITLE_HINTS)
+
+def gate_clause(title: str, body: str) -> dict:
+    if not llm or not gate_chain or not _is_real_body(body):
+        return {"is_risky": False, "score": 0, "reasons": [], "evidence": []}
+    hint = is_descriptive_title(title)
+    try:
+        out = gate_chain.invoke({"title": title, "clause": body}) or ""
+        data = _extract_json_block(out)
+        is_risky = bool(data.get("is_risky"))
+        score = int(data.get("score") or 0)
+        reasons = data.get("reasons") or []
+        evidence = data.get("evidence") or []
+        if hint and score > 0:
+            score = max(0, score - 20)  # 설명성 타이틀 감점
+        if is_risky and (len(evidence) < 1 or len(reasons) < 1):
+            is_risky, score = False, 0
+        return {"is_risky": is_risky, "score": score, "reasons": reasons, "evidence": evidence}
+    except Exception:
+        logging.exception("[GATE] 게이트 판정 실패")
+        return {"is_risky": False, "score": 0, "reasons": [], "evidence": []}
+
+# =============================================================================
+# 본 분석(수정 제안)
+# =============================================================================
 def analyze_single_clause(clause_text: str, vectorstore: Chroma,
-                          top_k: int = TOP_K_DEFAULT, threshold: float = THRESHOLD_DEFAULT) -> str:
+                          top_k: int = TOP_K_DEFAULT) -> str:
     if not _is_real_body(clause_text):
         return ""
-    docs = _search_docs(vectorstore, clause_text, k=top_k, threshold=threshold)
+    docs = _search_docs(vectorstore, clause_text, k=top_k)
     if not docs:
         return ""
-    # 본문+메타 스니펫
+
     similar_text = "\n\n".join([_doc_to_citation_snippet(d) for d in docs])
-    # 후보 카탈로그 생성
-    citations_catalog = _citations_catalog_from_docs(docs)
 
     out = judgment_chain.invoke({
         "clause": clause_text,
         "similar_cases": similar_text,
-        "citations_catalog": citations_catalog or "(없음)",
     }) if judgment_chain else ""
     out = (out or "").strip()
 
-    # 사후 정리: 정보가 빈약한 '관련 판례:' 줄은 제거(있을 때만 보이게)
-    if "관련 판례:" in out:
-        lines, cleaned = out.splitlines(), []
-        for ln in lines:
-            if ln.startswith("관련 판례:"):
-                has_case  = CASE_NO_RE.search(ln)
-                has_court = COURT_RE.search(ln)
-                has_date  = DATE_RE.search(ln)
-                if not (has_case or (has_court and has_date)):
-                    continue
+    # 안전 가드(선택): 혹시 모델이 '관련 판례:'를 찍어도 제거
+    if out:
+        cleaned = []
+        for ln in out.splitlines():
+            if ln.strip().startswith("관련 판례:"):
+                continue
             cleaned.append(ln)
         out = "\n".join(cleaned).strip()
     return out
 
 # 분석결과 → (원문 스니펫, 대체 문구) 페어 추출
 PAIR_BLOCK_RE = re.compile(
-    r"^\[문제가 되는 조항\]\s*(?P<src>.+?)\s*[\r\n]+"
-    r"설명:\s*(?P<reason>.+?)\s*[\r\n]+"
-    r"수정 제안:\s*(?P<dst>.+?)(?:\s*[\r\n]+관련 판례:.*)?$",
+    r"^\s*(?:\d+\s*[\.\)]\s*)?\[문제가 되는 조항\]\s*(?P<src>.+?)\s*[\r\n]+"
+    r"(?:설명|문제\s*이유)\s*:\s*(?P<reason>.+?)\s*[\r\n]+"
+    r"수정\s*제안\s*:\s*(?P<dst>.+?)$",
     re.DOTALL | re.MULTILINE
 )
 
@@ -513,7 +589,7 @@ def apply_pairs_to_docx(docx_path: str, pairs: List[Tuple[str, str]]) -> Tuple[s
                 text = new_text
                 applied += n
         if text != p.text:
-            p.text = text  # 스타일 단순화
+            p.text = text
 
     for p in doc.paragraphs:
         _apply_to_paragraph(p)
@@ -548,17 +624,43 @@ def apply_pairs_to_text(text: str, pairs: List[Tuple[str, str]]) -> Tuple[str, i
     return out, applied
 
 # =============================================================================
+# 공통 실행 루틴: 게이트 → 상위만 본분석
+# =============================================================================
+def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
+    gated = []
+    for c in clauses:
+        body = (c.get("body") or "").strip()
+        title = (c.get("title") or "").strip()
+        if not _is_real_body(body):
+            continue
+        g = gate_clause(title, body)
+        if g.get("is_risky") and g.get("score", 0) >= GATE_MIN_SCORE:
+            gated.append({**c, "gate": g})
+
+    if not gated:
+        return [], "", []
+
+    cap_by_ratio = max(1, int(len(clauses) * MAX_FLAGGED_RATIO))
+    cap = min(MAX_FLAGGED_ABS, cap_by_ratio)
+    gated.sort(key=lambda x: x["gate"]["score"], reverse=True)
+    selected = gated[:cap]
+
+    results = []
+    for c in selected:
+        analysis = analyze_single_clause(c["body"], vectorstore, top_k=TOP_K_DEFAULT)
+        if analysis:
+            results.append({"index": c["index"], "title": c["title"], "analysis": analysis, "gate": c["gate"]})
+
+    joined = "\n\n".join([r["analysis"] for r in results])
+    pairs = parse_replacement_pairs(joined)
+    return results, joined, pairs
+
+# =============================================================================
 # API
 # =============================================================================
 @app.route("/api/health", methods=["GET"])
 def health():
     return {"ok": True, "service": "analyze_terms", "time": datetime.now(timezone.utc).isoformat()}
-
-
-# Flask-CORS가 OPTIONS 요청(pre-flight)을 자동으로 처리하므로 수동 핸들러는 제거합니다.
-# @app.route("/api/<path:_any>", methods=["OPTIONS"])
-# def any_options(_any):
-#     return ("", 204)
 
 @app.route("/api/download/<path:filename>", methods=["GET"])
 def download_file(filename):
@@ -567,7 +669,7 @@ def download_file(filename):
 
 @app.route("/__whoami", methods=["GET"])
 def whoami():
-    routes = sorted([str(r) for r in app.url_map.iter_rules()])  # 디버그용
+    routes = sorted([str(r) for r in app.url_map.iter_rules()])
     return {
         "file": __file__,
         "cwd": os.getcwd(),
@@ -586,7 +688,7 @@ def debug_vector_db():
             try:
                 with open(vfile, "r", encoding="utf-8") as f:
                     version = f.read().strip()
-            except:
+            except Exception:
                 pass
         info[k] = {
             "path": p_abs,
@@ -603,7 +705,6 @@ def _after(resp):
     resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
     resp.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
     return resp
-    
 
 # JSON 본문 분석(파일 없이)
 @app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
@@ -635,31 +736,14 @@ def analyze_terms():
 
         vectorstore = build_vectorstore(vector_db_path)
 
-        results, flagged = [], 0
-        for c in clauses:  # 문서 등장 순서대로
-            body = (c.get("body") or "").strip()
-            if not _is_real_body(body):
-                continue
-            analysis = analyze_single_clause(
-                body, vectorstore,
-                top_k=TOP_K_DEFAULT, threshold=THRESHOLD_DEFAULT
-            )
-            if analysis:
-                flagged += 1
-                results.append({"index": c["index"], "title": c["title"], "analysis": analysis})
-
-        # 블록 사이 한 줄 공백
-        joined = "\n\n".join([r["analysis"] for r in results])
-
-        # 치환 페어만 파싱해서 반환(파일 저장은 업로드 엔드포인트에서)
-        pairs = parse_replacement_pairs(joined)
+        results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
 
         return jsonify({
             "ok": True,
             "category": category,
             "vector_db_path": vector_db_path,
             "count_clauses": len(clauses),
-            "count_flagged": flagged,
+            "count_flagged": len(results),
             "results": results,
             "text": joined,
             "pairs": [{"from": s, "to": d} for s, d in pairs],
@@ -693,7 +777,6 @@ def analyze_terms_upload():
         f.save(src_path)
         logging.info(f"[UPLOAD] {safe_name} → {src_path}")
 
-        # 텍스트 추출
         if ext == ".pdf":
             full_text = load_user_text_from_pdf(pdf_file=src_path)
         elif ext == ".docx":
@@ -714,21 +797,7 @@ def analyze_terms_upload():
 
         vectorstore = build_vectorstore(vector_db_path)
 
-        results, flagged = [], 0
-        for c in clauses:
-            body = (c.get("body") or "").strip()
-            if not _is_real_body(body):
-                continue
-            analysis = analyze_single_clause(
-                body, vectorstore,
-                top_k=TOP_K_DEFAULT, threshold=THRESHOLD_DEFAULT
-            )
-            if analysis:
-                flagged += 1
-                results.append({"index": c["index"], "title": c["title"], "analysis": analysis})
-
-        joined = "\n\n".join([r["analysis"] for r in results])
-        pairs = parse_replacement_pairs(joined)
+        results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
 
         output_filename, applied_count = None, 0
         try:
@@ -750,7 +819,7 @@ def analyze_terms_upload():
             "category": category,
             "vector_db_path": vector_db_path,
             "count_clauses": len(clauses),
-            "count_flagged": flagged,
+            "count_flagged": len(results),
             "results": results,
             "text": joined,
             "pairs": [{"from": s, "to": d} for s, d in pairs],
@@ -762,7 +831,6 @@ def analyze_terms_upload():
         logging.exception("[API] /api/analyze-terms-upload 오류")
         return jsonify({"ok": False, "error": str(e)}), 500
     finally:
-        # 처리가 끝나면(성공/실패 무관) 임시 업로드 파일을 삭제합니다.
         if os.path.exists(src_path):
             try:
                 os.remove(src_path)
@@ -770,8 +838,7 @@ def analyze_terms_upload():
             except Exception as e_clean:
                 logging.warning(f"[CLEANUP] 임시 파일 삭제 실패: {src_path}, error: {e_clean}")
 
-
-# ============================================================================
+# =============================================================================
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
 if __name__ == "__main__":

@@ -251,3 +251,8 @@
   cursor: not-allowed;
   filter: grayscale(0.05);
 }
+
+.results-body { white-space: pre-wrap; }
+
+.problem { color: #d32f2f; font-weight: 600; }   /* 빨강 */
+.suggest { color: #2e7d32; font-weight: 600; }   /* 초록 */
