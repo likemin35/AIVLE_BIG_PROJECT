@@ -10,6 +10,22 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 
+
+# ==============================================================
+# GCS 기반 Vector DB 설정
+# ==============================================================
+
+from google.cloud import storage
+
+GCS_VECTOR_BUCKET = os.environ.get("TERMS_VECTOR_BUCKET")  # 예: gs://aivle-vector-db
+LOCAL_VECTOR_ROOT = "/tmp/vector_db"
+
+LAW_VECTOR_DB_MAP = {
+    "insurance": "analyze/보험",
+    "deposit":   "analyze/예금",
+    "loan":      "analyze/대출",
+}
+
 # --- Chroma 버전 로깅(디버그용) ---
 try:
     import chromadb  # noqa
@@ -85,8 +101,6 @@ def normalize_category(cat: str|None) -> str|None:
 TOP_K_DEFAULT      = int(os.environ.get("ANALYZE_TOP_K", "6"))
 MAX_QUERY_CHARS    = int(os.environ.get("MAX_QUERY_CHARS", "1500"))
 GATE_MIN_SCORE     = int(os.environ.get("GATE_MIN_SCORE", "70"))      # 게이트 통과 점수
-MAX_FLAGGED_ABS    = int(os.environ.get("MAX_FLAGGED_ABS", "15"))     # 최대 표출 절대 개수
-MAX_FLAGGED_RATIO  = float(os.environ.get("MAX_FLAGGED_RATIO", "0.3"))# 전체 대비 비율
 
 # 조항 필터 문턱값(목차/가짜 조항 제거용)
 CLAUSE_MIN_BODY_CHARS   = int(os.environ.get("CLAUSE_MIN_BODY_CHARS", "80"))
@@ -141,22 +155,19 @@ else:
 # =============================================================================
 # 게이트 프롬프트(중괄호 이스케이프)
 gate_prompt = ChatPromptTemplate.from_template(r"""
-너는 기업 약관의 '리스크 여부'를 **매우 보수적으로** 판정하는 심사관이다.
-기본 원칙:
-- 디폴트는 NO(리스크 아님)이다.
-- 아래 '중대 신호' 중 **두 가지 이상이 조항의 원문에서 직접 확인될 때만** YES.
-- '정의/목적/명칭' 등 설명성 조항은 기본 NO. 다만 정의 자체가 모호해 분쟁 위험이 높은 경우에만 YES.
-- 판정은 JSON만 출력한다.
+너는 기업 약관의 '리스크 여부'를 매우 보수적으로 판정하는 심사관이다.
 
-중대 신호(예시):
-- 모호/가변 표현: "적절한", "상당한", "필요시", "기타 사유", "합리적인 판단", "등"으로 끝나는 포괄 규정
-- 책임/주체 불명확: 누구의 의무인지 불분명, 주체가 바뀌거나 혼재
-- 일방적 변경/해지/면책: 사업자에게 일방 재량 부여, 소비자에게 불리
-- 핵심 요소 누락: 기한/금액/절차 미기재, 통지 방식 불명확
-- 법령/고시/설명의무 위반 소지: 법정고지/철회권/분쟁처리 절차 누락 또는 축소
+판정 기준:
+- 디폴트는 NO.
+- 리스크라고 판단하려면,
+  반드시 해당 조항의 원문에서 그대로 인용 가능한 문제 문장이 존재해야 한다.
+- 추론, 요약, 해석 금지.
+- 원문에 없는 표현을 만들어내면 안 된다.
+- 문제가 되는 문장을 정확히 복사하여 evidence 배열에 넣어라.
+- 원문에서 정확히 인용할 수 없다면 반드시 NO로 판정한다.
 
 출력(JSON만):
-{{"is_risky": true|false, "score": 0..100, "reasons": ["간결 사유1","간결 사유2"], "evidence": ["원문 발췌1","원문 발췌2"]}}
+{"is_risky": true|false, "score": 0..100, "evidence": ["원문 그대로 인용1","원문 그대로 인용2"]}
 
 판정 대상 조항(제목 포함):
 {title}
@@ -330,6 +341,34 @@ def _sniff_ext(file_storage) -> str:
     if head.startswith(b"PK\x03\x04"): return ".docx"
     return ""
 
+
+def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
+    if os.path.exists(local_dir):
+        return
+
+    if not GCS_VECTOR_BUCKET:
+        raise RuntimeError("TERMS_VECTOR_BUCKET 환경변수가 설정되지 않았습니다.")
+
+    os.makedirs(local_dir, exist_ok=True)
+
+    client = storage.Client()
+    bucket_name = GCS_VECTOR_BUCKET.replace("gs://", "")
+    bucket = client.bucket(bucket_name)
+
+    logging.info(f"[VECTOR] GCS 다운로드 시작: {gcs_subdir}")
+
+    for blob in bucket.list_blobs(prefix=gcs_subdir):
+        rel_path = blob.name[len(gcs_subdir):].lstrip("/")
+        if not rel_path:
+            continue
+
+        dst = os.path.join(local_dir, rel_path)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        blob.download_to_filename(dst)
+
+    logging.info(f"[VECTOR] GCS 다운로드 완료: {local_dir}")
+
+
 # =============================================================================
 # 벡터스토어 유틸
 # =============================================================================
@@ -349,12 +388,22 @@ def _ensure_1x_vector_dir(path: str):
         except Exception as e:
             logging.warning("[VECTOR] 'index/' 격리 실패(계속 진행): %s", e)
 
-def build_vectorstore(path: str) -> Chroma:
-    if not os.path.isdir(path):
-        raise FileNotFoundError(f"벡터DB 경로가 존재하지 않습니다: {path}")
-    _ensure_1x_vector_dir(path)
-    logging.info(f"[VECTOR] open (1.x): {os.path.abspath(path)}")
-    return Chroma(persist_directory=path, embedding_function=embedding_model)
+def build_vectorstore(category: str) -> Chroma:
+    gcs_path = LAW_VECTOR_DB_MAP.get(category)
+    if not gcs_path:
+        raise ValueError(f"'{category}' 벡터 DB 없음")
+
+    local_path = os.path.join(LOCAL_VECTOR_ROOT, f"analyze_{category}")
+
+    _ensure_vector_db_from_gcs(local_path, gcs_path)
+    _ensure_1x_vector_dir(local_path)
+
+    logging.info(f"[VECTOR] open (1.x): {os.path.abspath(local_path)}")
+
+    return Chroma(
+        persist_directory=local_path,
+        embedding_function=embedding_model,
+    )
 
 def _clean_query(q: str) -> str:
     q = re.sub(r"\s+", " ", q or "").strip()
@@ -640,10 +689,51 @@ def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
     if not gated:
         return [], "", []
 
-    cap_by_ratio = max(1, int(len(clauses) * MAX_FLAGGED_RATIO))
-    cap = min(MAX_FLAGGED_ABS, cap_by_ratio)
-    gated.sort(key=lambda x: x["gate"]["score"], reverse=True)
-    selected = gated[:cap]
+def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
+    results = []
+
+    for c in clauses:
+        body = (c.get("body") or "").strip()
+        title = (c.get("title") or "").strip()
+
+        if not _is_real_body(body):
+            continue
+
+        g = gate_clause(title, body)
+
+        evidence = g.get("evidence") or []
+        is_risky = g.get("is_risky")
+        score = g.get("score", 0)
+
+        # 증거가 없으면 리스크 아님
+        if not is_risky or not evidence:
+            continue
+
+        real_evidence = [
+            e for e in evidence
+            if e and e.strip() in body
+        ]
+
+        if not real_evidence:
+            continue
+
+        analysis = analyze_single_clause(body, vectorstore, top_k=TOP_K_DEFAULT)
+        if analysis:
+            results.append({
+                "index": c["index"],
+                "title": c["title"],
+                "analysis": analysis,
+                "gate": {
+                    "score": score,
+                    "evidence": real_evidence
+                }
+            })
+
+    joined = "\n\n".join([r["analysis"] for r in results])
+    pairs = parse_replacement_pairs(joined)
+
+    return results, joined, pairs
+
 
     results = []
     for c in selected:
@@ -680,25 +770,16 @@ def whoami():
 @app.route("/api/debug/vector_db", methods=["GET"])
 def debug_vector_db():
     info = {}
-    for k, p in LAW_VECTOR_DB_MAP.items():
-        p_abs = os.path.abspath(p)
-        version = None
-        vfile = os.path.join(p_abs, "VERSION")
-        if os.path.exists(vfile):
-            try:
-                with open(vfile, "r", encoding="utf-8") as f:
-                    version = f.read().strip()
-            except Exception:
-                pass
+    for k, gcs_path in LAW_VECTOR_DB_MAP.items():
+        local_path = os.path.join(LOCAL_VECTOR_ROOT, f"analyze_{k}")
         info[k] = {
-            "path": p_abs,
-            "exists": os.path.isdir(p_abs),
-            "has_sqlite": os.path.exists(os.path.join(p_abs, "chroma.sqlite3")),
-            "has_index_dir": os.path.exists(os.path.join(p_abs, "index")),
-            "version_file": version,
-            "sample": sorted(os.listdir(p_abs))[:12] if os.path.isdir(p_abs) else [],
+            "gcs_path": gcs_path,
+            "local_path": local_path,
+            "exists_local": os.path.isdir(local_path),
+            "has_sqlite": os.path.exists(os.path.join(local_path, "chroma.sqlite3")),
         }
     return info
+
 
 @app.after_request
 def _after(resp):
@@ -717,7 +798,10 @@ def analyze_terms():
     raw_text = data.get("text", "")
     category_raw = data.get("category", "")
     category = normalize_category(category_raw)
-    vector_db_path = data.get("vector_db_path") or (LAW_VECTOR_DB_MAP.get(category) if category else None)
+    if not category:
+        return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}"}), 400
+
+    vectorstore = build_vectorstore(category)
     limit = int(data.get("limit", 0))
 
     try:
@@ -789,13 +873,11 @@ def analyze_terms_upload():
         if not category or category not in LAW_VECTOR_DB_MAP:
             return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}. 허용: {list(LAW_VECTOR_DB_MAP)}"}), 400
 
-        vector_db_path = LAW_VECTOR_DB_MAP[category]
-
         clauses = split_into_clauses(full_text)
         if limit > 0:
             clauses = clauses[:limit]
 
-        vectorstore = build_vectorstore(vector_db_path)
+        vectorstore = build_vectorstore(category)
 
         results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
 

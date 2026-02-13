@@ -10,7 +10,33 @@ from vertexai.generative_models import GenerativeModel
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 import requests
-from google.cloud import secretmanager
+from google.cloud import secretmanager, storage
+
+TERMS_VECTOR_BUCKET = os.environ.get("TERMS_VECTOR_BUCKET")  # gs://aivle-vector-db
+LOCAL_VECTOR_ROOT = "/tmp/vector_db"
+
+def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
+    if os.path.exists(local_dir):
+        return
+
+    if not TERMS_VECTOR_BUCKET:
+        raise RuntimeError("TERMS_VECTOR_BUCKET 환경변수가 설정되지 않았습니다.")
+
+    os.makedirs(local_dir, exist_ok=True)
+
+    client = storage.Client()
+    bucket_name = TERMS_VECTOR_BUCKET.replace("gs://", "")
+    bucket = client.bucket(bucket_name)
+
+    for blob in bucket.list_blobs(prefix=gcs_subdir):
+        rel_path = blob.name[len(gcs_subdir):].lstrip("/")
+        if not rel_path:
+            continue
+
+        dst = os.path.join(local_dir, rel_path)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        blob.download_to_filename(dst)
+
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
@@ -69,18 +95,49 @@ else:
     embedding = None
 
 VECTOR_DB_MAP = {
-    'loan': os.path.join(BASE_DIR, '대출'),
-    'cancer_insurance': os.path.join(BASE_DIR, '암보험'),
-    'deposit': os.path.join(BASE_DIR, '예금'),
-    'car_insurance': os.path.join(BASE_DIR, '자동차보험'),
-    'savings': os.path.join(BASE_DIR, '적금'),
-    'laws': os.path.join(BASE_DIR, '법령')
+    'loan': 'generate/대출',
+    'cancer_insurance': 'generate/암보험',
+    'deposit': 'generate/예금',
+    'car_insurance': 'generate/자동차보험',
+    'savings': 'generate/적금',
+    'laws': 'generate/법령'
 }
+
+
+EVALUATION_CRITERIA = """
+약관이해도평가제도 평가 기준:
+
+Ⅰ. 명확성(40점)
+- 목차 적절성(2)
+- 약관 구성사항 완비(3)
+- 필수기재사항 충족(5)
+- 불명확 담보 존재 여부(10)
+- 다의적 해석 여지(10)
+- 명칭의 적절성(5)
+- 오탈자(5)
+
+Ⅱ. 평이성(33점)
+- 어려운 내용 해설(10)
+- 어려운 용어 해설(5)
+- 중요내용 위치/누락(5)
+- 대구분·조항제목 강조(3)
+- 타법 인용 시 내용 누락(5)
+- 본문 글자크기(3)
+- 장평·자간·줄간격 겹침(2)
+
+Ⅲ. 간결성(15점)
+- 불필요/중복 표현(10)
+- 200자 이상 장문 사용(5)
+
+Ⅳ. 소비자친숙도(12점)
+- 구성·내용 종합평가(10)
+- 디자인 종합평가(2)
+"""
+
 
 PROMPT_TEMPLATE_JSON = r"""
 너는 보험 약관 작성 전문가다. 아래 정보를 참고하여 오직 JSON만 출력하라.
 텍스트 목차/서문/설명/마크다운/코드블럭/주석/별표(*)는 절대 출력하지 말 것.
-만약 출력된다면, 잘못된 결과
 
 입력:
 - 기업 이름: {company_name}
@@ -88,18 +145,57 @@ PROMPT_TEMPLATE_JSON = r"""
 - 기업 제공 상품 정보(원문):
 {wishlist}
 
-- 참고 약관 문서 및 법령자료):
+- 약관이해도평가제도 평가 기준:
+{evaluation_criteria}
+
+- 참고 약관 문서(우수/양호 등급 약관):
 {context}
 
+────────────────────────────
+[1단계 – 내부 분석 (출력 금지)]
+
+위 참고 약관은 약관이해도평가제도에서 높은 등급을 받은 문서이다.
+평가 기준(명확성·평이성·간결성·소비자친숙도)에 따라:
+
+1) 왜 높은 점수를 받았는지 구조적으로 분석하라.
+2) 다음 항목별 공통 패턴을 추출하라:
+
+- 명확성: 정의 방식, 수치·기간 명시 패턴, 주체 명시 방식, 모호 표현 제거 방식
+- 평이성: 용어 해설 위치, 문장 길이 구조, 항 분리 방식
+- 간결성: 반복 제거 방식, 장문 분리 구조
+- 소비자친숙도: 절차 설명 시 단계 구분, 권리 강조 방식
+
+이 분석 과정은 절대 출력하지 말 것.
+
+────────────────────────────
+[2단계 – 패턴 반영]
+
+위에서 추출한 '우수 약관 구조 패턴'을 본 약관 초안에 반드시 반영하라.
+
+필수 반영 사항:
+- 모든 권리·의무는 주체를 명확히 기재
+- 모호 표현(적절한, 상당한, 기타 사유, 필요 시 등) 사용 금지
+- 200자 이상 문장은 2개 이상의 항으로 분리
+- 중요한 소비자 권리는 조항 제목에서 강조
+- 어려운 용어는 정의 후 본문에서 통일 사용
+- 불명확 담보·다의적 해석 여지 제거
+
+────────────────────────────
+[3단계 – 자체 점검 (출력 금지)]
+
+생성 완료 직전에 평가 기준에 따라 내부적으로 재점검하라.
+감점 요소가 있으면 수정 후 최종 결과만 출력하라.
+
+────────────────────────────
 요구사항:
-1) 보장은 구체적 수치·기간·조건으로 명시(추상표현 금지).
-2) 독소조항·악용 우려 포인트는 정의/절차/예시로 명확화.
-3) 반복 용어는 '용어의 정의'에 1회 정의 후 본문에서는 용어만 사용.
-4) 각 절차는 주 경로와 예비 경로 2가지 제시.
-5) 최소 6개 관 이상, 총 50개 조 이상. 각 조는 다수의 하위항 포함.
-6) '목차'라는 단어 자체를 출력하지 말 것.
-7) 아래 JSON 스키마 그대로 출력. 키 누락 금지. 값은 문자열 또는 문자열 리스트만.
-8) 자체 점검: 출력 직전에 전체 조(articles) 개수가 50개 이상인지 확인하고, 부족하면 추가 작성하여 50개 이상이 되도록 할 것.
+
+1) 최소 6개 관 이상, 총 50개 조 이상 작성.
+2) 각 조는 다수의 하위항 포함.
+3) 보장은 구체적 수치·기간·조건 명시.
+4) 반복 용어는 '용어의 정의'에서 1회 정의.
+5) JSON 스키마 그대로 출력. 키 누락 금지.
+6) 출력은 JSON 본문만.
+7) 최종 조 개수가 50개 이상인지 반드시 확인.
 
 JSON 스키마:
 {{
@@ -120,7 +216,7 @@ JSON 스키마:
 
 주의:
 - 출력은 JSON 본문만.
-- 각 조의 'clauses'는 실제 조문을 충분히 길게 작성.
+- 분석 과정은 절대 출력하지 말 것.
 """
 
 # 공통 CORS 헤더
@@ -384,10 +480,18 @@ def generate_terms_v2():
         if not category:
             return jsonify({"error": "category가 필요합니다."}), 400
         
-        persist_dir = VECTOR_DB_MAP.get(category)
-        if not persist_dir or not os.path.isdir(persist_dir):
-            return jsonify({"error": f"'{category}' 벡터 저장소를 찾을 수 없습니다."}), 400
-        vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embedding)
+        gcs_path = VECTOR_DB_MAP.get(category)
+        if not gcs_path:
+            return jsonify({"error": f"'{category}' 벡터 저장소가 정의되지 않았습니다."}), 400
+
+        local_path = os.path.join(LOCAL_VECTOR_ROOT, f"generate_{category}")
+
+        _ensure_vector_db_from_gcs(local_path, gcs_path)
+
+        vectorstore = Chroma(
+            persist_directory=local_path,
+            embedding_function=embedding
+        )
         retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
 
         # docs = retriever.invoke(wishlist)
@@ -431,7 +535,8 @@ def generate_terms_v2():
             company_name=company_name,
             product_name=product_name,
             wishlist=wishlist,
-            context=context
+            context=context,
+            evaluation_criteria=EVALUATION_CRITERIA
         )
         raw = _gen_with_gemini(prompt)
         policy = _parse_json_loose(raw)

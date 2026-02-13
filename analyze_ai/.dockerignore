@@ -1,0 +1,31 @@
+# 벡터 DB 제거 (가장 중요)
+판례/
+**/chroma.sqlite3
+**/index/
+**/*.parquet
+
+# 업로드/출력 파일 제거
+uploads/
+outputs/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 가상환경
+venv/
+.env/
+.venv/
+
+# Git
+.git/
+.gitignore
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
