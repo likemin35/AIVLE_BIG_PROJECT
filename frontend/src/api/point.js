@@ -3,8 +3,8 @@ import axios from 'axios';
 import { auth } from '../firebase';
 
 const getApiUrl = () => {
-    if (process.env.REACT_APP_CLOUD_RUN_POINT_API_BASE_URL) {
-        return process.env.REACT_APP_CLOUD_RUN_POINT_API_BASE_URL;
+    if (process.env.REACT_APP_POINT_API_BASE_URL) {
+        return process.env.REACT_APP_POINT_API_BASE_URL;
     }
     return 'http://localhost:8088';
 };

@@ -1,5 +1,5 @@
 # OpenJDK 15 이미지 사용
-FROM openjdk:15-jdk-alpine
+FROM eclipse-temurin:11-jre-jammy
 
 # JAR 파일 복사
 COPY target/*SNAPSHOT.jar app.jar

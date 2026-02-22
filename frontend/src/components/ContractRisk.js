@@ -16,9 +16,10 @@ const getToken = async (force = false) => {
 
 // 서비스 마운트 경로 포함된 베이스
 const ANALYZE_API_BASE_URL =
-  process.env.REACT_APP_ANALYZE_API_BASE_URL || 'https://analyze-service-eck6h26cxa-uc.a.run.app';
+  process.env.REACT_APP_ANALYZE_API_BASE_URL || 'http://localhost:8080';
+
 const TERMS_API_BASE_URL =
-  process.env.REACT_APP_TERMS_API_BASE_URL || 'https://term-service-eck6h26cxa-uc.a.run.app';
+  process.env.REACT_APP_TERM_API_BASE_URL || 'http://localhost:8080';
 
 // 공통 fetch: Authorization 자동 첨부 + 401 시 1회 재시도
 async function fetchWithAuth(url, init = {}, { requireAuth = true } = {}) {

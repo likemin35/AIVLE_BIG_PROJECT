@@ -6,9 +6,6 @@ langchain-google-vertexai
 spacy
 requests
 google-cloud-secret-manager
-langchain_community
-langchain_huggingface
-chromadb
 networkx
 pyvis
-urllib3
+gunicorn

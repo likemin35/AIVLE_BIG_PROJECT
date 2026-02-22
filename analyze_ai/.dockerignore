@@ -1,8 +1,9 @@
 # 벡터 DB 제거 (가장 중요)
-판례/
+Precedent/
 **/chroma.sqlite3
+**/*.bin
+**/*.pickle
 **/index/
-**/*.parquet
 
 # 업로드/출력 파일 제거
 uploads/

@@ -2,12 +2,16 @@
 # analyze_terms.py
 from __future__ import annotations
 
-import os, re, json, uuid, logging, sys
+import os
+import re
+import json
+import uuid
+import logging
 from datetime import datetime, timezone
 from typing import List, Tuple
 
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
 
@@ -21,9 +25,9 @@ GCS_VECTOR_BUCKET = os.environ.get("TERMS_VECTOR_BUCKET")  # 예: gs://aivle-vec
 LOCAL_VECTOR_ROOT = "/tmp/vector_db"
 
 LAW_VECTOR_DB_MAP = {
-    "insurance": "analyze/보험",
-    "deposit":   "analyze/예금",
-    "loan":      "analyze/대출",
+    "insurance": "analyze/Precedent/chroma_db_insurance",
+    "deposit":   "analyze/Precedent/chroma_db_deposit",
+    "loan":      "analyze/Precedent/chroma_db_loan",
 }
 
 # --- Chroma 버전 로깅(디버그용) ---
@@ -39,14 +43,15 @@ import vertexai
 from google.oauth2 import service_account
 from google.cloud import secretmanager
 
-# LangChain / RAG
-from langchain_community.document_loaders import PyPDFDirectoryLoader, PyPDFLoader
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_google_vertexai import ChatVertexAI
-from langchain_core.prompts import ChatPromptTemplate
+# LangChain (0.0.352 세대)
+from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
 from langchain_core.output_parsers import StrOutputParser
+from langchain_community.vectorstores import Chroma
+from langchain.prompts import ChatPromptTemplate
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.document_loaders import PyPDFLoader, PyPDFDirectoryLoader
+
+
 
 # DOCX
 try:
@@ -59,7 +64,13 @@ except Exception:
 # Flask
 # =============================================================================
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
 # =============================================================================
 # Config / Env
@@ -75,13 +86,6 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# Vector DB root (Chroma 1.x 포맷)
-RAG_ROOT = os.environ.get("CHROMA_BASE", os.path.join(BASE_DIR, "판례"))
-LAW_VECTOR_DB_MAP = {
-    "insurance": os.path.join(RAG_ROOT, "보험"),
-    "deposit":   os.path.join(RAG_ROOT, "예금"),
-    "loan":      os.path.join(RAG_ROOT, "대출"),
-}
 
 # 카테고리 정규화
 _ALIAS = {
@@ -130,11 +134,14 @@ except Exception as e:
         logging.error(f"[BOOT] 자격증명 초기화 실패: {file_e}")
         credentials = None
 
+
 llm = None
 embedding_model = None
+
 if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+
         llm = ChatVertexAI(
             model_name="gemini-2.5-flash-lite",
             project=PROJECT_ID,
@@ -143,31 +150,43 @@ if credentials:
             temperature=0.2,
             max_output_tokens=8192,
         )
-        embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        logging.info("[BOOT] Vertex AI 및 임베딩 초기화 성공")
+
+        embedding_model = VertexAIEmbeddings(
+            model_name="text-embedding-004",
+            project=PROJECT_ID,
+            location=LOCATION,
+            credentials=credentials,
+        )
+
+        logging.info("[BOOT] Vertex AI LLM + Embedding 초기화 성공")
+
     except Exception:
-        logging.exception("[BOOT] Vertex/LLM 초기화 실패")
+        logging.exception("[BOOT] Vertex 초기화 실패")
 else:
     logging.error("[BOOT] 자격증명 없음 → LLM/임베딩 사용 불가")
+
 
 # =============================================================================
 # Prompts / Chains
 # =============================================================================
 # 게이트 프롬프트(중괄호 이스케이프)
 gate_prompt = ChatPromptTemplate.from_template(r"""
-너는 기업 약관의 '리스크 여부'를 매우 보수적으로 판정하는 심사관이다.
+너는 기업 약관의 리스크 여부를 1차 판정하는 심사관이다.
 
 판정 기준:
-- 디폴트는 NO.
-- 리스크라고 판단하려면,
-  반드시 해당 조항의 원문에서 그대로 인용 가능한 문제 문장이 존재해야 한다.
-- 추론, 요약, 해석 금지.
-- 원문에 없는 표현을 만들어내면 안 된다.
-- 문제가 되는 문장을 정확히 복사하여 evidence 배열에 넣어라.
-- 원문에서 정확히 인용할 수 없다면 반드시 NO로 판정한다.
+
+- 디폴트는 NO이지만, 잠재적 리스크도 적극적으로 탐지한다.
+- 소비자에게 불리하거나,
+  수치·기한·조건이 불명확하거나,
+  해석의 여지가 있거나,
+  권리·의무의 주체가 모호하면 리스크 가능성이 있다.
+- 명백한 위법이 아니어도 분쟁 가능성이 있으면 YES 가능하다.
+- 반드시 원문에서 문제 가능성이 있는 문장을 그대로 evidence에 복사하라.
+- evidence는 최소 1개 이상 포함되어야 한다.
+- 단, 완전히 문제 요소가 없다면 NO로 판정한다.
 
 출력(JSON만):
-{"is_risky": true|false, "score": 0..100, "evidence": ["원문 그대로 인용1","원문 그대로 인용2"]}
+{{"is_risky": true|false, "score": 0..100, "evidence": ["원문 그대로 인용1"]}}
 
 판정 대상 조항(제목 포함):
 {title}
@@ -342,12 +361,11 @@ def _sniff_ext(file_storage) -> str:
     return ""
 
 
+import shutil
+
 def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
     if os.path.exists(local_dir):
-        return
-
-    if not GCS_VECTOR_BUCKET:
-        raise RuntimeError("TERMS_VECTOR_BUCKET 환경변수가 설정되지 않았습니다.")
+        shutil.rmtree(local_dir)
 
     os.makedirs(local_dir, exist_ok=True)
 
@@ -367,6 +385,7 @@ def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
         blob.download_to_filename(dst)
 
     logging.info(f"[VECTOR] GCS 다운로드 완료: {local_dir}")
+
 
 
 # =============================================================================
@@ -400,10 +419,25 @@ def build_vectorstore(category: str) -> Chroma:
 
     logging.info(f"[VECTOR] open (1.x): {os.path.abspath(local_path)}")
 
-    return Chroma(
-        persist_directory=local_path,
-        embedding_function=embedding_model,
+    embeddings = VertexAIEmbeddings(
+        model_name="text-embedding-004",
+        project=PROJECT_ID,
+        location=LOCATION,
+        credentials=credentials,
     )
+
+    store = Chroma(
+        persist_directory=local_path,
+        embedding_function=embeddings,
+    )
+
+    try:
+        count = store._collection.count()
+        logging.info(f"[VECTOR] COLLECTION COUNT: {count}")
+    except Exception as e:
+        logging.error(f"[VECTOR] COUNT ERROR: {e}")
+
+    return store
 
 def _clean_query(q: str) -> str:
     q = re.sub(r"\s+", " ", q or "").strip()
@@ -412,7 +446,9 @@ def _clean_query(q: str) -> str:
 def _search_docs(vectorstore: Chroma, query: str, k: int):
     q = _clean_query(query)
     try:
-        return list(vectorstore.similarity_search(q, k=k))
+        docs = list(vectorstore.similarity_search(q, k=k))
+        logging.info(f"[VECTOR] SEARCH RESULT COUNT: {len(docs)}")
+        return docs
     except Exception as e:
         logging.error(f"[VECTOR] similarity_search 실패: {e}")
         return []
@@ -507,16 +543,6 @@ def _doc_to_citation_snippet(doc) -> str:
     page = _strip_html(getattr(doc, "page_content", "") or "")
     return (header + "\n" if header else "") + page
 
-def _citations_catalog_from_docs(docs: List) -> str:
-    seen, rows = set(), []
-    for d in docs:
-        info = _extract_citation_fields(d)
-        key = (info["court"], info["date"], info["case_no"], info["title"])
-        if key in seen:
-            continue
-        seen.add(key)
-        rows.append(f"- 법원: {info['court']} | 선고일: {info['date']} | 사건번호: {info['case_no']} | 사건명: {info['title']}")
-    return "\n".join(rows)
 
 # =============================================================================
 # 게이트(사전 판정)
@@ -536,23 +562,49 @@ def is_descriptive_title(title: str|None) -> bool:
 
 def gate_clause(title: str, body: str) -> dict:
     if not llm or not gate_chain or not _is_real_body(body):
-        return {"is_risky": False, "score": 0, "reasons": [], "evidence": []}
+        return {"is_risky": False, "score": 0, "evidence": []}
+
     hint = is_descriptive_title(title)
+
     try:
-        out = gate_chain.invoke({"title": title, "clause": body}) or ""
+        out = gate_chain.invoke({
+            "title": title,
+            "clause": body
+        }) or ""
+
+        logging.info("===== GATE RAW =====")
+        logging.info(out)
+
         data = _extract_json_block(out)
-        is_risky = bool(data.get("is_risky"))
-        score = int(data.get("score") or 0)
-        reasons = data.get("reasons") or []
+        logging.info(f"GATE PARSED: {data}")
+
+        is_risky = bool(data.get("is_risky", False))
+        score = int(data.get("score", 0))
         evidence = data.get("evidence") or []
+
+        # 설명성 타이틀이면 약간 감점만
         if hint and score > 0:
-            score = max(0, score - 20)  # 설명성 타이틀 감점
-        if is_risky and (len(evidence) < 1 or len(reasons) < 1):
-            is_risky, score = False, 0
-        return {"is_risky": is_risky, "score": score, "reasons": reasons, "evidence": evidence}
+            score = max(0, score - 15)
+
+        # evidence 없어도 is_risky True면 통과 허용
+        if is_risky:
+            return {
+                "is_risky": True,
+                "score": score,
+                "evidence": evidence
+            }
+
+        return {
+            "is_risky": False,
+            "score": score,
+            "evidence": evidence
+        }
+
     except Exception:
         logging.exception("[GATE] 게이트 판정 실패")
-        return {"is_risky": False, "score": 0, "reasons": [], "evidence": []}
+        return {"is_risky": False, "score": 0, "evidence": []}
+
+
 
 # =============================================================================
 # 본 분석(수정 제안)
@@ -585,10 +637,10 @@ def analyze_single_clause(clause_text: str, vectorstore: Chroma,
 
 # 분석결과 → (원문 스니펫, 대체 문구) 페어 추출
 PAIR_BLOCK_RE = re.compile(
-    r"^\s*(?:\d+\s*[\.\)]\s*)?\[문제가 되는 조항\]\s*(?P<src>.+?)\s*[\r\n]+"
-    r"(?:설명|문제\s*이유)\s*:\s*(?P<reason>.+?)\s*[\r\n]+"
-    r"수정\s*제안\s*:\s*(?P<dst>.+?)$",
-    re.DOTALL | re.MULTILINE
+    r"\[문제가 되는 조항\]\s*(?P<src>.+?)\n+"
+    r"(?:설명|문제\s*이유)\s*:\s*(?P<reason>.+?)\n+"
+    r"수정\s*제안\s*:\s*(?P<dst>.+?)(?:\n|$)",
+    re.DOTALL
 )
 
 def parse_replacement_pairs(analysis_text: str) -> List[Tuple[str, str]]:
@@ -676,20 +728,6 @@ def apply_pairs_to_text(text: str, pairs: List[Tuple[str, str]]) -> Tuple[str, i
 # 공통 실행 루틴: 게이트 → 상위만 본분석
 # =============================================================================
 def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
-    gated = []
-    for c in clauses:
-        body = (c.get("body") or "").strip()
-        title = (c.get("title") or "").strip()
-        if not _is_real_body(body):
-            continue
-        g = gate_clause(title, body)
-        if g.get("is_risky") and g.get("score", 0) >= GATE_MIN_SCORE:
-            gated.append({**c, "gate": g})
-
-    if not gated:
-        return [], "", []
-
-def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
     results = []
 
     for c in clauses:
@@ -699,34 +737,33 @@ def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
         if not _is_real_body(body):
             continue
 
-        g = gate_clause(title, body)
+        # -------------------------
+        #게이트 실행
+        # -------------------------
+        gate = gate_clause(title, body)
 
-        evidence = g.get("evidence") or []
-        is_risky = g.get("is_risky")
-        score = g.get("score", 0)
+        logging.info("===== GATE RESULT =====")
+        logging.info(gate)
+        logging.info("========================")
 
-        # 증거가 없으면 리스크 아님
-        if not is_risky or not evidence:
+        if not gate.get("is_risky"):
             continue
 
-        real_evidence = [
-            e for e in evidence
-            if e and e.strip() in body
-        ]
-
-        if not real_evidence:
-            continue
-
+        # -------------------------
+        #  본 분석 실행
+        # -------------------------
         analysis = analyze_single_clause(body, vectorstore, top_k=TOP_K_DEFAULT)
+
+        logging.info("===== ANALYSIS RAW =====")
+        logging.info(analysis)
+        logging.info("========================")
+
         if analysis:
             results.append({
                 "index": c["index"],
                 "title": c["title"],
                 "analysis": analysis,
-                "gate": {
-                    "score": score,
-                    "evidence": real_evidence
-                }
+                "gate": gate
             })
 
     joined = "\n\n".join([r["analysis"] for r in results])
@@ -735,15 +772,7 @@ def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
     return results, joined, pairs
 
 
-    results = []
-    for c in selected:
-        analysis = analyze_single_clause(c["body"], vectorstore, top_k=TOP_K_DEFAULT)
-        if analysis:
-            results.append({"index": c["index"], "title": c["title"], "analysis": analysis, "gate": c["gate"]})
 
-    joined = "\n\n".join([r["analysis"] for r in results])
-    pairs = parse_replacement_pairs(joined)
-    return results, joined, pairs
 
 # =============================================================================
 # API
@@ -781,28 +810,18 @@ def debug_vector_db():
     return info
 
 
-@app.after_request
-def _after(resp):
-    resp.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-    resp.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-    return resp
 
 # JSON 본문 분석(파일 없이)
-@app.route("/api/analyze-terms", methods=["POST", "OPTIONS"])
-@cross_origin(origin="*")
+@app.route("/api/analyze-terms", methods=["POST"])
 def analyze_terms():
-    if request.method == "OPTIONS":
-        return jsonify({"ok": True}), 200
 
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
     category_raw = data.get("category", "")
     category = normalize_category(category_raw)
+
     if not category:
         return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}"}), 400
-
-    vectorstore = build_vectorstore(category)
-    limit = int(data.get("limit", 0))
 
     try:
         full_text = (raw_text or "").strip()
@@ -811,37 +830,37 @@ def analyze_terms():
             pdf_file = data.get("pdf_file")
             full_text = load_user_text_from_pdf(pdf_dir=pdf_dir, pdf_file=pdf_file)
 
-        if not vector_db_path:
-            return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}. 허용: {list(LAW_VECTOR_DB_MAP)}"}), 400
-
         clauses = split_into_clauses(full_text)
+
+        limit = int(data.get("limit", 0))
         if limit > 0:
             clauses = clauses[:limit]
 
-        vectorstore = build_vectorstore(vector_db_path)
+        vectorstore = build_vectorstore(category)
 
         results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
 
         return jsonify({
             "ok": True,
             "category": category,
-            "vector_db_path": vector_db_path,
             "count_clauses": len(clauses),
-            "count_flagged": len(results),
+            "count_flagged": len(pairs),
+            "count_flagged_clauses": len(results),
+            "count_risk_items": len(pairs),
             "results": results,
             "text": joined,
             "pairs": [{"from": s, "to": d} for s, d in pairs],
         })
+
     except Exception as e:
         logging.exception("[API] /api/analyze-terms 오류")
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
-@app.route("/api/analyze-terms-upload", methods=["POST", "OPTIONS"])
-@cross_origin(origin="*")
+@app.route("/api/analyze-terms-upload", methods=["POST"])
 def analyze_terms_upload():
-    if request.method == "OPTIONS":
-        return jsonify({"ok": True}), 200
+
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "file 필드가 없습니다."}), 400
 
@@ -851,6 +870,10 @@ def analyze_terms_upload():
 
     category_raw = request.form.get("category", "")
     category = normalize_category(category_raw)
+
+    if not category:
+        return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}"}), 400
+
     limit = int(request.form.get("limit", 0))
 
     ext = _sniff_ext(f)
@@ -868,12 +891,13 @@ def analyze_terms_upload():
         elif ext == ".txt" or ext == "":
             full_text = read_txt(src_path)
         else:
-            return jsonify({"ok": False, "error": f"지원하지 않는 형식입니다: {ext or '(알 수 없음)'} . txt/pdf/docx만 허용"}), 400
-
-        if not category or category not in LAW_VECTOR_DB_MAP:
-            return jsonify({"ok": False, "error": f"category가 유효하지 않습니다: {category_raw}. 허용: {list(LAW_VECTOR_DB_MAP)}"}), 400
+            return jsonify({
+                "ok": False,
+                "error": f"지원하지 않는 형식입니다: {ext or '(알 수 없음)'} . txt/pdf/docx만 허용"
+            }), 400
 
         clauses = split_into_clauses(full_text)
+
         if limit > 0:
             clauses = clauses[:limit]
 
@@ -882,6 +906,7 @@ def analyze_terms_upload():
         results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
 
         output_filename, applied_count = None, 0
+
         try:
             if ext == ".docx":
                 output_filename, applied_count = apply_pairs_to_docx(src_path, pairs)
@@ -899,9 +924,9 @@ def analyze_terms_upload():
         return jsonify({
             "ok": True,
             "category": category,
-            "vector_db_path": vector_db_path,
-            "count_clauses": len(clauses),
-            "count_flagged": len(results),
+            "count_flagged": len(pairs),
+            "count_flagged_clauses": len(results),
+            "count_risk_items": len(pairs),
             "results": results,
             "text": joined,
             "pairs": [{"from": s, "to": d} for s, d in pairs],
@@ -909,9 +934,11 @@ def analyze_terms_upload():
             "output_file": output_filename,
             "output_url": download_url,
         })
+
     except Exception as e:
         logging.exception("[API] /api/analyze-terms-upload 오류")
         return jsonify({"ok": False, "error": str(e)}), 500
+
     finally:
         if os.path.exists(src_path):
             try:
@@ -919,6 +946,7 @@ def analyze_terms_upload():
                 logging.info(f"[CLEANUP] 임시 파일 삭제: {src_path}")
             except Exception as e_clean:
                 logging.warning(f"[CLEANUP] 임시 파일 삭제 실패: {src_path}, error: {e_clean}")
+
 
 # =============================================================================
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)

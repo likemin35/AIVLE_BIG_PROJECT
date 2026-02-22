@@ -5,8 +5,8 @@ import { auth } from '../firebase'; // Firebase 인증 추가
 // ✅ API URL 결정 함수
 const getApiUrl = () => {
     // 1️⃣ Cloud Run URL이 있으면 최우선 사용
-    if (process.env.REACT_APP_CLOUD_RUN_QNA_API_BASE_URL) {
-        return process.env.REACT_APP_CLOUD_RUN_QNA_API_BASE_URL;
+    if (process.env.REACT_APP_QNA_API_BASE_URL) {
+        return process.env.REACT_APP_QNA_API_BASE_URL;
     }
 
     // 2️⃣ 로컬 개발 기본 URL

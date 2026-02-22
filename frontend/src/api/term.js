@@ -3,18 +3,15 @@ import axios from 'axios';
 import { auth } from '../firebase';
 
 const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // GCP 배포 환경 (게이트웨이)
-    return 'https://term-service-902267887946.us-central1.run.app';
+  if (process.env.REACT_APP_TERM_API_BASE_URL) {
+    return process.env.REACT_APP_TERM_API_BASE_URL;
   }
-  // 로컬 개발 환경 (게이트웨이)
   return 'http://localhost:8088';
 };
 
 const apiClient = axios.create({
   baseURL: getApiUrl(),
 });
-
 // 모든 요청에 Firebase 토큰 자동 첨부
 apiClient.interceptors.request.use(
   async (config) => {

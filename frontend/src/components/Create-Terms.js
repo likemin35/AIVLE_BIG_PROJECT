@@ -19,15 +19,14 @@ function CreateTerms() {
   const [error, setError] = useState('');
 
   const CLOUD_RUN_API_BASE_URL =
-    process.env.REACT_APP_CLOUD_RUN_API_BASE_URL ||
-    'https://terms-api-service-eck6h26cxa-uc.a.run.app';
+    process.env.REACT_APP_CREATE_API_BASE_URL ||
+    'http://localhost:8080';
 
   const categories = [
     { value: 'deposit', label: '예금' },
     { value: 'savings', label: '적금' },
-    { value: 'loan', label: '주택담보대출' },
-    { value: 'cancer_insurance', label: '암보험' },
-    { value: 'car_insurance', label: '자동차보험' },
+    { value: 'loan', label: '대출' },
+    { value: 'insurance', label: '암보험' },
   ];
 
   // 간단 CSV 파서: "항목,내용" 섹션에서 회사명/상품명만 추출 (클라이언트 미리보기용)

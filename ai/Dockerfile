@@ -1,15 +1,17 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY ai/ .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 EXPOSE 8080
 
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "Create_Terms:app", "--workers=1", "--threads=4"]
+CMD ["bash", "-lc", "exec gunicorn -b 0.0.0.0:${PORT:-8080} create_terms:app --workers=1 --threads=4 --timeout=900"]

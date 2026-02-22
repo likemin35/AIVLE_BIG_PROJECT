@@ -6,14 +6,17 @@ import json
 import logging
 import urllib.parse
 from google.oauth2 import service_account
-from vertexai.generative_models import GenerativeModel
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings, ChatVertexAI
 from langchain_community.vectorstores import Chroma
 import requests
 from google.cloud import secretmanager, storage
 
 TERMS_VECTOR_BUCKET = os.environ.get("TERMS_VECTOR_BUCKET")  # gs://aivle-vector-db
 LOCAL_VECTOR_ROOT = "/tmp/vector_db"
+
+VECTORSTORES = {}
+RETRIEVERS = {}
+
 
 def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
     if os.path.exists(local_dir):
@@ -40,7 +43,13 @@ def _ensure_vector_db_from_gcs(local_dir: str, gcs_subdir: str):
 
 # Flask App 초기화 및 CORS 설정
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(
+    app,
+    resources={r"/api/*": {"origins": "*"}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization", "x-authenticated-user-uid"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -52,57 +61,88 @@ POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")
 PROJECT_ID = "aivle-team0721"
 LOCATION = "us-central1"
 
-# 크로마 DB 저장소 경로
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
+VECTOR_DB_MAP = {
+    'loan': 'create/Terms/loan',
+    'insurance': 'create/Terms/insurance',
+    'deposit': 'create/Terms/deposit',
+    'savings': 'create/Terms/savings',
+}
+
+credentials = None
+llm = None
+embedding = None
+
+def load_vectorstore(category):
+    gcs_path = VECTOR_DB_MAP.get(category)
+    if not gcs_path:
+        return None
+
+    local_path = os.path.join(LOCAL_VECTOR_ROOT, f"generate_{category}")
+
+    _ensure_vector_db_from_gcs(local_path, gcs_path)
+
+    vectorstore = Chroma(
+        persist_directory=local_path,
+        embedding_function=embedding
+    )
+
+    retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
+
+    VECTORSTORES[category] = vectorstore
+    RETRIEVERS[category] = retriever
+
+secret_client = secretmanager.SecretManagerServiceClient()
+secret_name = f"projects/{PROJECT_ID}/secrets/firebase-adminsdk/versions/latest"
+response = secret_client.access_secret_version(name=secret_name)
+secret_payload = response.payload.data.decode("UTF-8")
 
 try:
-    secret_client = secretmanager.SecretManagerServiceClient()
-    secret_name = f"projects/{PROJECT_ID}/secrets/firebase-adminsdk/versions/latest"
-    response = secret_client.access_secret_version(name=secret_name)
-    secret_payload = response.payload.data.decode("UTF-8")
-    credentials_info = json.loads(secret_payload)
-    credentials = service_account.Credentials.from_service_account_info(credentials_info)
-    logging.info("Secret Manager에서 서비스 계정 키 로드 성공")
+    credentials, project_id = google.auth.default()
+    logging.info("Cloud Run 기본 서비스 계정 로드 성공")
 except Exception as e:
-    logging.warning(f"Secret Manager 접근 실패: {e}. 로컬 키 파일로 대체합니다.")
-    try:
-        if not os.path.exists(LOCAL_KEY_FILE):
-            raise FileNotFoundError("로컬 서비스 계정 키 파일을 찾을 수 없습니다: " + LOCAL_KEY_FILE)
-        credentials = service_account.Credentials.from_service_account_file(LOCAL_KEY_FILE)
-        logging.info("로컬 파일에서 서비스 계정 키 로드 성공")
-    except Exception as file_e:
-        logging.error(f"AI 서비스 초기화 실패: Secret Manager와 로컬 파일 모두 실패. ({file_e})")
-        credentials = None
+    logging.error(f"기본 자격증명 로드 실패: {e}")
+    credentials = None
+
 
 if credentials:
     try:
         vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
-        gemini_model = GenerativeModel("gemini-2.5-flash-lite")
-        logging.info("Vertex AI 초기화 성공")
+
+        llm = ChatVertexAI(
+            model_name="gemini-2.5-flash-lite",
+            project=PROJECT_ID,
+            location=LOCATION,
+            credentials=credentials,
+            temperature=0.3,
+            max_output_tokens=12000,
+        )
+
+        embedding = VertexAIEmbeddings(
+            model_name="text-embedding-004",
+            project=PROJECT_ID,
+            location=LOCATION,
+            credentials=credentials
+        )
+
+        logging.info("Vertex AI LLM + Embedding 초기화 성공")
+
     except Exception as e:
-        logging.error(f"Vertex AI Gemini 모델 초기화 실패: {e}")
-        gemini_model = None
-    try:
-        embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        logging.info("허깅페이스 임베딩 초기화 성공")
-    except Exception as e:
-        logging.error(f"허깅페이스 임베딩 초기화 실패: {e}")
+        logging.error(f"Vertex 초기화 실패: {e}")
+        llm = None
         embedding = None
 else:
-    gemini_model = None
+    llm = None
     embedding = None
 
-VECTOR_DB_MAP = {
-    'loan': 'generate/대출',
-    'cancer_insurance': 'generate/암보험',
-    'deposit': 'generate/예금',
-    'car_insurance': 'generate/자동차보험',
-    'savings': 'generate/적금',
-    'laws': 'generate/법령'
-}
 
+if embedding:
+    for category in VECTOR_DB_MAP.keys():
+        try:
+            load_vectorstore(category)
+            logging.info(f"{category} 벡터스토어 로드 완료")
+        except Exception as e:
+            logging.error(f"{category} 벡터스토어 로드 실패: {e}")
 
 EVALUATION_CRITERIA = """
 약관이해도평가제도 평가 기준:
@@ -219,12 +259,6 @@ JSON 스키마:
 - 분석 과정은 절대 출력하지 말 것.
 """
 
-# 공통 CORS 헤더
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-authenticated-user-uid')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
 
 # 포인트 URL 안전 생성
 def _build_point_reduce_url(base: str, user_id: str, amount: int, reason: str) -> str:
@@ -236,17 +270,14 @@ def _build_point_reduce_url(base: str, user_id: str, amount: int, reason: str) -
 
 # Gemini 호출
 def _gen_with_gemini(prompt: str) -> str:
+    if not llm:
+        raise RuntimeError("LLM이 초기화되지 않았습니다.")
+
     try:
-        resp = gemini_model.generate_content(
-            prompt,
-            generation_config={
-                "max_output_tokens": 24000,
-                "temperature": 0.3
-            }
-        )
-        return resp.candidates[0].content.parts[0].text
+        response = llm.invoke(prompt)
+        return response.content
     except Exception:
-        logging.exception("Gemini 호출 실패")
+        logging.exception("LLM 호출 실패")
         raise
 
 # JSON 파서
@@ -419,17 +450,16 @@ def json_to_text(policy: dict) -> str:
     return "\n\n".join(full_text)
 
 # 신규: 멀티파트 업로드 
-@app.route('/api/generate', methods=['POST', 'OPTIONS'])
-@cross_origin(origin='*')
+@app.route('/api/generate', methods=['POST'])
 def generate_terms_v2():
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
-    if not gemini_model:
+    if not llm:
         return jsonify({"error": "AI 모델 초기화 실패"}), 500
 
     if not request.content_type or "multipart/form-data" not in request.content_type:
-        return jsonify({"error": "multipart/form-data 로 전송해 주세요."} ), 400
+        return jsonify({"error": "multipart/form-data 로 전송해 주세요."}), 400
 
     try:
         form = request.form
@@ -479,54 +509,26 @@ def generate_terms_v2():
 
         if not category:
             return jsonify({"error": "category가 필요합니다."}), 400
-        
-        gcs_path = VECTOR_DB_MAP.get(category)
-        if not gcs_path:
-            return jsonify({"error": f"'{category}' 벡터 저장소가 정의되지 않았습니다."}), 400
 
-        local_path = os.path.join(LOCAL_VECTOR_ROOT, f"generate_{category}")
+        retriever = RETRIEVERS.get(category)
+        if not retriever:
+            return jsonify({"error": "벡터스토어 로드 실패"}), 500
 
-        _ensure_vector_db_from_gcs(local_path, gcs_path)
-
-        vectorstore = Chroma(
-            persist_directory=local_path,
-            embedding_function=embedding
-        )
-        retriever = vectorstore.as_retriever(search_kwargs={'k': 5})
-
-        # docs = retriever.invoke(wishlist)
-        # context = "\n\n".join([d.page_content for d in docs])[:12000]
-        
-        # logging.info(f"DB 검색어: '{retrieval_query}'")
-        # docs = retriever.invoke(retrieval_query)
-        # retrieval_query = product_name
-
-        # 두  벡터db 임시 쿼리로 상품명
         logging.info(f"초안카테고리DB 검색어: '{product_name}'")
+
         try:
             docs = retriever.invoke(product_name)
         except Exception as e:
             logging.error(f"초안카테고리DB 검색 실패: {e}")
             return jsonify({"error": "초안카테고리DB 검색 중 오류가 발생했습니다."}), 500
-        
-        logging.info(f"법령DB 검색어: '{product_name}'")
-        try:
-            law_docs = retriever.invoke(product_name)
-        except Exception as e:
-            logging.error(f"법령DB 검색 실패: {e}")
-            return jsonify({"error": "법령DB 검색 중 오류가 발생했습니다."}), 500
-        
-        
-        # AI에게 전달할 참고문서(context)는 검색 결과로 만듭니다.
-        context = "\n\n".join([d.page_content for d in docs + law_docs])
 
-        # 표 스펙 구성(통합 CSV에서)
-        parsed = parse_unified_product_csv_upload(files['productMeta'])
+        context = "\n\n".join([d.page_content for d in docs])
+
 
         user_tables = {}
         if parsed["refund_spec"]:
             user_tables["해약환급금"] = parsed["refund_spec"]
-            user_tables["해약환급금예시"] = parsed["refund_spec"]  # 동일 스펙 재사용
+            user_tables["해약환급금예시"] = parsed["refund_spec"] 
         if parsed["criteria_spec"]:
             user_tables["지급기준표"] = parsed["criteria_spec"]
 
@@ -569,7 +571,11 @@ def generate_terms_v2():
 # Health check
 @app.route('/api/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok", "ai_initialized": gemini_model is not None}), 200
+    return jsonify({
+        "status": "ok",
+        "ai_initialized": llm is not None
+    }), 200
+
 
 
 if __name__ == '__main__':

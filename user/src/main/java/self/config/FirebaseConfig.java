@@ -6,20 +6,17 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
-import java.io.InputStream;
-
 
 @Configuration
 public class FirebaseConfig {
 
     @Bean
     public FirebaseAuth firebaseAuth() throws Exception {
-        ClassPathResource resource = new ClassPathResource("firebase-adminsdk.json");
-        InputStream serviceAccount = resource.getInputStream();
+
+        GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
 
         FirebaseOptions options = FirebaseOptions.builder()
-                .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                .setCredentials(credentials)
                 .build();
 
         if (FirebaseApp.getApps().isEmpty()) {

@@ -1,15 +1,8 @@
 import axios from 'axios';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
-// ===================================================================
-// TODO: 아래 URL을 실제 배포된 서비스의 주소로 변경하세요.
-// ===================================================================
-
-// 1. NER 서비스 URL (키워드 하이라이트용)
-const NER_API_BASE_URL = 'https://ner-api-service-902267887946.us-central1.run.app';
-
-// 2. Graph 서비스 URL (네트워크 시각화용)
-const GRAPH_API_BASE_URL = 'https://graph-api-service-902267887946.us-central1.run.app';
+const NER_API_BASE_URL = process.env.REACT_APP_KEYWORD_NER_API_BASE_URL;
+const GRAPH_API_BASE_URL = process.env.REACT_APP_KEYWORD_GRAPH_API_BASE_URL;
 
 // ===================================================================
 
