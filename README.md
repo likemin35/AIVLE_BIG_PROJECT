@@ -2,6 +2,10 @@
 
 보험/금융 약관을 생성, 검수, 리스크 분석, 시각화까지 한 흐름으로 다루는 멀티서비스 프로젝트입니다. 현재 레포는 React 프론트엔드, Spring Boot 기반 도메인 서비스, Flask 기반 AI 서비스, Gateway, Docker/Cloud Run/Kubernetes 배포 자산까지 함께 포함하고 있습니다.
 
+배포된 프론트엔드 주소:
+
+- https://front-service-902267887946.us-central1.run.app
+
 ## 주요 기능
 
 - AI 약관 초안 생성
@@ -212,6 +216,10 @@ cd keywords_ai
 pip install -r requirements.txt
 python main.py
 ```
+
+## 배포 주소
+
+- 프론트엔드: https://front-service-902267887946.us-central1.run.app
 
 ## 실행 시 참고할 파일
 
