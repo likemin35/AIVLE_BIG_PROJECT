@@ -14,9 +14,19 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class AuthenticationFilter implements GlobalFilter, Ordered {
+
+    private static final Set<String> PUBLIC_FRONTEND_PATHS = Set.of(
+        "/",
+        "/login",
+        "/signup",
+        "/complete-signup",
+        "/reset-password",
+        "/about"
+    );
 
     @Autowired
     private FirebaseAuth firebaseAuth;
@@ -24,40 +34,45 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-        String authToken = this.getAuthToken(request);
+        String path = request.getURI().getPath();
+        String authToken = getAuthToken(request);
 
-        // 비로그인 사용자의 qna GET 요청은 허용
-        if (authToken == null && request.getMethod().matches("GET") && request.getURI().getPath().startsWith("/qna")) {
+        if ("OPTIONS".equalsIgnoreCase(request.getMethodValue())) {
             return chain.filter(exchange);
         }
 
-        // 인증 엔드포인트는 허용
-        List<String> path = List.of(request.getURI().getPath().split("/"));
-        if (path.contains("auth")) {
+        if (authToken == null && request.getMethod().matches("GET") && path.startsWith("/qna")) {
             return chain.filter(exchange);
         }
 
-        // 위 조건에 해당하지 않는데 토큰이 없으면 거부
+        List<String> segments = List.of(path.split("/"));
+        if (segments.contains("auth")) {
+            return chain.filter(exchange);
+        }
+
+        if (authToken == null && isPublicFrontendPath(path)) {
+            return chain.filter(exchange);
+        }
+
         if (authToken == null) {
-            return this.onError(exchange, "Authorization header is missing or invalid");
+            return onError(exchange);
         }
 
-        // 토큰이 있으면 검증하고 uid를 헤더에 추가
         try {
             FirebaseToken decodedToken = firebaseAuth.verifyIdToken(authToken);
             String uid = decodedToken.getUid();
 
             ServerHttpRequest modifiedRequest = request.mutate()
-                    .headers(httpHeaders -> httpHeaders.set("X-Authenticated-User-Uid", uid))
-                    .build();
+                .headers(headers -> headers.set("X-Authenticated-User-Uid", uid))
+                .build();
 
             return chain.filter(exchange.mutate().request(modifiedRequest).build());
         } catch (Exception e) {
-            return this.onError(exchange, "Invalid authentication token");
+            return onError(exchange);
         }
     }
 
-    private Mono<Void> onError(ServerWebExchange exchange, String err) {
+    private Mono<Void> onError(ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
     }
@@ -70,8 +85,27 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         return null;
     }
 
+    private boolean isPublicFrontendPath(String path) {
+        if (PUBLIC_FRONTEND_PATHS.contains(path)) {
+            return true;
+        }
+
+        return path.startsWith("/static/")
+            || path.startsWith("/fonts/")
+            || path.equals("/favicon.ico")
+            || path.equals("/manifest.json")
+            || path.equals("/robots.txt")
+            || path.endsWith(".js")
+            || path.endsWith(".css")
+            || path.endsWith(".png")
+            || path.endsWith(".jpg")
+            || path.endsWith(".jpeg")
+            || path.endsWith(".svg")
+            || path.endsWith(".ico");
+    }
+
     @Override
     public int getOrder() {
-        return -1; // Run before other filters
+        return -1;
     }
 }

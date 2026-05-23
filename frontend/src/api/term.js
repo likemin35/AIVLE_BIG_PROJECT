@@ -11,6 +11,7 @@ const getApiUrl = () => {
 
 const apiClient = axios.create({
   baseURL: getApiUrl(),
+  timeout: Number(process.env.REACT_APP_API_TIMEOUT_MS || 10000),
 });
 // 모든 요청에 Firebase 토큰 자동 첨부
 apiClient.interceptors.request.use(
@@ -27,6 +28,18 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ECONNABORTED') {
+      error.message = '약관 서비스 요청 시간이 초과되었습니다.';
+    } else if (!error.response) {
+      error.message = '약관 서비스에 연결하지 못했습니다.';
+    }
+    return Promise.reject(error);
+  }
 );
 
 /**
@@ -232,4 +245,52 @@ export const downloadBlob = (blob, filename) => {
   a.click();
   a.remove();
   window.URL.revokeObjectURL(url);
+};
+
+export const requestCreateTermsJob = async (formData) => {
+  try {
+    const response = await apiClient.post('/terms/jobs/create', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Async create job request failed.', error);
+    throw error;
+  }
+};
+
+export const requestAnalyzeTermsJob = async (termId, category) => {
+  try {
+    const response = await apiClient.post(`/terms/${termId}/jobs/analyze`, { category });
+    return response.data;
+  } catch (error) {
+    console.error('Async analyze job request failed.', error);
+    throw error;
+  }
+};
+
+export const requestAnalyzeTermsFileJob = async (file, category) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('category', category);
+
+  try {
+    const response = await apiClient.post('/terms/jobs/analyze-file', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Async analyze file job request failed.', error);
+    throw error;
+  }
+};
+
+export const getTermJob = async (jobId) => {
+  try {
+    const response = await apiClient.get(`/terms/jobs/${jobId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch term job ${jobId}.`, error);
+    throw error;
+  }
 };

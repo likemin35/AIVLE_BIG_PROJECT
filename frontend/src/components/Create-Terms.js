@@ -1,111 +1,108 @@
-// src/components/Create-Terms.js
 import React, { useState } from 'react';
 import { useOutletContext, Link, useNavigate } from 'react-router-dom';
+import { getContractById, getTermJob, requestCreateTermsJob } from '../api/term';
 import './Create-Terms.css';
+
+const categories = [
+  { value: 'deposit', label: '예금' },
+  { value: 'savings', label: '적금' },
+  { value: 'loan', label: '대출' },
+  { value: 'insurance', label: '보험' },
+];
+
 function CreateTerms() {
   const { user, authLoading } = useOutletContext();
   const navigate = useNavigate();
 
-  // 기본 메타(입력값은 CSV가 덮어씀; 미기재 시 백엔드가 CSV에서 읽음)
   const [companyName, setCompanyName] = useState('');
-  const [category, setCategory] = useState('선택');
+  const [category, setCategory] = useState('select');
   const [productName, setProductName] = useState('');
   const [effectiveDate, setEffectiveDate] = useState('');
-
-  // 단일 CSV 파일 (필수)
   const [productMetaFile, setProductMetaFile] = useState(null);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const CLOUD_RUN_API_BASE_URL =
-    process.env.REACT_APP_CREATE_API_BASE_URL ||
-    'http://localhost:8080';
-
-  const categories = [
-    { value: 'deposit', label: '예금' },
-    { value: 'savings', label: '적금' },
-    { value: 'loan', label: '대출' },
-    { value: 'insurance', label: '암보험' },
-  ];
-
-  // 간단 CSV 파서: "항목,내용" 섹션에서 회사명/상품명만 추출 (클라이언트 미리보기용)
   const extractMetaFromCsv = async (file) => {
     const text = await file.text();
-    // BOM 제거 및 개행 분리
     const clean = text.replace(/^\uFEFF/, '');
-    const lines = clean.split(/\r?\n/).filter(l => l.trim().length > 0);
+    const lines = clean.split(/\r?\n/).filter((line) => line.trim().length > 0);
 
-    // 구분자 추정(쉼표, 세미콜론, 탭)
-    const guessDelim = (sample) => {
+    const guessDelimiter = (sample) => {
       if (sample.includes('\t')) return '\t';
       if (sample.includes(';')) return ';';
       return ',';
     };
-    const delim = guessDelim(lines[0] || ',');
 
+    const delimiter = guessDelimiter(lines[0] || ',');
     const splitRow = (row) => {
-      // 큰따옴표로 감싼 셀 고려(아주 간단 버전)
       const pattern = new RegExp(
-        `(?:^|${delim})(?:"([^"]*(?:""[^"]*)*)"|([^"${delim}]*))`,
+        `(?:^|${delimiter})(?:"([^"]*(?:""[^"]*)*)"|([^"${delimiter}]*))`,
         'g'
       );
-      const out = [];
+      const result = [];
       row.replace(pattern, (_, quoted, plain) => {
-        if (quoted !== undefined) out.push(quoted.replace(/""/g, '"'));
-        else out.push((plain || '').trim());
+        if (quoted !== undefined) result.push(quoted.replace(/""/g, '"'));
+        else result.push((plain || '').trim());
         return '';
       });
-      return out;
+      return result;
     };
 
-    let inKV = false;
-    for (let i = 0; i < lines.length; i++) {
-      const cells = splitRow(lines[i]);
+    let inKeyValueSection = false;
+    lines.forEach((line) => {
+      const cells = splitRow(line);
       const head0 = (cells[0] || '').trim();
       const head1 = (cells[1] || '').trim();
 
-      // 섹션 시작/전환 감지
       if (head0 === '항목' && head1 === '내용') {
-        inKV = true;
-        continue;
+        inKeyValueSection = true;
+        return;
       }
-      if (
-        head0 === '경과기간' || // 환급 표 시작 → KV 종료
-        head0 === '급부명'      // 지급 표 시작 → KV 종료
-      ) {
-        inKV = false;
+      if (head0 === '경과기간' || head0 === '급부명') {
+        inKeyValueSection = false;
       }
 
-      if (inKV && head0) {
-        if (head0 === '회사명' && head1) setCompanyName(prev => prev || head1);
-        if (head0 === '상품명' && head1) setProductName(prev => prev || head1);
+      if (inKeyValueSection && head0) {
+        if (head0 === '회사명' && head1) setCompanyName((prev) => prev || head1);
+        if (head0 === '상품명' && head1) setProductName((prev) => prev || head1);
       }
-    }
+    });
   };
 
   const onChangeProductCsv = async (file) => {
     setProductMetaFile(file || null);
-    if (file) {
-      // 파일명 확장자 체크(권장)
-      if (!file.name.toLowerCase().endsWith('.csv')) {
-        alert('CSV 파일만 업로드해주세요.');
-        setProductMetaFile(null);
-        return;
-      }
-      try {
-        await extractMetaFromCsv(file);
-      } catch (e) {
-        // 파싱 실패해도 백엔드가 처리하므로 치명적 오류는 아님
-        console.warn('CSV 미리 파싱 실패(무시 가능):', e);
-      }
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert('CSV 파일만 업로드할 수 있습니다.');
+      setProductMetaFile(null);
+      return;
+    }
+
+    try {
+      await extractMetaFromCsv(file);
+    } catch (e) {
+      console.warn('CSV preview parse failed:', e);
     }
   };
 
-  // 업로드 기반 약관 생성 (multipart/form-data)
+  const pollJobUntilDone = async (jobId, timeoutMs = 180000, intervalMs = 3000) => {
+    const startedAt = Date.now();
+    let currentJob = await getTermJob(jobId);
+
+    while (Date.now() - startedAt < timeoutMs) {
+      if (currentJob.status === 'DONE' || currentJob.status === 'FAILED') {
+        return currentJob;
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+      currentJob = await getTermJob(jobId);
+    }
+
+    return currentJob;
+  };
+
   const handleSubmit = async () => {
-    // 필수: 카테고리 + product_info.csv
-    if (category === '선택') {
+    if (category === 'select') {
       alert('카테고리를 선택해주세요.');
       return;
     }
@@ -113,7 +110,7 @@ function CreateTerms() {
       alert('product_info.csv 파일을 업로드해주세요.');
       return;
     }
-    if (!user || !user.uid) {
+    if (!user?.uid) {
       alert('사용자 인증 정보가 없습니다. 다시 로그인해주세요.');
       return;
     }
@@ -122,70 +119,49 @@ function CreateTerms() {
     setIsLoading(true);
 
     try {
-      const fd = new FormData();
-      // 카테고리는 벡터DB/백엔드 라우팅에 필요할 수 있어 필수로 전송
-      fd.append('category', category);
+      const formData = new FormData();
+      formData.append('category', category);
+      formData.append('companyName', companyName || '');
+      formData.append('productName', productName || '');
+      formData.append('effectiveDate', effectiveDate || '');
+      formData.append('requirements', '');
+      formData.append('productMeta', productMetaFile);
 
-      // 선택 메타(빈 값이어도 전송): 백엔드가 CSV에서 재확인/덮어씀
-      fd.append('companyName', companyName || '');
-      fd.append('productName', productName || '');
-      fd.append('effectiveDate', effectiveDate || '');
-
-      // 자유 입력 요구사항은 CSV가 대체하므로 비워도 됨(백엔드에서 무시/덮어씀)
-      fd.append('requirements', '');
-
-      // 단일 CSV 파일
-      fd.append('productMeta', productMetaFile);
-
-      // 기존 v2 엔드포인트 그대로 사용(백엔드가 통합 CSV 파싱하도록 구현됨을 전제)
-      const res = await fetch(`${CLOUD_RUN_API_BASE_URL}/api/generate`, {
-        method: 'POST',
-        headers: {
-          'x-authenticated-user-uid': user.uid,
-          'Authorization': `Bearer ${await user.getIdToken()}`,
-          // Content-Type은 브라우저가 자동 설정해야 합니다.
-        },
-        body: fd,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || '약관 생성 중 알 수 없는 오류가 발생했습니다.');
+      const job = await requestCreateTermsJob(formData);
+      if (!job?.jobId) {
+        throw new Error('약관 생성 Job 생성에 실패했습니다.');
       }
 
-      // v2 응답: { policy, meta }
-      const policy = data.policy;
-      const meta = data.meta || {
-        companyName: companyName || '',
-        category,
-        productName: productName || '',
-        effectiveDate: effectiveDate || '',
-      };
+      const latestJob = await pollJobUntilDone(job.jobId);
+      if (latestJob.status !== 'DONE') {
+        throw new Error(latestJob.errorMessage || '약관 생성 작업이 완료되지 않았습니다.');
+      }
 
+      const createdTerm = await getContractById(latestJob.resultId);
       const draftPayload = {
-        // terms: policy ? JSON.stringify(policy, null, 2) : (data.terms || ''),
-        terms: policy,
-        table_of_contents: data.table_of_contents || '', // 목차 데이터 추가
-        policy,
-        meta,
+        terms: createdTerm?.content || '',
+        table_of_contents: '',
+        policy: createdTerm?.content || '',
+        meta: {
+          companyName: companyName || '',
+          category,
+          productName: productName || createdTerm?.productName || '',
+          effectiveDate: effectiveDate || '',
+        },
       };
 
       sessionStorage.setItem('draftPayload', JSON.stringify(draftPayload));
+      alert('AI 약관 초안 생성이 완료되어 편집 화면으로 이동합니다.');
       navigate('/terms/new/edit', { state: draftPayload });
-
-      if (data.warning) {
-        alert(data.warning);
-      }
     } catch (err) {
       console.error('Error generating terms:', err);
-      const msg = err.message || '';
-      if (msg.includes('포인트')) {
+      const message = err?.message || '오류가 발생했습니다.';
+      if (message.includes('포인트')) {
         alert('포인트가 부족합니다.');
       } else {
-        alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        alert(message);
       }
-      setError(msg);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -197,18 +173,17 @@ function CreateTerms() {
     return (
       <div className="terms-main">
         <div className="login-prompt">
-          <h2>로그인 필요</h2>
-          <p>이 페이지에 접근하려면 로그인이 필요합니다.</p>
+          <h2>로그인이 필요</h2>
+          <p>이 페이지를 이용하려면 로그인이 필요합니다.</p>
           <Link to="/login" className="login-btn-link">로그인 페이지로 이동</Link>
         </div>
-</div>
-);
+      </div>
+    );
   }
 
   return (
     <div className="terms-main">
       <div className="terms-container">
-        {/* 왼쪽 입력 폼 영역 (기존 우측) */}
         <div className="form-section">
           <div className="form-container">
             <div className="form-group">
@@ -218,13 +193,13 @@ function CreateTerms() {
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 className="form-input"
-                placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
+                placeholder="CSV에서 자동 채움, 필요하면 직접 수정"
                 disabled={isLoading}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">초안 카테고리 (필수)</label>
+              <label className="form-label">초안 카테고리</label>
               <div className="select-container">
                 <select
                   value={category}
@@ -232,7 +207,7 @@ function CreateTerms() {
                   className="form-select"
                   disabled={isLoading}
                 >
-                  <option value="선택">선택</option>
+                  <option value="select">선택</option>
                   {categories.map((cat) => (
                     <option key={cat.value} value={cat.value}>
                       {cat.label}
@@ -250,13 +225,13 @@ function CreateTerms() {
                 value={productName}
                 onChange={(e) => setProductName(e.target.value)}
                 className="form-input"
-                placeholder="CSV 업로드 시 자동 채움, 필요 시 수정 가능"
+                placeholder="CSV에서 자동 채움, 필요하면 직접 수정"
                 disabled={isLoading}
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">시행 날짜 (선택)</label>
+              <label className="form-label">시행 날짜</label>
               <input
                 type="date"
                 value={effectiveDate}
@@ -266,17 +241,8 @@ function CreateTerms() {
               />
             </div>
 
-            {/* CSV 업로드 (단일) - 커스텀 툴팁 아이콘 추가 */}
             <div className="form-group">
-              <label className="form-label">
-                약관 csv파일 (필수)
-                <div className="tooltip-container">
-                  <span className="info-icon">ⓘ</span>
-                  <div className="tooltip-content">
-                    상단에는 '항목,내용' 섹션(회사명/상품명 등), <br />중간/하단에는 표(해약환급금, 지급기준표)를 포함해 주세요.
-                  </div>
-                </div>
-              </label>
+              <label className="form-label">약관 CSV 파일</label>
               <input
                 type="file"
                 accept=".csv"
@@ -286,26 +252,17 @@ function CreateTerms() {
               />
             </div>
 
-            <button
-              onClick={handleSubmit}
-              className="ai-draft-btn"
-              disabled={isLoading}
-            >
-              {isLoading ? '생성 중...' : 'AI 초안 딸각 (5,000P)'}
+            <button onClick={handleSubmit} className="ai-draft-btn" disabled={isLoading}>
+              {isLoading ? '생성 중...' : 'AI 초안 생성 (5,000P)'}
             </button>
 
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
           </div>
         </div>
 
-        {/* 오른쪽 미리보기 영역 (기존 좌측) */}
         <div className="preview-section">
           <div className="preview-placeholder">
-            <p>파일 업로드 후 AI 약관 초안을 생성하면 편집 화면으로 이동합니다.</p>
+            <p>비동기 Job이 완료되면 편집 화면으로 이동합니다.</p>
           </div>
         </div>
       </div>

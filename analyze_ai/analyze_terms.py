@@ -7,6 +7,8 @@ import re
 import json
 import uuid
 import logging
+import base64
+import requests
 from datetime import datetime, timezone
 from typing import List, Tuple
 
@@ -79,6 +81,9 @@ PROJECT_ID = os.environ.get("GCP_PROJECT", "aivle-team0721")
 LOCATION   = os.environ.get("GCP_LOCATION", "us-central1")
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 LOCAL_KEY_FILE = os.path.join(BASE_DIR, "firebase-adminsdk.json")
+TERM_SERVICE_BASE_URL = os.environ.get("TERM_SERVICE_BASE_URL", "http://localhost:8083")
+INTERNAL_CALLBACK_TOKEN = os.environ.get("INTERNAL_CALLBACK_TOKEN", "")
+ASYNC_AI_ENABLED = os.environ.get("ASYNC_AI_ENABLED", "true").lower() == "true"
 
 # 업로드/출력 폴더
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
@@ -772,6 +777,77 @@ def _analyze_clauses_with_gate(clauses: List[dict], vectorstore: Chroma):
     return results, joined, pairs
 
 
+def execute_analyze_job(payload: dict):
+    raw_text = payload.get("text", "")
+    category_raw = payload.get("category", "")
+    category = normalize_category(category_raw)
+
+    if not category:
+        raise ValueError(f"Invalid category: {category_raw}")
+
+    full_text = (raw_text or "").strip()
+    if not full_text:
+        raise ValueError("text is required for async analyze job")
+
+    clauses = split_into_clauses(full_text)
+    limit = int(payload.get("limit", 0) or 0)
+    if limit > 0:
+        clauses = clauses[:limit]
+
+    vectorstore = build_vectorstore(category)
+    results, joined, pairs = _analyze_clauses_with_gate(clauses, vectorstore)
+
+    return {
+        "termId": payload.get("termId"),
+        "category": category,
+        "count_clauses": len(clauses),
+        "count_flagged": len(pairs),
+        "count_flagged_clauses": len(results),
+        "count_risk_items": len(pairs),
+        "results": results,
+        "text": joined,
+        "pairs": [{"from": s, "to": d} for s, d in pairs],
+    }
+
+
+def verify_internal_token():
+    if not INTERNAL_CALLBACK_TOKEN:
+        return
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+    elif request.args.get("token"):
+        token = request.args.get("token")
+    if not token:
+        raise PermissionError("Missing internal bearer token")
+    if token != INTERNAL_CALLBACK_TOKEN:
+        raise PermissionError("Invalid internal bearer token")
+
+
+def decode_pubsub_push_message() -> dict:
+    envelope = request.get_json(silent=True) or {}
+    message = envelope.get("message") or {}
+    data = message.get("data")
+    if not data:
+        raise ValueError("Pub/Sub push message.data is missing")
+    return json.loads(base64.b64decode(data).decode("utf-8"))
+
+
+def callback_term_service(job_id: str, path: str, body: dict):
+    headers = {"Content-Type": "application/json"}
+    if INTERNAL_CALLBACK_TOKEN:
+        headers["Authorization"] = f"Bearer {INTERNAL_CALLBACK_TOKEN}"
+    response = requests.post(
+        f"{TERM_SERVICE_BASE_URL}/terms/internal/jobs/{job_id}/{path}",
+        headers=headers,
+        json=body,
+        timeout=120
+    )
+    response.raise_for_status()
+    return response
+
+
 
 
 # =============================================================================
@@ -814,6 +890,8 @@ def debug_vector_db():
 # JSON 본문 분석(파일 없이)
 @app.route("/api/analyze-terms", methods=["POST"])
 def analyze_terms():
+    if ASYNC_AI_ENABLED:
+        return jsonify({"ok": False, "error": "Public analyze endpoint is disabled in async mode. Use term-service job API."}), 403
 
     data = request.get_json(silent=True) or {}
     raw_text = data.get("text", "")
@@ -860,6 +938,8 @@ def analyze_terms():
 # 업로드 파일 분석 + 원문에 수정 적용하여 새 파일 제공
 @app.route("/api/analyze-terms-upload", methods=["POST"])
 def analyze_terms_upload():
+    if ASYNC_AI_ENABLED:
+        return jsonify({"ok": False, "error": "Public analyze upload endpoint is disabled in async mode. Use term-service job API."}), 403
 
     if "file" not in request.files:
         return jsonify({"ok": False, "error": "file 필드가 없습니다."}), 400
@@ -951,6 +1031,41 @@ def analyze_terms_upload():
 # =============================================================================
 # Run (리로더 끔: 중복 프로세스/포트 혼선 방지)
 # =============================================================================
+@app.route("/internal/pubsub/terms-analyze", methods=["POST"])
+def handle_terms_analyze_pubsub():
+    try:
+        verify_internal_token()
+        payload = decode_pubsub_push_message()
+        job_id = payload.get("jobId")
+        if not job_id:
+            return jsonify({"ok": False, "error": "jobId is missing"}), 400
+
+        result = execute_analyze_job(payload)
+        callback_term_service(job_id, "complete", {"result": result})
+        return jsonify({"ok": True, "jobId": job_id})
+    except PermissionError as e:
+        return jsonify({"ok": False, "error": str(e)}), 401
+    except Exception as e:
+        logging.exception("Async analyze job failed")
+        job_id = None
+        try:
+            envelope = request.get_json(silent=True) or {}
+            message = envelope.get("message") or {}
+            if message.get("data"):
+                decoded = json.loads(base64.b64decode(message["data"]).decode("utf-8"))
+                job_id = decoded.get("jobId")
+        except Exception:
+            pass
+
+        if job_id:
+            try:
+                callback_term_service(job_id, "fail", {"errorMessage": str(e)})
+            except Exception:
+                logging.exception("Failed to notify term-service about analyze job failure")
+
+        return jsonify({"ok": False, "error": str(e), "jobId": job_id}), 200
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", os.environ.get("PY_PORT", 8080)))
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)

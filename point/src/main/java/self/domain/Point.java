@@ -18,4 +18,6 @@ public class Point {
     private Integer amount;
 
     private String userId; // Firebase UID
+
+    private Integer reservedAmount;
 }

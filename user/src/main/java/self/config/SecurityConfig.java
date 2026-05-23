@@ -15,7 +15,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable() // CSRF 비활성화 (개발용, 운영 시 별도 설정 필요)
                 .authorizeRequests()
-                .antMatchers("/api/auth/signup", "/test").permitAll()
+                .antMatchers("/api/auth/signup", "/test", "/api/users/me", "/api/users/me/profile").permitAll()
                 .anyRequest().authenticated();
     }
 }

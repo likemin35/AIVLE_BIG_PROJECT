@@ -1,19 +1,2 @@
 spring:
   profiles: docker
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: ${KAFKA_BROKER:}
-      bindings:
-        event-in:
-          group: point
-          destination: self
-          contentType: application/json
-          consumer:
-            auto-startup: false
-        event-out:
-          destination: self
-          contentType: application/json
-          producer:
-            auto-startup: false

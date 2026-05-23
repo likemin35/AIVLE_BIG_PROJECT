@@ -11,32 +11,13 @@ firebase:
   secret-id: "firebase-adminsdk"
   project-id: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
 
+INTERNAL_CALLBACK_TOKEN: ${INTERNAL_CALLBACK_TOKEN:}
+
 ---
 
 # 로컬 개발 환경 (default profile)
 spring:
   profiles: default
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: localhost:9092
-        streams:
-          binder:
-            configuration:
-              default:
-                key:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-                value:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-      bindings:
-        event-in:
-          group: point
-          destination: self
-          contentType: application/json
-        event-out:
-          destination: self
-          contentType: application/json
 
 logging:
   level:
@@ -58,24 +39,3 @@ server:
 # Docker 환경 (docker profile)
 spring:
   profiles: docker
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: my-kafka:9092
-        streams:
-          binder:
-            configuration:
-              default:
-                key:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-                value:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-      bindings:
-        event-in:
-          group: point
-          destination: self
-          contentType: application/json
-        event-out:
-          destination: self
-          contentType: application/json

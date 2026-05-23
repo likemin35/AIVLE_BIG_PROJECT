@@ -57,8 +57,8 @@ export default function PolicyLink({
           alignItems: layout === 'stack' ? 'flex-start' : 'center',
         }}
       >
-        <a
-          href="#"
+        <button
+          type="button"
           className={linkClassName}
           onClick={(e) => {
             e.preventDefault();
@@ -66,12 +66,12 @@ export default function PolicyLink({
           }}
         >
           {termsLabel}
-        </a>
+        </button>
 
         {layout === 'inline' && <span style={{ opacity: 0.6 }}>{divider}</span>}
 
-        <a
-          href="#"
+        <button
+          type="button"
           className={linkClassName}
           onClick={(e) => {
             e.preventDefault();
@@ -79,7 +79,7 @@ export default function PolicyLink({
           }}
         >
           {privacyLabel}
-        </a>
+        </button>
       </div>
 
       <PDFModal open={modalOpen} onClose={closeModal} pdfUrl={modalUrl} title={modalTitle} />

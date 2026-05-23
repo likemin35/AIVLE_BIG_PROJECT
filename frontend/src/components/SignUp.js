@@ -8,8 +8,8 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../firebase';
+import { auth, googleProvider } from '../firebase';
+import { saveCurrentUserProfile } from '../api/user';
 import { useNavigate } from 'react-router-dom';
 import googleLogo from '../assets/google-logo.png';
 import PDFModal from './PDFModal';
@@ -113,10 +113,11 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
 
       const timestamp = new Date().toISOString();
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await saveCurrentUserProfile({
         name: formData.name,
         company: formData.company,
         email: formData.email,
+        isVerified: formData.isVerified,
 
         createdAt: new Date(),
         agreedTerms: {
@@ -154,7 +155,7 @@ function SignUp({ user, authLoading, onHomeClick }) { // user와 authLoading pro
       const user = result.user;
       const timestamp = new Date().toISOString();
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await saveCurrentUserProfile({
         name: user.displayName || '',
         email: user.email,
         company: '',

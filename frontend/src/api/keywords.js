@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
-const NER_API_BASE_URL = process.env.REACT_APP_KEYWORD_NER_API_BASE_URL;
-const GRAPH_API_BASE_URL = process.env.REACT_APP_KEYWORD_GRAPH_API_BASE_URL;
+const GATEWAY_BASE_URL = process.env.REACT_APP_GATEWAY_BASE_URL || 'http://localhost:8088';
+const NER_API_BASE_URL = process.env.REACT_APP_KEYWORD_NER_API_BASE_URL || `${GATEWAY_BASE_URL}/ner`;
+const GRAPH_API_BASE_URL = process.env.REACT_APP_KEYWORD_GRAPH_API_BASE_URL || `${GATEWAY_BASE_URL}/graph`;
 
 // ===================================================================
 

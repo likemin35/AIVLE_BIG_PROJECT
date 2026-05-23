@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate, useOutletContext, useLocation } from 'react-router-dom';
 import { getQuestionById, deleteQuestion, createAnswer, deleteAnswer, updateAnswer } from '../api/qna';
 import './QnaDetail.css';
@@ -32,7 +32,7 @@ const QnaDetail = () => {
 
     const effectRan = useRef(false);
 
-    const fetchQuestion = async () => {
+    const fetchQuestion = useCallback(async () => {
         try {
             const data = await getQuestionById(id);
             setQuestion(data);
@@ -41,14 +41,14 @@ const QnaDetail = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [id]);
 
     useEffect(() => {
         if (effectRan.current === false) {
             fetchQuestion();
             return () => { effectRan.current = true; };
         }
-    }, [id]);
+    }, [fetchQuestion]);
 
     // 질문 삭제 핸들러
     const handleQuestionDelete = async () => {

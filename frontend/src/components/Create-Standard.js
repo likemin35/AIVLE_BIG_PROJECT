@@ -10,9 +10,9 @@ function CreateStandard() {
   const [productName, setProductName] = useState('');
   const [requirements, setRequirements] = useState('');
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [generatedTerms, setGeneratedTerms] = useState('');
+  const [isLoading] = useState(false);
+  const [error] = useState('');
+  const [generatedTerms] = useState('');
 
 
   const categories = ['예금', '적금', '주택담보대출', '암보험', '자동차보험'];

@@ -11,35 +11,23 @@ firebase:
   project-id: "aivle-team0721" # 실제 프로젝트 ID로 변경해주세요
   storage-bucket: "aivle-team0721.firebasestorage.app" # qna 서비스와 동일한 스토리지 버킷으로 수정
 
+GCP_PROJECT_ID: ${GCP_PROJECT_ID:aivle-team0721}
+PUBSUB_TERMS_CREATE_TOPIC: ${PUBSUB_TERMS_CREATE_TOPIC:terms-create-request}
+PUBSUB_TERMS_ANALYZE_TOPIC: ${PUBSUB_TERMS_ANALYZE_TOPIC:terms-analyze-request}
+POINT_SERVICE_BASE_URL: ${POINT_SERVICE_BASE_URL:http://localhost:8085}
+CREATE_SERVICE_BASE_URL: ${CREATE_SERVICE_BASE_URL:http://localhost:8080}
+ANALYZE_SERVICE_BASE_URL: ${ANALYZE_SERVICE_BASE_URL:http://localhost:8082}
+POINT_SERVICE_CONNECT_TIMEOUT_MS: ${POINT_SERVICE_CONNECT_TIMEOUT_MS:3000}
+POINT_SERVICE_READ_TIMEOUT_MS: ${POINT_SERVICE_READ_TIMEOUT_MS:10000}
+AI_WORKER_CONNECT_TIMEOUT_MS: ${AI_WORKER_CONNECT_TIMEOUT_MS:3000}
+AI_WORKER_READ_TIMEOUT_MS: ${AI_WORKER_READ_TIMEOUT_MS:15000}
+INTERNAL_CALLBACK_TOKEN: ${INTERNAL_CALLBACK_TOKEN:}
+ASYNC_AI_ENABLED: ${ASYNC_AI_ENABLED:true}
+
 ---
 
 spring:
   profiles: default
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: localhost:9092
-        streams:
-          binder:
-            configuration:
-              default:
-                key:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-                value:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-      bindings:
-        event-in:
-          group: term
-#<<< EDA / Topic Name
-          destination: self
-#>>> EDA / Topic Name
-          contentType: application/json
-        event-out:
-#<<< EDA / Topic Name
-          destination: self
-#>>> EDA / Topic Name
-          contentType: application/json
 
 logging:
   level:
@@ -53,24 +41,3 @@ server:
 
 spring:
   profiles: docker
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: my-kafka:9092
-        streams:
-          binder:
-            configuration:
-              default:
-                key:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-                value:
-                  serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-      bindings:
-        event-in:
-          group: term
-          destination: self
-          contentType: application/json
-        event-out:
-          destination: self
-          contentType: application/json

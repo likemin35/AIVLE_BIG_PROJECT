@@ -27,12 +27,6 @@ spring:
 
       # <<< API Gateway / Routes
       routes:
-        # analyze → localhost:8082
-        - id: analyze
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
-
         - id: keywords-ner
           uri: http://localhost:8081
           predicates:
@@ -47,10 +41,19 @@ spring:
           filters:
             - StripPrefix=1
 
-        - id: ai
+        - id: keyword-graph
           uri: http://localhost:8080
           predicates:
-            - Path=/api/generate/**,/ais/**
+            - Path=/graph,/graph/**
+          filters:
+            - StripPrefix=1
+
+        - id: image
+          uri: http://localhost:8080
+          predicates:
+            - Path=/image,/image/**
+          filters:
+            - StripPrefix=1
 
         - id: term
           uri: http://localhost:8083
@@ -62,7 +65,17 @@ spring:
           uri: http://localhost:8085
           predicates:
             # ⬇️ 기존 오타(/terms...) 교정
-            - Path=/points,/points/**,/getPoints,/getPoints/**,/api/points,/api/points/**
+            - Path=/points,/points/**,/getPoints,/getPoints/**
+
+        - id: point-api
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/points,/api/points/**
+
+        - id: user
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/users/**,/api/auth/**,/users/**
 
         - id: qna
           uri: http://localhost:8086
@@ -96,37 +109,62 @@ spring:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin,RETAIN_LAST
 
       routes:
-        # analyze → analyze:8082
-        - id: analyze
-          uri: http://analyze:8082
+        - id: keywords-ner
+          uri: ${KEYWORD_NER_SERVICE_URL:http://keywordner:8080}
           predicates:
-            - Path=/api/analyze-terms,/api/analyze-terms/**,/api/analyze-terms-upload,/api/analyze-terms-upload/**
-
-        - id: ai
-          uri: http://ai:8080
-          predicates:
-            - Path=/api/generate/**,/ais/**
+            - Path=/ner/**
           filters:
-            - StripPrefix=1  # ← 백엔드가 /api/generate를 그대로 받는다면 이 줄 제거가 필요할 수도 있음 (참고)
+            - StripPrefix=1
+
+        - id: keywords-ai
+          uri: ${KEYWORD_AI_SERVICE_URL:http://keywordai:8080}
+          predicates:
+            - Path=/keywords/**
+          filters:
+            - StripPrefix=1
+
+        - id: keyword-graph
+          uri: ${KEYWORD_GRAPH_SERVICE_URL:http://keywordgraph:8080}
+          predicates:
+            - Path=/graph,/graph/**
+          filters:
+            - StripPrefix=1
+
+        - id: image
+          uri: ${IMAGE_SERVICE_URL:http://image:8080}
+          predicates:
+            - Path=/image,/image/**
+          filters:
+            - StripPrefix=1
 
         - id: term
-          uri: http://term:8080
+          uri: ${TERM_SERVICE_URL:http://term:8080}
           predicates:
             # ⬇️ 정확 경로까지 포함
             - Path=/terms,/terms/**
 
         - id: point
-          uri: http://point:8080
+          uri: ${POINT_SERVICE_URL:http://point:8080}
           predicates:
             - Path=/points/**
 
+        - id: point-api
+          uri: ${POINT_SERVICE_URL:http://point:8080}
+          predicates:
+            - Path=/api/points,/api/points/**
+
+        - id: user
+          uri: ${USER_SERVICE_URL:http://user:8080}
+          predicates:
+            - Path=/api/users/**,/api/auth/**,/users/**
+
         - id: qna
-          uri: http://qna:8080
+          uri: ${QNA_SERVICE_URL:http://qna:8080}
           predicates:
             - Path=/qna/**
 
         - id: frontend
-          uri: http://frontend:8080
+          uri: ${FRONT_SERVICE_URL:http://frontend:8080}
           predicates:
             - Path=/**
 

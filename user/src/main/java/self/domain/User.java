@@ -9,8 +9,6 @@ import java.util.Map;
 import javax.persistence.*;
 import lombok.Data;
 import self.UserApplication;
-import self.domain.InfoModified;
-import self.domain.UserSignedUp;
 
 @Entity
 @Table(name = "User_table")
@@ -30,18 +28,6 @@ public class User {
 
     private String company;
 
-    @PostPersist
-    public void onPostPersist() {
-        UserSignedUp userSignedUp = new UserSignedUp(this);
-        userSignedUp.publishAfterCommit();
-    }
-
-    @PostUpdate
-    public void onPostUpdate() {
-        InfoModified infoModified = new InfoModified(this);
-        infoModified.publishAfterCommit();
-    }
-
     public static UserRepository repository() {
         UserRepository userRepository = UserApplication.applicationContext.getBean(
             UserRepository.class
@@ -51,10 +37,7 @@ public class User {
 
     //<<< Clean Arch / Port Method
     public void userLogin(UserLoginCommand userLoginCommand) {
-        //implement business logic here:
-
-        UserLoggedIn userLoggedIn = new UserLoggedIn(this);
-        userLoggedIn.publishAfterCommit();
+        // No-op: login side effects are handled directly by current services.
     }
     //>>> Clean Arch / Port Method
 

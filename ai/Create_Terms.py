@@ -5,6 +5,8 @@ import os, _csv, _io
 import json
 import logging
 import urllib.parse
+import base64
+import google.auth
 from google.oauth2 import service_account
 from langchain_google_vertexai import VertexAIEmbeddings, ChatVertexAI
 from langchain_community.vectorstores import Chroma
@@ -56,6 +58,9 @@ logging.basicConfig(level=logging.INFO)
 # 서비스 URL
 TERM_SERVICE_URL = os.environ.get("TERM_SERVICE_URL", "http://localhost:8083/terms")
 POINT_SERVICE_URL = os.environ.get("POINT_SERVICE_URL", "http://localhost:8085")
+TERM_SERVICE_BASE_URL = os.environ.get("TERM_SERVICE_BASE_URL", "http://localhost:8083")
+INTERNAL_CALLBACK_TOKEN = os.environ.get("INTERNAL_CALLBACK_TOKEN", "")
+ASYNC_AI_ENABLED = os.environ.get("ASYNC_AI_ENABLED", "true").lower() == "true"
 
 # Vertex AI 설정
 PROJECT_ID = "aivle-team0721"
@@ -420,6 +425,108 @@ def parse_unified_product_csv_upload(file_storage):
         "criteria_spec": criteria_spec
     }
 
+
+def parse_unified_product_csv_bytes(raw_bytes: bytes):
+    file_like = type("UploadedCsv", (), {})()
+    file_like.stream = _io.BytesIO(raw_bytes)
+    return parse_unified_product_csv_upload(file_like)
+
+
+def execute_create_job(payload: dict):
+    if not llm:
+        raise RuntimeError("AI model is not initialized")
+
+    company_name = (payload.get("companyName") or "").strip()
+    product_name = (payload.get("productName") or "").strip()
+    category = (payload.get("category") or "").strip()
+    wishlist = (payload.get("requirements") or "").strip()
+    effective_date = (payload.get("effectiveDate") or "").strip()
+    user_id = (payload.get("userId") or "").strip()
+
+    parsed = {}
+    product_meta_base64 = payload.get("productMetaBase64")
+    if product_meta_base64:
+        raw_bytes = base64.b64decode(product_meta_base64)
+        parsed = parse_unified_product_csv_bytes(raw_bytes)
+
+    if parsed.get("company_name"):
+        company_name = parsed["company_name"]
+    if parsed.get("product_name"):
+        product_name = parsed["product_name"]
+    if parsed.get("wishlist_text"):
+        wishlist = parsed["wishlist_text"]
+
+    if not all([company_name, product_name, wishlist, user_id, category]):
+        raise ValueError("Missing required create job payload fields")
+
+    retriever = RETRIEVERS.get(category)
+    if not retriever:
+        raise RuntimeError("Retriever was not loaded for category: " + category)
+
+    docs = retriever.invoke(product_name)
+    context = "\n\n".join([d.page_content for d in docs])
+
+    prompt = PROMPT_TEMPLATE_JSON.format(
+        company_name=company_name,
+        product_name=product_name,
+        wishlist=wishlist,
+        context=context,
+        evaluation_criteria=EVALUATION_CRITERIA
+    )
+    raw = _gen_with_gemini(prompt)
+    policy = _parse_json_loose(raw)
+    policy_text = json_to_text(policy)
+
+    return {
+        "title": product_name or "AI 약관 초안",
+        "category": category,
+        "productName": product_name,
+        "companyName": company_name,
+        "requirements": wishlist,
+        "effectiveDate": effective_date,
+        "policy": policy_text,
+        "content": policy_text,
+    }
+
+
+def verify_internal_token():
+    if not INTERNAL_CALLBACK_TOKEN:
+        return
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1]
+    elif request.args.get("token"):
+        token = request.args.get("token")
+    if not token:
+        raise PermissionError("Missing internal bearer token")
+    if token != INTERNAL_CALLBACK_TOKEN:
+        raise PermissionError("Invalid internal bearer token")
+
+
+def decode_pubsub_push_message() -> dict:
+    envelope = request.get_json(silent=True) or {}
+    message = envelope.get("message") or {}
+    data = message.get("data")
+    if not data:
+        raise ValueError("Pub/Sub push message.data is missing")
+    decoded = base64.b64decode(data).decode("utf-8")
+    return json.loads(decoded)
+
+
+def callback_term_service(job_id: str, path: str, body: dict):
+    headers = {"Content-Type": "application/json"}
+    if INTERNAL_CALLBACK_TOKEN:
+        headers["Authorization"] = f"Bearer {INTERNAL_CALLBACK_TOKEN}"
+    response = requests.post(
+        f"{TERM_SERVICE_BASE_URL}/terms/internal/jobs/{job_id}/{path}",
+        headers=headers,
+        json=body,
+        timeout=120
+    )
+    response.raise_for_status()
+    return response
+
 # JSON을 텍스트로 변환
 def json_to_text(policy: dict) -> str:
     full_text = []
@@ -452,6 +559,11 @@ def json_to_text(policy: dict) -> str:
 # 신규: 멀티파트 업로드 
 @app.route('/api/generate', methods=['POST'])
 def generate_terms_v2():
+    if ASYNC_AI_ENABLED:
+        return jsonify({
+            "error": "Public create endpoint is disabled in async mode. Use term-service job API."
+        }), 403
+
     if request.method == 'OPTIONS':
         return jsonify({'status': 'ok'}), 200
 
@@ -567,6 +679,40 @@ def generate_terms_v2():
     except Exception:
         logging.exception("약관 생성 중 오류")
         return jsonify({"error": "약관 생성 중 서버에서 오류가 발생했습니다."} ), 500
+
+@app.route('/internal/pubsub/terms-create', methods=['POST'])
+def handle_terms_create_pubsub():
+    try:
+        verify_internal_token()
+        payload = decode_pubsub_push_message()
+        job_id = payload.get("jobId")
+        if not job_id:
+            return jsonify({"ok": False, "error": "jobId is missing"}), 400
+
+        result = execute_create_job(payload)
+        callback_term_service(job_id, "complete", {"result": result})
+        return jsonify({"ok": True, "jobId": job_id})
+    except PermissionError as e:
+        return jsonify({"ok": False, "error": str(e)}), 401
+    except Exception as e:
+        logging.exception("Async create job failed")
+        job_id = None
+        try:
+            envelope = request.get_json(silent=True) or {}
+            message = envelope.get("message") or {}
+            if message.get("data"):
+                decoded = json.loads(base64.b64decode(message["data"]).decode("utf-8"))
+                job_id = decoded.get("jobId")
+        except Exception:
+            pass
+
+        if job_id:
+            try:
+                callback_term_service(job_id, "fail", {"errorMessage": str(e)})
+            except Exception:
+                logging.exception("Failed to notify term-service about create job failure")
+
+        return jsonify({"ok": False, "error": str(e), "jobId": job_id}), 200
 
 # Health check
 @app.route('/api/health', methods=['GET'])

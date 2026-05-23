@@ -4,10 +4,11 @@ import { useOutletContext, Link } from 'react-router-dom';
 import { reduceUserPoints } from '../api/point'; // 포인트 API import
 import './UploadImage.css';
 import '../App.css';
-import PolicyLinks from './PolicyLink';
 
 // Cloud Run 서비스 URL (POST / 로 업로드)
-const API_URL = 'https://image-ai-service-eck6h26cxa-uc.a.run.app';
+const API_URL =
+  process.env.REACT_APP_IMAGE_API_BASE_URL ||
+  'http://localhost:8088/image';
 const POINT_COST = 1000; // 포인트 소모량
 
 function UploadImage() {

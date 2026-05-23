@@ -1,14 +1,15 @@
 package self.infra;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import self.domain.Point;
 import self.domain.PointHistory;
+import self.domain.PointReservation;
 import self.service.PointService;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(value = "/api/points")
@@ -16,6 +17,9 @@ public class PointController {
 
     @Autowired
     private PointService pointService;
+
+    @Value("${INTERNAL_CALLBACK_TOKEN:}")
+    private String internalCallbackToken;
 
     // Firebase UID로 포인트 조회
     @GetMapping("/{firebaseUid}")
@@ -78,11 +82,113 @@ public class PointController {
                 .map(response -> (ResponseEntity<Object>) response);
     }
 
+    @PostMapping("/internal/reservations")
+    public Mono<ResponseEntity<Object>> reservePoints(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestBody ReservationRequest request) {
+        try {
+            verifyInternalToken(authorizationHeader);
+            return pointService.reservePoints(
+                    request.getReservationId(),
+                    request.getUserId(),
+                    request.getAmount(),
+                    request.getDescription()
+                )
+                .map(reservation -> ResponseEntity.ok(toReservationResponse(reservation)))
+                .cast(ResponseEntity.class)
+                .onErrorResume(IllegalArgumentException.class, e ->
+                    Mono.just(ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage())))
+                )
+                .onErrorResume(e ->
+                    Mono.just(ResponseEntity.status(500).body(new ErrorResponse("포인트 예약 실패: " + e.getMessage())))
+                )
+                .map(response -> (ResponseEntity<Object>) response);
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(401).body(new ErrorResponse(e.getMessage())));
+        }
+    }
+
+    @PostMapping("/internal/reservations/{reservationId}/confirm")
+    public Mono<ResponseEntity<Object>> confirmReservation(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @PathVariable String reservationId) {
+        try {
+            verifyInternalToken(authorizationHeader);
+            return pointService.confirmReservation(reservationId)
+                .map(reservation -> ResponseEntity.ok(toReservationResponse(reservation)))
+                .cast(ResponseEntity.class)
+                .onErrorResume(IllegalArgumentException.class, e ->
+                    Mono.just(ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage())))
+                )
+                .onErrorResume(e ->
+                    Mono.just(ResponseEntity.status(500).body(new ErrorResponse("포인트 예약 확정 실패: " + e.getMessage())))
+                )
+                .map(response -> (ResponseEntity<Object>) response);
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(401).body(new ErrorResponse(e.getMessage())));
+        }
+    }
+
+    @PostMapping("/internal/reservations/{reservationId}/cancel")
+    public Mono<ResponseEntity<Object>> cancelReservation(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @PathVariable String reservationId) {
+        try {
+            verifyInternalToken(authorizationHeader);
+            return pointService.cancelReservation(reservationId)
+                .map(reservation -> ResponseEntity.ok(toReservationResponse(reservation)))
+                .cast(ResponseEntity.class)
+                .onErrorResume(IllegalArgumentException.class, e ->
+                    Mono.just(ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage())))
+                )
+                .onErrorResume(e ->
+                    Mono.just(ResponseEntity.status(500).body(new ErrorResponse("포인트 예약 취소 실패: " + e.getMessage())))
+                )
+                .map(response -> (ResponseEntity<Object>) response);
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(401).body(new ErrorResponse(e.getMessage())));
+        }
+    }
+
+    @PostMapping("/internal/bootstrap/{firebaseUid}")
+    public Mono<ResponseEntity<Object>> bootstrapInitialPoints(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @PathVariable String firebaseUid) {
+        try {
+            verifyInternalToken(authorizationHeader);
+            return pointService.bootstrapInitialPoints(firebaseUid)
+                .map(updatedPoint -> ResponseEntity.ok(new PointResponse(updatedPoint.getId(), updatedPoint.getUserId(), updatedPoint.getAmount())))
+                .cast(ResponseEntity.class)
+                .onErrorResume(e ->
+                    Mono.just(ResponseEntity.status(500).body(new ErrorResponse("초기 포인트 지급 실패: " + e.getMessage())))
+                )
+                .map(response -> (ResponseEntity<Object>) response);
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(401).body(new ErrorResponse(e.getMessage())));
+        }
+    }
+
     // Request DTO for charging points
     public static class ChargeRequest {
         private Integer amount;
         public Integer getAmount() { return amount; }
         public void setAmount(Integer amount) { this.amount = amount; }
+    }
+
+    public static class ReservationRequest {
+        private String reservationId;
+        private String userId;
+        private Integer amount;
+        private String description;
+
+        public String getReservationId() { return reservationId; }
+        public void setReservationId(String reservationId) { this.reservationId = reservationId; }
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
+        public Integer getAmount() { return amount; }
+        public void setAmount(Integer amount) { this.amount = amount; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
     }
 
     // Response DTO
@@ -113,5 +219,46 @@ public class PointController {
 
         // Getter
         public String getError() { return error; }
+    }
+
+    public static class PointReservationResponse {
+        private String reservationId;
+        private String userId;
+        private Integer amount;
+        private String status;
+
+        public PointReservationResponse(String reservationId, String userId, Integer amount, String status) {
+            this.reservationId = reservationId;
+            this.userId = userId;
+            this.amount = amount;
+            this.status = status;
+        }
+
+        public String getReservationId() { return reservationId; }
+        public String getUserId() { return userId; }
+        public Integer getAmount() { return amount; }
+        public String getStatus() { return status; }
+    }
+
+    private PointReservationResponse toReservationResponse(PointReservation reservation) {
+        return new PointReservationResponse(
+                reservation.getId(),
+                reservation.getUserId(),
+                reservation.getAmount(),
+                reservation.getStatus()
+        );
+    }
+
+    private void verifyInternalToken(String authorizationHeader) {
+        if (internalCallbackToken == null || internalCallbackToken.isBlank()) {
+            return;
+        }
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Missing internal bearer token");
+        }
+        String token = authorizationHeader.substring(7);
+        if (!internalCallbackToken.equals(token)) {
+            throw new IllegalArgumentException("Invalid internal bearer token");
+        }
     }
 }

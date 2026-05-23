@@ -4,9 +4,7 @@ import { updateContract } from '../api/term';
 import './Edit-Terms.css';
 import LoadingSpinner from './LoadingSpinner';
 const TERM_SERVICE_BASE_URL =
-  window.location.hostname === 'localhost'
-    ? 'http://localhost:8088'
-    : 'https://term-service-902267887946.us-central1.run.app';
+  process.env.REACT_APP_TERM_API_BASE_URL || 'http://localhost:8088';
 
 function EditTerms() {
   const { user, authLoading } = useOutletContext();
@@ -52,12 +50,12 @@ function EditTerms() {
     // 올바른 순서: 제목 -> 목차 -> 본문
     return `${docTitle}\n\n${toc}\n${docBody}`;
   });
-  const [createdAt, setCreatedAt] = useState(() => {
+  const [createdAt] = useState(() => {
     if (!initialData) return '';
     const dateToSet = initialData.createdAt ? new Date(initialData.createdAt) : new Date();
     return dateToSet.toISOString().split('T')[0];
   });
-  const [metaInfo, setMetaInfo] = useState(() => {
+  const [metaInfo] = useState(() => {
       if (!initialData) return {};
       if (isEditMode) {
           return {

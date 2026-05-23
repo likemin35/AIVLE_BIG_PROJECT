@@ -11,15 +11,15 @@ public class PointHistory {
     private String id;
     private String userId;
     private int amount;
-    private String type; // "CHARGE", "DEDUCT" 등
-    private String description; // 변동 사유
+    private String type;
+    private String description;
+    private String reservationId;
     private Date timestamp;
 
     public PointHistory() {
         this.timestamp = new Date();
     }
 
-    // Getters and Setters
     public String getId() {
         return id;
     }
@@ -58,6 +58,14 @@ public class PointHistory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getReservationId() {
+        return reservationId;
+    }
+
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
     }
 
     public Date getTimestamp() {

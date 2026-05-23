@@ -29,24 +29,18 @@ spring:
         format_sql: true
         implicit_naming_strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
 
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: localhost:9092
-      bindings:
-        event-in:
-          group: user
-          destination: self
-          contentType: application/json
-        event-out:
-          destination: self
-          contentType: application/json
-
 logging:
   level:
     org.hibernate.type: trace
     org.springframework.cloud: debug
+
+server:
+  port: 8084
+
+POINT_SERVICE_BASE_URL: ${POINT_SERVICE_BASE_URL:http://localhost:8085}
+POINT_SERVICE_CONNECT_TIMEOUT_MS: ${POINT_SERVICE_CONNECT_TIMEOUT_MS:3000}
+POINT_SERVICE_READ_TIMEOUT_MS: ${POINT_SERVICE_READ_TIMEOUT_MS:10000}
+INTERNAL_CALLBACK_TOKEN: ${INTERNAL_CALLBACK_TOKEN:}
 
 firebase:
   email-verification-url: "http://localhost:8088/api/auth/verify-email"
@@ -55,20 +49,6 @@ firebase:
 
 spring:
   profiles: docker
-
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: dummy:9092
-      bindings:
-        event-in:
-          group: user
-          destination: self
-          contentType: application/json
-        event-out:
-          destination: self
-          contentType: application/json
 
 firebase:
   email-verification-url: "https://your-frontend-url/api/auth/verify-email"

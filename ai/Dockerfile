@@ -14,4 +14,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["bash", "-lc", "exec gunicorn -b 0.0.0.0:${PORT:-8080} create_terms:app --workers=1 --threads=4 --timeout=900"]
+CMD ["bash", "-lc", "exec gunicorn -b 0.0.0.0:${PORT:-8080} Create_Terms:app --workers=1 --threads=4 --timeout=900"]

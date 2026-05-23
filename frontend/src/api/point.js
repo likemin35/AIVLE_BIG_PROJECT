@@ -11,6 +11,7 @@ const getApiUrl = () => {
 
 const apiClient = axios.create({
     baseURL: getApiUrl(),
+    timeout: Number(process.env.REACT_APP_API_TIMEOUT_MS || 10000),
     headers: {
         'Content-Type': 'application/json',
     }
@@ -30,6 +31,18 @@ apiClient.interceptors.request.use(async (config) => {
 }, (error) => {
     return Promise.reject(error);
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.code === 'ECONNABORTED') {
+            error.message = '포인트 서비스 요청 시간이 초과되었습니다.';
+        } else if (!error.response) {
+            error.message = '포인트 서비스에 연결하지 못했습니다.';
+        }
+        return Promise.reject(error);
+    }
+);
 
 /**
  * ✅ 특정 사용자의 포인트를 조회합니다.

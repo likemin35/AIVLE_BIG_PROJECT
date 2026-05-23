@@ -8,8 +8,8 @@ import CreateTerms from './components/Create-Terms';
 import CreateStandard from './components/Create-Standard';
 
 import CompleteSignUp from './components/CompleteSignUp';
-import { auth, db } from './firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from './firebase';
+import { getCurrentUserProfile } from './api/user';
 import MyPage from './MyPage';
 import QnaList from './components/QnaList';
 import QnaWrite from './components/QnaWrite';
@@ -34,7 +34,6 @@ import UploadImage from './components/UploadImage';
 import ExplainPage from './components/ExplainPage';
 
 // (선택) 어디서든 설명 페이지로 이동하는 버튼 컴포넌트
-import GoToExplainButton from './components/GoToExplainButton';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -43,11 +42,11 @@ function App() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (userAuth) => {
       if (userAuth && userAuth.emailVerified) {
-        const userDocRef = doc(db, 'users', userAuth.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          setUser(Object.assign(userAuth, userDoc.data()));
-        } else {
+        try {
+          const profile = await getCurrentUserProfile();
+          setUser(Object.assign({}, userAuth, profile || {}));
+        } catch (error) {
+          console.error('Failed to fetch user profile from user-service:', error);
           setUser(userAuth);
         }
       } else {
